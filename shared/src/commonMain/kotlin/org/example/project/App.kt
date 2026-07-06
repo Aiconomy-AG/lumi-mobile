@@ -14,36 +14,30 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import features.login.presentation.LoginScreen
 import org.jetbrains.compose.resources.painterResource
 
 import kotlinproject.shared.generated.resources.Res
 import kotlinproject.shared.generated.resources.compose_multiplatform
+import org.example.project.data.auth.MockAuthRepository
+import org.example.project.data.auth.UserSession
+import org.example.project.presentation.auth.LoginViewModel
 
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+    var currentUser by remember { mutableStateOf<UserSession?>(null) }
+
+    if (currentUser == null) {
+        val viewModel = remember {
+            LoginViewModel(
+                authRepository = MockAuthRepository(),
+                onLoginSuccess = { user ->
+                    currentUser = user
                 }
-            }
+            )
         }
+
+        LoginScreen(viewModel)
     }
 }

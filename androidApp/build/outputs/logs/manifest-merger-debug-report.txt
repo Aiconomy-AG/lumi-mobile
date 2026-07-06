@@ -1,0 +1,388 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:2:1-22:12
+INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:2:1-22:12
+INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:2:1-22:12
+INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:2:1-22:12
+MERGED from [:shared] /Users/raresfodorca/Desktop/lumi/lumi-mobile/shared/build/intermediates/merged_manifest/androidMain/processAndroidMainManifest/AndroidManifest.xml:2:1-7:12
+MERGED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:2:1-16:12
+MERGED from [androidx.compose.material3:material3-android:1.5.0-alpha17] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/235e66a59b137979ed298bac694abd49/transformed/material3/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.compose.material:material-ripple-android:1.11.0-rc01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/60f64e6745605573be5d11609f86252e/transformed/material-ripple/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.animation:animation-core-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a49cb530df331a03f1f856f36c51d5ca/transformed/animation-core/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.animation:animation-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/4cda766fd0b1090e6694bb7c5ad56a70/transformed/animation/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.foundation:foundation-layout-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/f6b0cffecf4db3154c514a754896b765/transformed/foundation-layout/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.foundation:foundation-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1cc0c58525c84b3d0a7459a1f6b4f1e3/transformed/foundation/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-util-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fef08c72faaf57a498c51e0c9afab600/transformed/ui-util/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-unit-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/c91ace3a86aa584d5ab7236f0ee5e55e/transformed/ui-unit/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-text-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/2e43da9bcb881d4cc00dcf9f22770d68/transformed/ui-text/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-graphics-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/ad7b4ebf3c5cdff89272a24a69d1cdd4/transformed/ui-graphics/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-geometry-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e8c66c6dcbf2715e1d580b27db910ded/transformed/ui-geometry/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-tooling-data-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/660175052059f497f81f5fdc165bb257/transformed/ui-tooling-data/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-tooling-preview-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/053cc8a3d159729a2e821859ea7689c6/transformed/ui-tooling-preview/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.compose.ui:ui-tooling-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/0d4087159f07b8f473f9e0107276c8f1/transformed/ui-tooling/AndroidManifest.xml:17:1-28:12
+MERGED from [androidx.navigationevent:navigationevent-android:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/930eb95d159f157abf08229265a9fa2a/transformed/navigationevent/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.navigationevent:navigationevent-compose-android:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/87712bed29ea0d7d81c20884a6b2fd57/transformed/navigationevent-compose/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.runtime:runtime-annotation-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a4385b81ff5a14028758b4ebf3534342/transformed/runtime-annotation/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.runtime:runtime-retain-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/81d98ba54d4eaf934369e0be56612c0d/transformed/runtime-retain/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.graphics:graphics-shapes-android:1.1.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7d724145ec37c78b7ce2c54579526059/transformed/graphics-shapes/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/198f3bad75f209a8c1793035721285e4/transformed/customview-poolingcontainer-1.0.0/AndroidManifest.xml:17:1-23:12
+MERGED from [androidx.core:core-ktx:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/8d9bec1f472705d5834edb080b62d76a/transformed/core-ktx-1.18.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.autofill:autofill:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/53c450b2987036d47ebc5434bbc75a25/transformed/autofill-1.0.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.transition:transition:1.6.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a9bae603ce1a9d74c5a1c76f00f6cd2c/transformed/transition-1.6.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.window:window-core-android:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1654c9c1e6a29cdabd0b7bd3d93fe544/transformed/window-core/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:17:1-31:12
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/2e0bf3df7220cc1a14260a92408b0095/transformed/dynamicanimation-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.graphics:graphics-path:1.0.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/528d15e8eb3c7dfc412081316ccea6ee/transformed/graphics-path-1.0.1/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/8719477feb66f2bdeea1ebf843a08ffe/transformed/legacy-support-core-utils-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.loader:loader:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/71f43613a0bcfad559f9fc8e43d62902/transformed/loader-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:17:1-30:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/efc69c6419f1774127636f49d853365c/transformed/lifecycle-livedata-core-ktx-2.11.0-beta01/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/eae2cdecfdc7809556e0291c4a819e35/transformed/lifecycle-livedata-2.11.0-beta01/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/2406f6659094ba64652c29ca10456def/transformed/lifecycle-runtime-ktx/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1505b14d44b53ed61e5852bfeb9d6113/transformed/lifecycle-livedata-core-2.11.0-beta01/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/04717a2f43dbd4621f093cc9179adb21/transformed/lifecycle-runtime/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/9cc191108e9564567ad42ce9fc79f8c0/transformed/lifecycle-viewmodel-ktx-2.11.0-beta01/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1930694a7a3a079759263ff863e8d803/transformed/lifecycle-viewmodel-2.11.0-beta01/AndroidManifest.xml:2:1-5:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/232a88e9b52631d92704e571aca6cbae/transformed/lifecycle-viewmodel/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e0ad09268117c93d23aea2f22d22e4f2/transformed/lifecycle-viewmodel-savedstate/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.savedstate:savedstate-android:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/f581a0a60c559a56b91d986297141c96/transformed/savedstate/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.savedstate:savedstate-ktx:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/25df24bbc59da5c323768343ddab0e9f/transformed/savedstate-ktx-1.4.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.savedstate:savedstate-compose-android:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/c10f87a6c4dfdd441b1df74506fdfffa/transformed/savedstate-compose/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.runtime:runtime-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/083d66bfce9854644815f4e1d3db7e97/transformed/runtime/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.runtime:runtime-saveable-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/c23714c11166b6718a963c3bbc54b9e5/transformed/runtime-saveable/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-compose-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/243b0bd3ea2b6b50e41bf48f27d08201/transformed/lifecycle-runtime-compose/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-compose-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a92fa95f33aa609622accb4c4c9e6677/transformed/lifecycle-viewmodel-compose/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/b25f849a90e9a778c72d53bb15db9705/transformed/ui/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.activity:activity-ktx:1.13.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/ef2700616ebca1df4aaa84c25f211009/transformed/activity-ktx-1.13.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.activity:activity:1.13.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/4d80a766df3d21cf27c9f6c4bead62b7/transformed/activity-1.13.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.activity:activity-compose:1.13.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/46a1cd4143a7aa2ed00836847f5c40f8/transformed/activity-compose-1.13.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.core:core-viewtree:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/792ac8de38fcd0fbb172d01b965b40b2/transformed/core-viewtree-1.0.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:17:1-55:12
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/72b7abd8a4486c0b4f4776c1e3433e49/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:17:1-27:12
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7a7a9083d1cd4537c47806e34d661906/transformed/startup-runtime-1.1.1/AndroidManifest.xml:17:1-33:12
+MERGED from [androidx.tracing:tracing:1.2.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/9ddce702ca07ce4d6b9137210574a74f/transformed/tracing-1.2.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.interpolator:interpolator:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/b26ad80d4d21bc6ef6e8e34d145faae7/transformed/interpolator-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.arch.core:core-runtime:2.2.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/3161114ee52e289032a006e553cb39b4/transformed/core-runtime-2.2.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.documentfile:documentfile:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/dc35ba869c5199deb398e3b3cab03284/transformed/documentfile-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1e3bfbb03fa92d551beff5aa87658198/transformed/localbroadcastmanager-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.print:print:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/452777ec58e0d50d6c716a4f41a30f44/transformed/print-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.annotation:annotation-experimental:1.4.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/584000a531d37806984944cb714ddd91/transformed/annotation-experimental-1.4.1/AndroidManifest.xml:2:1-7:12
+	package
+		INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml
+	android:versionCode
+		INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:2:11-69
+application
+ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:4:5-20:19
+INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:4:5-20:19
+MERGED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:7:5-14:19
+MERGED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:7:5-14:19
+MERGED from [androidx.compose.ui:ui-tooling-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/0d4087159f07b8f473f9e0107276c8f1/transformed/ui-tooling/AndroidManifest.xml:22:5-26:19
+MERGED from [androidx.compose.ui:ui-tooling-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/0d4087159f07b8f473f9e0107276c8f1/transformed/ui-tooling/AndroidManifest.xml:22:5-26:19
+MERGED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:22:5-29:19
+MERGED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:22:5-29:19
+MERGED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:28:5-89
+MERGED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:28:5-89
+MERGED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/72b7abd8a4486c0b4f4776c1e3433e49/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/72b7abd8a4486c0b4f4776c1e3433e49/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7a7a9083d1cd4537c47806e34d661906/transformed/startup-runtime-1.1.1/AndroidManifest.xml:25:5-31:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7a7a9083d1cd4537c47806e34d661906/transformed/startup-runtime-1.1.1/AndroidManifest.xml:25:5-31:19
+	android:extractNativeLibs
+		INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml
+	android:appComponentFactory
+		ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:28:18-86
+	android:supportsRtl
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:9:9-35
+	android:label
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:7:9-41
+	android:roundIcon
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:8:9-54
+	android:icon
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:6:9-43
+	android:allowBackup
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:5:9-35
+	android:theme
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:10:9-72
+activity#org.example.project.MainActivity
+ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:11:9-19:20
+	android:exported
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:12:13-36
+	android:name
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:13:13-41
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:14:13-18:29
+action#android.intent.action.MAIN
+ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:15:17-69
+	android:name
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:15:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:17:17-77
+	android:name
+		ADDED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml:17:27-74
+uses-sdk
+INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml
+INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml
+MERGED from [:shared] /Users/raresfodorca/Desktop/lumi/lumi-mobile/shared/build/intermediates/merged_manifest/androidMain/processAndroidMainManifest/AndroidManifest.xml:5:5-44
+MERGED from [:shared] /Users/raresfodorca/Desktop/lumi/lumi-mobile/shared/build/intermediates/merged_manifest/androidMain/processAndroidMainManifest/AndroidManifest.xml:5:5-44
+MERGED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:5:5-44
+MERGED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material3:material3-android:1.5.0-alpha17] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/235e66a59b137979ed298bac694abd49/transformed/material3/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.material3:material3-android:1.5.0-alpha17] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/235e66a59b137979ed298bac694abd49/transformed/material3/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.material:material-ripple-android:1.11.0-rc01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/60f64e6745605573be5d11609f86252e/transformed/material-ripple/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material:material-ripple-android:1.11.0-rc01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/60f64e6745605573be5d11609f86252e/transformed/material-ripple/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.animation:animation-core-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a49cb530df331a03f1f856f36c51d5ca/transformed/animation-core/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.animation:animation-core-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a49cb530df331a03f1f856f36c51d5ca/transformed/animation-core/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.animation:animation-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/4cda766fd0b1090e6694bb7c5ad56a70/transformed/animation/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.animation:animation-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/4cda766fd0b1090e6694bb7c5ad56a70/transformed/animation/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.foundation:foundation-layout-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/f6b0cffecf4db3154c514a754896b765/transformed/foundation-layout/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.foundation:foundation-layout-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/f6b0cffecf4db3154c514a754896b765/transformed/foundation-layout/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.foundation:foundation-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1cc0c58525c84b3d0a7459a1f6b4f1e3/transformed/foundation/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.foundation:foundation-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1cc0c58525c84b3d0a7459a1f6b4f1e3/transformed/foundation/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-util-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fef08c72faaf57a498c51e0c9afab600/transformed/ui-util/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-util-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fef08c72faaf57a498c51e0c9afab600/transformed/ui-util/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-unit-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/c91ace3a86aa584d5ab7236f0ee5e55e/transformed/ui-unit/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-unit-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/c91ace3a86aa584d5ab7236f0ee5e55e/transformed/ui-unit/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-text-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/2e43da9bcb881d4cc00dcf9f22770d68/transformed/ui-text/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-text-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/2e43da9bcb881d4cc00dcf9f22770d68/transformed/ui-text/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-graphics-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/ad7b4ebf3c5cdff89272a24a69d1cdd4/transformed/ui-graphics/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-graphics-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/ad7b4ebf3c5cdff89272a24a69d1cdd4/transformed/ui-graphics/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-geometry-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e8c66c6dcbf2715e1d580b27db910ded/transformed/ui-geometry/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-geometry-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e8c66c6dcbf2715e1d580b27db910ded/transformed/ui-geometry/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-tooling-data-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/660175052059f497f81f5fdc165bb257/transformed/ui-tooling-data/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-tooling-data-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/660175052059f497f81f5fdc165bb257/transformed/ui-tooling-data/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-tooling-preview-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/053cc8a3d159729a2e821859ea7689c6/transformed/ui-tooling-preview/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.ui:ui-tooling-preview-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/053cc8a3d159729a2e821859ea7689c6/transformed/ui-tooling-preview/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.ui:ui-tooling-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/0d4087159f07b8f473f9e0107276c8f1/transformed/ui-tooling/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.ui:ui-tooling-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/0d4087159f07b8f473f9e0107276c8f1/transformed/ui-tooling/AndroidManifest.xml:20:5-44
+MERGED from [androidx.navigationevent:navigationevent-android:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/930eb95d159f157abf08229265a9fa2a/transformed/navigationevent/AndroidManifest.xml:5:5-44
+MERGED from [androidx.navigationevent:navigationevent-android:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/930eb95d159f157abf08229265a9fa2a/transformed/navigationevent/AndroidManifest.xml:5:5-44
+MERGED from [androidx.navigationevent:navigationevent-compose-android:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/87712bed29ea0d7d81c20884a6b2fd57/transformed/navigationevent-compose/AndroidManifest.xml:5:5-44
+MERGED from [androidx.navigationevent:navigationevent-compose-android:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/87712bed29ea0d7d81c20884a6b2fd57/transformed/navigationevent-compose/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-annotation-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a4385b81ff5a14028758b4ebf3534342/transformed/runtime-annotation/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-annotation-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a4385b81ff5a14028758b4ebf3534342/transformed/runtime-annotation/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-retain-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/81d98ba54d4eaf934369e0be56612c0d/transformed/runtime-retain/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-retain-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/81d98ba54d4eaf934369e0be56612c0d/transformed/runtime-retain/AndroidManifest.xml:5:5-44
+MERGED from [androidx.graphics:graphics-shapes-android:1.1.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7d724145ec37c78b7ce2c54579526059/transformed/graphics-shapes/AndroidManifest.xml:5:5-44
+MERGED from [androidx.graphics:graphics-shapes-android:1.1.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7d724145ec37c78b7ce2c54579526059/transformed/graphics-shapes/AndroidManifest.xml:5:5-44
+MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/198f3bad75f209a8c1793035721285e4/transformed/customview-poolingcontainer-1.0.0/AndroidManifest.xml:20:5-21:38
+MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/198f3bad75f209a8c1793035721285e4/transformed/customview-poolingcontainer-1.0.0/AndroidManifest.xml:20:5-21:38
+MERGED from [androidx.core:core-ktx:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/8d9bec1f472705d5834edb080b62d76a/transformed/core-ktx-1.18.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-ktx:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/8d9bec1f472705d5834edb080b62d76a/transformed/core-ktx-1.18.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.autofill:autofill:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/53c450b2987036d47ebc5434bbc75a25/transformed/autofill-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.autofill:autofill:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/53c450b2987036d47ebc5434bbc75a25/transformed/autofill-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.transition:transition:1.6.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a9bae603ce1a9d74c5a1c76f00f6cd2c/transformed/transition-1.6.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.transition:transition:1.6.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a9bae603ce1a9d74c5a1c76f00f6cd2c/transformed/transition-1.6.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.window:window-core-android:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1654c9c1e6a29cdabd0b7bd3d93fe544/transformed/window-core/AndroidManifest.xml:5:5-44
+MERGED from [androidx.window:window-core-android:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1654c9c1e6a29cdabd0b7bd3d93fe544/transformed/window-core/AndroidManifest.xml:5:5-44
+MERGED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/2e0bf3df7220cc1a14260a92408b0095/transformed/dynamicanimation-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/2e0bf3df7220cc1a14260a92408b0095/transformed/dynamicanimation-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.graphics:graphics-path:1.0.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/528d15e8eb3c7dfc412081316ccea6ee/transformed/graphics-path-1.0.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.graphics:graphics-path:1.0.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/528d15e8eb3c7dfc412081316ccea6ee/transformed/graphics-path-1.0.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/8719477feb66f2bdeea1ebf843a08ffe/transformed/legacy-support-core-utils-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/8719477feb66f2bdeea1ebf843a08ffe/transformed/legacy-support-core-utils-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/71f43613a0bcfad559f9fc8e43d62902/transformed/loader-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/71f43613a0bcfad559f9fc8e43d62902/transformed/loader-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/efc69c6419f1774127636f49d853365c/transformed/lifecycle-livedata-core-ktx-2.11.0-beta01/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/efc69c6419f1774127636f49d853365c/transformed/lifecycle-livedata-core-ktx-2.11.0-beta01/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/eae2cdecfdc7809556e0291c4a819e35/transformed/lifecycle-livedata-2.11.0-beta01/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/eae2cdecfdc7809556e0291c4a819e35/transformed/lifecycle-livedata-2.11.0-beta01/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/2406f6659094ba64652c29ca10456def/transformed/lifecycle-runtime-ktx/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/2406f6659094ba64652c29ca10456def/transformed/lifecycle-runtime-ktx/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1505b14d44b53ed61e5852bfeb9d6113/transformed/lifecycle-livedata-core-2.11.0-beta01/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1505b14d44b53ed61e5852bfeb9d6113/transformed/lifecycle-livedata-core-2.11.0-beta01/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/04717a2f43dbd4621f093cc9179adb21/transformed/lifecycle-runtime/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/04717a2f43dbd4621f093cc9179adb21/transformed/lifecycle-runtime/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/9cc191108e9564567ad42ce9fc79f8c0/transformed/lifecycle-viewmodel-ktx-2.11.0-beta01/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/9cc191108e9564567ad42ce9fc79f8c0/transformed/lifecycle-viewmodel-ktx-2.11.0-beta01/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1930694a7a3a079759263ff863e8d803/transformed/lifecycle-viewmodel-2.11.0-beta01/AndroidManifest.xml:4:5-43
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1930694a7a3a079759263ff863e8d803/transformed/lifecycle-viewmodel-2.11.0-beta01/AndroidManifest.xml:4:5-43
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/232a88e9b52631d92704e571aca6cbae/transformed/lifecycle-viewmodel/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/232a88e9b52631d92704e571aca6cbae/transformed/lifecycle-viewmodel/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e0ad09268117c93d23aea2f22d22e4f2/transformed/lifecycle-viewmodel-savedstate/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e0ad09268117c93d23aea2f22d22e4f2/transformed/lifecycle-viewmodel-savedstate/AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-android:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/f581a0a60c559a56b91d986297141c96/transformed/savedstate/AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-android:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/f581a0a60c559a56b91d986297141c96/transformed/savedstate/AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/25df24bbc59da5c323768343ddab0e9f/transformed/savedstate-ktx-1.4.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/25df24bbc59da5c323768343ddab0e9f/transformed/savedstate-ktx-1.4.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.savedstate:savedstate-compose-android:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/c10f87a6c4dfdd441b1df74506fdfffa/transformed/savedstate-compose/AndroidManifest.xml:5:5-44
+MERGED from [androidx.savedstate:savedstate-compose-android:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/c10f87a6c4dfdd441b1df74506fdfffa/transformed/savedstate-compose/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/083d66bfce9854644815f4e1d3db7e97/transformed/runtime/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/083d66bfce9854644815f4e1d3db7e97/transformed/runtime/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-saveable-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/c23714c11166b6718a963c3bbc54b9e5/transformed/runtime-saveable/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-saveable-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/c23714c11166b6718a963c3bbc54b9e5/transformed/runtime-saveable/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-compose-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/243b0bd3ea2b6b50e41bf48f27d08201/transformed/lifecycle-runtime-compose/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-compose-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/243b0bd3ea2b6b50e41bf48f27d08201/transformed/lifecycle-runtime-compose/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-compose-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a92fa95f33aa609622accb4c4c9e6677/transformed/lifecycle-viewmodel-compose/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-compose-android:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a92fa95f33aa609622accb4c4c9e6677/transformed/lifecycle-viewmodel-compose/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/b25f849a90e9a778c72d53bb15db9705/transformed/ui/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/b25f849a90e9a778c72d53bb15db9705/transformed/ui/AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.13.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/ef2700616ebca1df4aaa84c25f211009/transformed/activity-ktx-1.13.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.13.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/ef2700616ebca1df4aaa84c25f211009/transformed/activity-ktx-1.13.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity:1.13.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/4d80a766df3d21cf27c9f6c4bead62b7/transformed/activity-1.13.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.13.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/4d80a766df3d21cf27c9f6c4bead62b7/transformed/activity-1.13.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity-compose:1.13.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/46a1cd4143a7aa2ed00836847f5c40f8/transformed/activity-compose-1.13.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-compose:1.13.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/46a1cd4143a7aa2ed00836847f5c40f8/transformed/activity-compose-1.13.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-viewtree:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/792ac8de38fcd0fbb172d01b965b40b2/transformed/core-viewtree-1.0.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-viewtree:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/792ac8de38fcd0fbb172d01b965b40b2/transformed/core-viewtree-1.0.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/72b7abd8a4486c0b4f4776c1e3433e49/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/72b7abd8a4486c0b4f4776c1e3433e49/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7a7a9083d1cd4537c47806e34d661906/transformed/startup-runtime-1.1.1/AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7a7a9083d1cd4537c47806e34d661906/transformed/startup-runtime-1.1.1/AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.tracing:tracing:1.2.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/9ddce702ca07ce4d6b9137210574a74f/transformed/tracing-1.2.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.tracing:tracing:1.2.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/9ddce702ca07ce4d6b9137210574a74f/transformed/tracing-1.2.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/b26ad80d4d21bc6ef6e8e34d145faae7/transformed/interpolator-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/b26ad80d4d21bc6ef6e8e34d145faae7/transformed/interpolator-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.arch.core:core-runtime:2.2.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/3161114ee52e289032a006e553cb39b4/transformed/core-runtime-2.2.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.arch.core:core-runtime:2.2.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/3161114ee52e289032a006e553cb39b4/transformed/core-runtime-2.2.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.documentfile:documentfile:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/dc35ba869c5199deb398e3b3cab03284/transformed/documentfile-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.documentfile:documentfile:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/dc35ba869c5199deb398e3b3cab03284/transformed/documentfile-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1e3bfbb03fa92d551beff5aa87658198/transformed/localbroadcastmanager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/1e3bfbb03fa92d551beff5aa87658198/transformed/localbroadcastmanager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/452777ec58e0d50d6c716a4f41a30f44/transformed/print-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/452777ec58e0d50d6c716a4f41a30f44/transformed/print-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.4.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/584000a531d37806984944cb714ddd91/transformed/annotation-experimental-1.4.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.4.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/584000a531d37806984944cb714ddd91/transformed/annotation-experimental-1.4.1/AndroidManifest.xml:5:5-44
+	android:targetSdkVersion
+		INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/raresfodorca/Desktop/lumi/lumi-mobile/androidApp/src/main/AndroidManifest.xml
+provider#org.jetbrains.compose.resources.AndroidContextProvider
+ADDED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:8:9-13:20
+	android:enabled
+		ADDED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:11:13-35
+	android:authorities
+		ADDED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:10:13-84
+	android:exported
+		ADDED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:12:13-37
+	android:name
+		ADDED from [org.jetbrains.compose.components:components-resources-android:1.11.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/724de9c514289a207734cabd82119df6/transformed/library-release/AndroidManifest.xml:9:13-82
+activity#androidx.compose.ui.tooling.PreviewActivity
+ADDED from [androidx.compose.ui:ui-tooling-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/0d4087159f07b8f473f9e0107276c8f1/transformed/ui-tooling/AndroidManifest.xml:23:9-25:39
+	android:exported
+		ADDED from [androidx.compose.ui:ui-tooling-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/0d4087159f07b8f473f9e0107276c8f1/transformed/ui-tooling/AndroidManifest.xml:25:13-36
+	android:name
+		ADDED from [androidx.compose.ui:ui-tooling-android:1.11.2] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/0d4087159f07b8f473f9e0107276c8f1/transformed/ui-tooling/AndroidManifest.xml:24:13-71
+uses-library#androidx.window.extensions
+ADDED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:23:9-25:40
+	android:required
+		ADDED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:25:13-37
+	android:name
+		ADDED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:24:13-54
+uses-library#androidx.window.sidecar
+ADDED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:26:9-28:40
+	android:required
+		ADDED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:28:13-37
+	android:name
+		ADDED from [androidx.window:window:1.5.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/fd9cc1b8e947fa66169f1f40be424ccf/transformed/window-1.5.0/AndroidManifest.xml:27:13-51
+provider#androidx.startup.InitializationProvider
+ADDED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7a7a9083d1cd4537c47806e34d661906/transformed/startup-runtime-1.1.1/AndroidManifest.xml:26:9-30:34
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/7a7a9083d1cd4537c47806e34d661906/transformed/startup-runtime-1.1.1/AndroidManifest.xml:26:9-30:34
+	tools:node
+		ADDED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:28:13-31
+	android:authorities
+		ADDED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:26:13-68
+	android:exported
+		ADDED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:27:13-37
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:25:13-67
+meta-data#androidx.emoji2.text.EmojiCompatInitializer
+ADDED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/e5c3122b95a61c7860b88b8fba6f8aa4/transformed/emoji2-1.4.0/AndroidManifest.xml:30:17-75
+permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:23:9-81
+permission#org.example.project.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:23:9-81
+uses-permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:26:22-94
+uses-permission#org.example.project.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.18.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/5ad8f434c4b1dc941b5a497d48397ef7/transformed/core-1.18.0/AndroidManifest.xml:26:22-94
+meta-data#androidx.lifecycle.ProcessLifecycleInitializer
+ADDED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.lifecycle:lifecycle-process:2.11.0-beta01] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/a6360c311b1e96cde5f17b5f72bcad70/transformed/lifecycle-process-2.11.0-beta01/AndroidManifest.xml:30:17-78
+meta-data#androidx.profileinstaller.ProfileInstallerInitializer
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:30:17-85
+receiver#androidx.profileinstaller.ProfileInstallReceiver
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:34:9-52:20
+	android:enabled
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:37:13-35
+	android:exported
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:38:13-36
+	android:permission
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:39:13-57
+	android:directBootAware
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:36:13-44
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:35:13-76
+intent-filter#action:name:androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:40:13-42:29
+action#androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:17-91
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:25-88
+intent-filter#action:name:androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:43:13-45:29
+action#androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:17-85
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:25-82
+intent-filter#action:name:androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:46:13-48:29
+action#androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:17-88
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:25-85
+intent-filter#action:name:androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:49:13-51:29
+action#androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:17-95
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.4.0] /Users/raresfodorca/.gradle/caches/9.1.0/transforms/aa54746a7ede80af8ca8e2800e1ad27e/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:25-92
