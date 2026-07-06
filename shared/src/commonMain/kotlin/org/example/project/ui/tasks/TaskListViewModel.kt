@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.example.project.data.remote.task.TaskMockApiService
+import org.example.project.data.task.TaskMockApiService
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskApi
 
