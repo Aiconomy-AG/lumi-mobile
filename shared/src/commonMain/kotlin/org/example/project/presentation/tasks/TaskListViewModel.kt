@@ -1,4 +1,4 @@
-package org.example.project.ui.tasks
+package org.example.project.presentation.tasks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
