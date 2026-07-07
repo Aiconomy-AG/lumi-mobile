@@ -1,6 +1,7 @@
 package features.main
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +16,10 @@ import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
 import org.example.project.presentation.tasks.TaskDetailScreen
 import org.example.project.presentation.tasks.TaskDetailViewModel
+import feature.stock.data.MockStockRepository
+import feature.stock.presentation.AddProductScreen
+import org.example.project.presentation.stock.StockScreen
+import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
 
@@ -25,6 +30,8 @@ fun MainScreen(
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
     val taskListViewModel = remember { TaskListViewModel() }
+    val stockViewModel = remember { StockViewModel(MockStockRepository()) }
+    var showAddProductScreen by remember { mutableStateOf(false) }
     val taskTimeEntryApi = remember { TaskTimeEntryMockApiService() }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -93,6 +100,30 @@ fun MainScreen(
                         )
                     }
                 }
+
+                AppSection.STOCK -> {
+                    Box(modifier = Modifier.padding(paddingValues)) {
+                        if (showAddProductScreen) {
+                            AddProductScreen(
+                                viewModel = stockViewModel,
+                                onProductAdded = {
+                                    showAddProductScreen = false
+                                },
+                                onBackClick = {
+                                    showAddProductScreen = false
+                                }
+                            )
+                        } else {
+                            StockScreen(
+                                viewModel = stockViewModel,
+                                onAddProductClick = {
+                                    showAddProductScreen = true
+                                }
+                            )
+                        }
+                    }
+                }
+
                 else -> {
                     EmptySectionScreen(
                         title = selectedSection.title,
