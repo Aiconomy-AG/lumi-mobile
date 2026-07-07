@@ -54,7 +54,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
             Text(
-                text = "Welcome back",
+                text = "Sign in",
                 color = textWhite,
                 fontSize = 34.sp,
                 fontWeight = FontWeight.Bold

@@ -2,6 +2,7 @@ package org.example.project
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.tooling.preview.Preview
+import features.main.MainScreen
 import org.example.project.data.auth.MockAuthRepository
 import org.example.project.data.auth.UserSession
 import org.example.project.presentation.auth.LoginScreen
@@ -23,5 +24,12 @@ fun App() {
         }
 
         LoginScreen(viewModel)
+    } else {
+        MainScreen(
+            user = currentUser!!,
+            onLogout = {
+                currentUser = null
+            }
+        )
     }
 }
