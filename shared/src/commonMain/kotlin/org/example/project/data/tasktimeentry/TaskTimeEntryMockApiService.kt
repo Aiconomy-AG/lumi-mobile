@@ -5,7 +5,9 @@ import org.example.project.domain.tasktimeentry.TaskTimeEntry
 import org.example.project.domain.tasktimeentry.TaskTimeEntryApi
 import kotlin.time.Clock
 
-class TaskTimeEntryMockApiService : TaskTimeEntryApi {
+class TaskTimeEntryMockApiService(
+    private val employeeId: Int = 1
+) : TaskTimeEntryApi {
 
     private val entriesByTask = mutableMapOf<Int, MutableList<TaskTimeEntry>>()
     private var nextId = 1
@@ -20,7 +22,7 @@ class TaskTimeEntryMockApiService : TaskTimeEntryApi {
         val entry = TaskTimeEntry(
             id = nextId++,
             taskId = taskId,
-            employeeId = 1,
+            employeeId = employeeId,
             startedAt = Clock.System.now(),
         )
         entriesByTask.getOrPut(taskId) { mutableListOf() }.add(entry)

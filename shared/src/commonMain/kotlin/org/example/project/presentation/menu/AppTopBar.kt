@@ -7,16 +7,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -28,60 +23,61 @@ import androidx.compose.ui.unit.sp
 import org.example.project.data.auth.UserSession
 import org.example.project.domain.task.Task
 import org.example.project.presentation.tasks.ActiveTimerViewModel
+import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun AppTopBar(
     title: String,
     user: UserSession,
     activeTimerViewModel: ActiveTimerViewModel,
-    onMenuClick: () -> Unit,
-    onOpenActiveTask: (Task) -> Unit = {},
+    onOpenActiveTask: (Task) -> Unit,
+    onMenuClick: () -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val activeTimer by activeTimerViewModel.uiState.collectAsState()
+    val activeTimerState by activeTimerViewModel.uiState.collectAsState()
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(statusBarTopPadding + 58.dp)
-            .background(colors.background)
-            .border(width = 0.5.dp, color = colors.outline)
+            .background(AppColorPalette.OverlayBackground)
+            .border(width = 0.5.dp, color = AppColorPalette.SubtleBorder)
             .padding(top = statusBarTopPadding)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onMenuClick) {
-            MenuGlyph(tint = colors.onSurfaceVariant)
+            MenuGlyph(tint = AppColorPalette.IconPrimaryTranslucent)
         }
 
         Text(
             text = title,
-            color = colors.onBackground,
+            color = AppColorPalette.TextPrimarySoft,
             fontSize = 17.sp,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)
         )
 
-        val activeTask = activeTimer.activeTask
-        if (activeTask != null) {
-            ActiveTimerChip(
-                taskTitle = activeTask.title,
-                elapsedSeconds = activeTimer.elapsedSeconds,
-                onOpenTask = { onOpenActiveTask(activeTask) },
+        activeTimerState.activeTask?.let { task ->
+            TimerChip(
+                elapsedSeconds = activeTimerState.elapsedSeconds,
+                onClick = {
+                    onOpenActiveTask(task)
+                }
             )
+
             Spacer(modifier = Modifier.width(10.dp))
         }
 
         Box(
             modifier = Modifier
                 .size(34.dp)
-                .background(colors.surfaceVariant, CircleShape),
+                .background(AppColorPalette.SelectionOverlay, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = user.name.take(2).uppercase(),
-                color = colors.onSurfaceVariant,
+                color = AppColorPalette.IconPrimary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -90,51 +86,32 @@ fun AppTopBar(
 }
 
 @Composable
-private fun ActiveTimerChip(taskTitle: String, elapsedSeconds: Int, onOpenTask: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        Row(
-            modifier = Modifier
-                .background(colors.primary.copy(alpha = 0.2f), RoundedCornerShape(999.dp))
-                .clickable { expanded = true }
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = formatChipElapsed(elapsedSeconds),
-                color = colors.primary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
+private fun TimerChip(
+    elapsedSeconds: Int,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .background(
+                color = AppColorPalette.Primary,
+                shape = RoundedCornerShape(18.dp)
             )
-        }
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TimerGlyph(tint = AppColorPalette.OnPrimary)
 
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            Column(
-                modifier = Modifier
-                    .clickable {
-                        expanded = false
-                        onOpenTask()
-                    }
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                Text(text = "Timer activ", color = colors.onSurfaceVariant, fontSize = 12.sp)
-                Text(text = taskTitle, color = colors.onBackground, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                Text(text = formatChipElapsed(elapsedSeconds), color = colors.primary, fontSize = 14.sp)
-            }
-        }
+        Spacer(modifier = Modifier.width(6.dp))
+
+        Text(
+            text = formatElapsed(elapsedSeconds),
+            color = AppColorPalette.OnPrimary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
-
-private fun formatChipElapsed(totalSeconds: Int): String {
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val seconds = totalSeconds % 60
-    return "${hours.pad()}:${minutes.pad()}:${seconds.pad()}"
-}
-
-private fun Int.pad(): String = toString().padStart(2, '0')
 
 @Composable
 private fun MenuGlyph(
@@ -154,3 +131,50 @@ private fun MenuGlyph(
         }
     }
 }
+
+@Composable
+private fun TimerGlyph(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier.size(14.dp)) {
+        val strokeWidth = size.width * 0.1f
+
+        drawCircle(
+            color = tint,
+            radius = size.width * 0.36f,
+            center = Offset(size.width * 0.5f, size.height * 0.56f),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.5f, size.height * 0.56f),
+            end = Offset(size.width * 0.5f, size.height * 0.36f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.5f, size.height * 0.56f),
+            end = Offset(size.width * 0.64f, size.height * 0.62f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.38f, size.height * 0.12f),
+            end = Offset(size.width * 0.62f, size.height * 0.12f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+private fun formatElapsed(totalSeconds: Int): String {
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return "${hours.pad()}:${minutes.pad()}:${seconds.pad()}"
+}
+
+private fun Int.pad(): String = toString().padStart(2, '0')

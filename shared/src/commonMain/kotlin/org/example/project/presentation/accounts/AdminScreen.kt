@@ -299,13 +299,18 @@ private fun UserTableRow(
 private fun IconActionButton(
     onClick: () -> Unit
 ) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.size(AppDimensions.ActionButtonSize),
-        colors = AppComponentDefaults.primaryButtonColors(),
-        contentPadding = PaddingValues(0.dp)
+    Box(
+        modifier = Modifier.width(76.dp),
+        contentAlignment = Alignment.Center
     ) {
-        DeleteIcon(tint = AppColorPalette.OnPrimary)
+        Button(
+            onClick = onClick,
+            modifier = Modifier.size(AppDimensions.ActionButtonSize),
+            colors = AppComponentDefaults.primaryButtonColors(),
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            DeleteIcon(tint = AppColorPalette.OnPrimary)
+        }
     }
 }
 

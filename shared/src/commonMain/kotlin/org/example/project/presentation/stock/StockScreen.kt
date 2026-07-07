@@ -8,29 +8,28 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.example.project.domain.stock.Product
 import org.example.project.presentation.theme.AppColorPalette
+import org.example.project.presentation.theme.AppComponentDefaults
+import org.example.project.presentation.theme.AppDimensions
+import org.example.project.presentation.theme.AppTextStyles
 
 @Composable
 fun StockScreen(
     viewModel: StockViewModel,
     onAddProductClick: () -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     val state by viewModel.state.collectAsState()
     var currentPage by remember { mutableStateOf(0) }
     val pageSize = 5
@@ -49,8 +48,8 @@ fun StockScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.background)
-            .padding(16.dp)
+            .background(AppColorPalette.Background)
+            .padding(AppDimensions.ScreenPadding)
     ) {
         StockHeader(
             productCount = state.products.size,
@@ -61,7 +60,7 @@ fun StockScreen(
             onAddProductClick = onAddProductClick
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
         StockTable(
             products = pagedProducts,
@@ -69,7 +68,7 @@ fun StockScreen(
             onUpdateQuantity = viewModel::updateStockQuantity
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
         StockPagination(
             currentPage = currentPage,
@@ -97,71 +96,57 @@ private fun StockHeader(
     onSearchQueryChanged: (String) -> Unit,
     onAddProductClick: () -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
-
     Column {
         Text(
             text = "Stock",
-            color = colors.onBackground,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
+            color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.PageTitle
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "$productCount products",
-                color = colors.onSurfaceVariant
+                color = AppColorPalette.TextSecondary
             )
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
 
             Text(
                 text = "$lowStockCount low stock",
-                color = colors.primary
+                color = AppColorPalette.Primary
             )
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
 
             Text(
                 text = "$outOfStockCount out of stock",
-                color = colors.error
+                color = AppColorPalette.Error
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
         OutlinedTextField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
             placeholder = {
-                Text("Search products...", color = colors.onSurfaceVariant)
+                Text("Search products...", color = AppColorPalette.TextSecondary)
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = colors.onBackground,
-                unfocusedTextColor = colors.onBackground,
-                cursorColor = colors.primary,
-                focusedBorderColor = colors.primary,
-                unfocusedBorderColor = colors.outline,
-                focusedLabelColor = colors.primary,
-                unfocusedLabelColor = colors.onSurfaceVariant
-            )
+            colors = AppComponentDefaults.appTextFieldColors()
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
         Button(
             onClick = onAddProductClick,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colors.primary,
-                contentColor = colors.onPrimary
-            )
+            colors = AppComponentDefaults.primaryButtonColors()
         ) {
             Text("+ Add product")
         }
@@ -174,22 +159,21 @@ private fun StockTable(
     onDeleteProduct: (Int) -> Unit,
     onUpdateQuantity: (Int, Int, Int) -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 390.dp)
+            .heightIn(max = AppDimensions.TableMaxHeight)
             .border(
                 width = 1.dp,
-                color = colors.outline,
-                shape = RoundedCornerShape(16.dp)
+                color = AppColorPalette.Border,
+                shape = RoundedCornerShape(AppDimensions.TableCornerRadius)
             )
             .background(
-                color = colors.surface,
-                shape = RoundedCornerShape(16.dp)
+                color = AppColorPalette.Surface,
+                shape = RoundedCornerShape(AppDimensions.TableCornerRadius)
             )
     ) {
         Column(
@@ -197,7 +181,7 @@ private fun StockTable(
                 .verticalScroll(verticalScrollState)
                 .horizontalScroll(horizontalScrollState)
                 .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 26.dp)
-                .width(760.dp)
+                .width(686.dp)
         ) {
             StockTableHeader()
 
@@ -246,10 +230,10 @@ private fun HorizontalScrollBar(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(6.dp)
+            .height(AppDimensions.ScrollBarHeight)
             .background(
-                color = Color(0xFF2A2A2A),
-                shape = RoundedCornerShape(6.dp)
+                color = AppColorPalette.Border,
+                shape = RoundedCornerShape(AppDimensions.ScrollBarHeight)
             )
     ) {
         val density = LocalDensity.current
@@ -267,8 +251,8 @@ private fun HorizontalScrollBar(
                 .width(thumbWidth)
                 .fillMaxHeight()
                 .background(
-                    color = Color(0xFFF5B11B),
-                    shape = RoundedCornerShape(6.dp)
+                    color = AppColorPalette.Primary,
+                    shape = RoundedCornerShape(AppDimensions.ScrollBarHeight)
                 )
         )
     }
@@ -283,7 +267,7 @@ private fun StockTableHeader() {
         TableHeaderCell("SKU", 150)
         TableHeaderCell("Stock", 120)
         TableHeaderCell("Price", 120)
-        TableHeaderCell("Actions", 150)
+        TableHeaderCell("Actions", 76)
     }
 }
 
@@ -296,7 +280,6 @@ private fun StockTableRow(
     onDeleteProduct: () -> Unit,
     onUpdateQuantity: (Int) -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     var showEditDialog by remember { mutableStateOf(false) }
 
     Row(
@@ -305,50 +288,44 @@ private fun StockTableRow(
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TableCell(product.name, 220, colors.onBackground)
-        TableCell(sku, 150, colors.onSurfaceVariant)
+        TableCell(product.name, 220, AppColorPalette.TextPrimary)
+        TableCell(sku, 150, AppColorPalette.TextSecondary)
 
         TableCell(
             text = if (stockQuantity == 0) "Out of stock" else stockQuantity.toString(),
             width = 120,
             color = when {
-                stockQuantity == 0 -> colors.error
-                stockQuantity <= 5 -> colors.primary
-                else -> AppColorPalette.StatusDone.content
+                stockQuantity == 0 -> AppColorPalette.Error
+                stockQuantity <= 5 -> AppColorPalette.Primary
+                else -> AppColorPalette.Success
             }
         )
 
-        TableCell("${price} lei", 120, colors.onBackground)
+        TableCell("${price} lei", 120, AppColorPalette.TextPrimary)
 
         Row(
-            modifier = Modifier.width(150.dp)
+            modifier = Modifier.width(76.dp)
         ) {
             Button(
-                modifier = Modifier.width(62.dp),
+                modifier = Modifier.size(AppDimensions.ActionButtonSize),
                 onClick = {
                     showEditDialog = true
                 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colors.primary,
-                    contentColor = colors.onPrimary
-                ),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                colors = AppComponentDefaults.primaryButtonColors(),
+                contentPadding = PaddingValues(0.dp)
             ) {
-                Text("Edit")
+                EditIcon(tint = AppColorPalette.OnPrimary)
             }
 
             Spacer(modifier = Modifier.width(4.dp))
 
             Button(
-                modifier = Modifier.width(84.dp),
+                modifier = Modifier.size(AppDimensions.ActionButtonSize),
                 onClick = onDeleteProduct,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colors.primary,
-                    contentColor = colors.onPrimary
-                ),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                colors = AppComponentDefaults.primaryButtonColors(),
+                contentPadding = PaddingValues(0.dp)
             ) {
-                Text("Delete")
+                DeleteIcon(tint = AppColorPalette.OnPrimary)
             }
         }
     }
@@ -368,14 +345,111 @@ private fun StockTableRow(
 }
 
 @Composable
+private fun EditIcon(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.Canvas(modifier = modifier.size(AppDimensions.ActionIconSize)) {
+        val strokeWidth = size.width * 0.1f
+
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.28f, size.height * 0.76f),
+            end = Offset(size.width * 0.72f, size.height * 0.32f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.66f, size.height * 0.24f),
+            end = Offset(size.width * 0.82f, size.height * 0.4f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.2f, size.height * 0.84f),
+            end = Offset(size.width * 0.34f, size.height * 0.78f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.72f, size.height * 0.3f),
+            end = Offset(size.width * 0.78f, size.height * 0.24f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+@Composable
+private fun DeleteIcon(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.Canvas(modifier = modifier.size(AppDimensions.ActionIconSize)) {
+        val strokeWidth = size.width * 0.1f
+
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.24f, size.height * 0.34f),
+            end = Offset(size.width * 0.76f, size.height * 0.34f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.42f, size.height * 0.22f),
+            end = Offset(size.width * 0.58f, size.height * 0.22f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.48f, size.height * 0.16f),
+            end = Offset(size.width * 0.52f, size.height * 0.16f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawRoundRect(
+            color = tint,
+            topLeft = Offset(size.width * 0.32f, size.height * 0.42f),
+            size = androidx.compose.ui.geometry.Size(size.width * 0.36f, size.height * 0.42f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.05f),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.44f, size.height * 0.5f),
+            end = Offset(size.width * 0.44f, size.height * 0.76f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.56f, size.height * 0.5f),
+            end = Offset(size.width * 0.56f, size.height * 0.76f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(size.width * 0.5f, size.height * 0.5f),
+            end = Offset(size.width * 0.5f, size.height * 0.76f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+@Composable
 private fun StockPagination(
     currentPage: Int,
     totalPages: Int,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -384,12 +458,7 @@ private fun StockPagination(
         Button(
             onClick = onPreviousClick,
             enabled = currentPage > 0,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colors.primary,
-                contentColor = colors.onPrimary,
-                disabledContainerColor = colors.outline,
-                disabledContentColor = colors.onSurfaceVariant
-            )
+            colors = AppComponentDefaults.paginationButtonColors()
         ) {
             Text("Previous")
         }
@@ -398,7 +467,7 @@ private fun StockPagination(
 
         Text(
             text = "Page ${currentPage + 1} of $totalPages",
-            color = colors.onSurfaceVariant
+            color = AppColorPalette.TextSecondary
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -406,12 +475,7 @@ private fun StockPagination(
         Button(
             onClick = onNextClick,
             enabled = currentPage < totalPages - 1,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colors.primary,
-                contentColor = colors.onPrimary,
-                disabledContainerColor = colors.outline,
-                disabledContentColor = colors.onSurfaceVariant
-            )
+            colors = AppComponentDefaults.paginationButtonColors()
         ) {
             Text("Next")
         }
@@ -424,16 +488,15 @@ private fun EditQuantityDialog(
     onDismiss: () -> Unit,
     onSave: (Int) -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     var quantityText by remember {
         mutableStateOf(currentQuantity.toString())
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = colors.surface,
-        titleContentColor = colors.onBackground,
-        textContentColor = colors.onBackground,
+        containerColor = AppColorPalette.Surface,
+        titleContentColor = AppColorPalette.TextPrimary,
+        textContentColor = AppColorPalette.TextPrimary,
         title = {
             Text("Edit")
         },
@@ -447,15 +510,7 @@ private fun EditQuantityDialog(
                     Text("Quantity")
                 },
                 singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = colors.onBackground,
-                    unfocusedTextColor = colors.onBackground,
-                    cursorColor = colors.primary,
-                    focusedBorderColor = colors.primary,
-                    unfocusedBorderColor = colors.outline,
-                    focusedLabelColor = colors.primary,
-                    unfocusedLabelColor = colors.onSurfaceVariant
-                )
+                colors = AppComponentDefaults.appTextFieldColors()
             )
         },
         confirmButton = {
@@ -466,22 +521,16 @@ private fun EditQuantityDialog(
                     if (quantity != null && quantity >= 0) {
                         onSave(quantity)
                     }
-                },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = colors.primary
-                )
+                }
             ) {
-                Text("Save")
+                Text("Save", color = AppColorPalette.Primary)
             }
         },
         dismissButton = {
             TextButton(
-                onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = colors.onSurfaceVariant
-                )
+                onClick = onDismiss
             ) {
-                Text("Cancel")
+                Text("Cancel", color = AppColorPalette.TextSecondary)
             }
         }
     )
@@ -494,8 +543,8 @@ private fun TableHeaderCell(
 ) {
     Text(
         text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontWeight = FontWeight.Bold,
+        color = AppColorPalette.TextSecondary,
+        style = AppTextStyles.TableHeader,
         modifier = Modifier.width(width.dp)
     )
 }

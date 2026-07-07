@@ -13,16 +13,21 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
+import feature.stock.data.MockStockRepository
+import feature.stock.presentation.AddProductScreen
+import org.example.project.data.accounts.MockUserRepository
+import org.example.project.presentation.accounts.AddUserScreen
+import org.example.project.presentation.accounts.AdminScreen
+import org.example.project.presentation.accounts.AdminViewModel
+import org.example.project.presentation.stock.StockScreen
+import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.tasks.ActiveTimerViewModel
 import org.example.project.presentation.tasks.AddTaskScreen
 import org.example.project.presentation.tasks.TaskDetailScreen
 import org.example.project.presentation.tasks.TaskDetailViewModel
-import feature.stock.data.MockStockRepository
-import feature.stock.presentation.AddProductScreen
-import org.example.project.presentation.stock.StockScreen
-import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
+import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun MainScreen(
@@ -34,10 +39,12 @@ fun MainScreen(
     val taskListViewModel = remember { TaskListViewModel() }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
+
+    val adminViewModel = remember { AdminViewModel(MockUserRepository()) }
+    var showAddUserScreen by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
-    val taskTimeEntryApi = remember { TaskTimeEntryMockApiService() }
+    val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
-    val colors = MaterialTheme.colorScheme
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -57,6 +64,8 @@ fun MainScreen(
                     selectedSection = section
                     selectedTask = null
                     showAddTaskScreen = false
+                    showAddProductScreen = false
+                    showAddUserScreen = false
                     scope.launch { drawerState.close() }
                 },
                 onLogout = onLogout
@@ -64,19 +73,22 @@ fun MainScreen(
         }
     ) {
         Scaffold(
-            containerColor = colors.background,
+            containerColor = AppColorPalette.Background,
             contentWindowInsets = WindowInsets.safeDrawing,
             topBar = {
                 AppTopBar(
                     title = selectedSection.title,
                     user = user,
                     activeTimerViewModel = activeTimerViewModel,
-                    onMenuClick = {
-                        scope.launch { drawerState.open() }
-                    },
                     onOpenActiveTask = { task ->
                         selectedSection = AppSection.TASKS
                         selectedTask = task
+                        showAddTaskScreen = false
+                        showAddProductScreen = false
+                        showAddUserScreen = false
+                    },
+                    onMenuClick = {
+                        scope.launch { drawerState.open() }
                     }
                 )
             },
@@ -88,6 +100,8 @@ fun MainScreen(
                         selectedSection = section
                         selectedTask = null
                         showAddTaskScreen = false
+                        showAddProductScreen = false
+                        showAddUserScreen = false
                     }
                 )
             }
@@ -100,16 +114,24 @@ fun MainScreen(
                         if (showAddTaskScreen) {
                             AddTaskScreen(
                                 viewModel = taskListViewModel,
-                                onTaskAdded = { showAddTaskScreen = false },
-                                onBackClick = { showAddTaskScreen = false },
-                                modifier = Modifier.padding(paddingValues),
+                                onTaskAdded = {
+                                    showAddTaskScreen = false
+                                },
+                                onBackClick = {
+                                    showAddTaskScreen = false
+                                },
+                                modifier = Modifier.padding(paddingValues)
                             )
                         } else {
                             TaskListScreen(
                                 viewModel = taskListViewModel,
-                                onTaskClick = { selectedTask = it },
-                                onAddTaskClick = { showAddTaskScreen = true },
-                                modifier = Modifier.padding(paddingValues),
+                                onTaskClick = {
+                                    selectedTask = it
+                                },
+                                onAddTaskClick = {
+                                    showAddTaskScreen = true
+                                },
+                                modifier = Modifier.padding(paddingValues)
                             )
                         }
                     } else {
@@ -120,11 +142,13 @@ fun MainScreen(
                                     task = task,
                                     employeeId = user.id,
                                     activeTimerViewModel = activeTimerViewModel,
-                                    timeEntryApi = taskTimeEntryApi,
+                                    timeEntryApi = taskTimeEntryApi
                                 )
                             },
-                            onBack = { selectedTask = null },
-                            modifier = Modifier.padding(paddingValues),
+                            onBack = {
+                                selectedTask = null
+                            },
+                            modifier = Modifier.padding(paddingValues)
                         )
                     }
                 }
@@ -152,12 +176,35 @@ fun MainScreen(
                     }
                 }
 
+                AppSection.ADMIN -> {
+                    Box(modifier = Modifier.padding(paddingValues)) {
+                        if (showAddUserScreen) {
+                            AddUserScreen(
+                                viewModel = adminViewModel,
+                                onUserAdded = {
+                                    showAddUserScreen = false
+                                },
+                                onBackClick = {
+                                    showAddUserScreen = false
+                                }
+                            )
+                        } else {
+                            AdminScreen(
+                                viewModel = adminViewModel,
+                                onAddUserClick = {
+                                    showAddUserScreen = true
+                                }
+                            )
+                        }
+                    }
+                }
+
                 else -> {
                     EmptySectionScreen(
                         title = selectedSection.title,
                         modifier = Modifier
                             .padding(paddingValues)
-                            .background(colors.background)
+                            .background(AppColorPalette.Background)
                     )
                 }
             }
