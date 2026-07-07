@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
@@ -36,6 +35,7 @@ fun MainScreen(
     var showAddProductScreen by remember { mutableStateOf(false) }
     val taskTimeEntryApi = remember { TaskTimeEntryMockApiService() }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
+    val colors = MaterialTheme.colorScheme
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -61,7 +61,7 @@ fun MainScreen(
         }
     ) {
         Scaffold(
-            containerColor = Color(0xFF0B0B0B),
+            containerColor = colors.background,
             contentWindowInsets = WindowInsets.safeDrawing,
             topBar = {
                 AppTopBar(
@@ -143,7 +143,7 @@ fun MainScreen(
                         title = selectedSection.title,
                         modifier = Modifier
                             .padding(paddingValues)
-                            .background(Color(0xFF0B0B0B))
+                            .background(colors.background)
                     )
                 }
             }

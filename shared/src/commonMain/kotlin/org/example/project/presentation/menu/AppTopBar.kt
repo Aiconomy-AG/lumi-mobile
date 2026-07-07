@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -36,6 +37,7 @@ fun AppTopBar(
     onMenuClick: () -> Unit,
     onOpenActiveTask: (Task) -> Unit = {},
 ) {
+    val colors = MaterialTheme.colorScheme
     val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val activeTimer by activeTimerViewModel.uiState.collectAsState()
 
@@ -43,19 +45,19 @@ fun AppTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(statusBarTopPadding + 58.dp)
-            .background(Color(0xF20B0B0B))
-            .border(width = 0.5.dp, color = Color(0x1FE6E6E6))
+            .background(colors.background)
+            .border(width = 0.5.dp, color = colors.outline)
             .padding(top = statusBarTopPadding)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onMenuClick) {
-            MenuGlyph(tint = Color(0xBFE0E0E0))
+            MenuGlyph(tint = colors.onSurfaceVariant)
         }
 
         Text(
             text = title,
-            color = Color(0xFFEAEAEA),
+            color = colors.onBackground,
             fontSize = 17.sp,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)
@@ -74,12 +76,12 @@ fun AppTopBar(
         Box(
             modifier = Modifier
                 .size(34.dp)
-                .background(Color(0x1AE6E6E6), CircleShape),
+                .background(colors.surfaceVariant, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = user.name.take(2).uppercase(),
-                color = Color(0xFFE0E0E0),
+                color = colors.onSurfaceVariant,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -89,19 +91,20 @@ fun AppTopBar(
 
 @Composable
 private fun ActiveTimerChip(taskTitle: String, elapsedSeconds: Int, onOpenTask: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
     var expanded by remember { mutableStateOf(false) }
 
     Box {
         Row(
             modifier = Modifier
-                .background(Color(0x33FFB31A), RoundedCornerShape(999.dp))
+                .background(colors.primary.copy(alpha = 0.2f), RoundedCornerShape(999.dp))
                 .clickable { expanded = true }
                 .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = formatChipElapsed(elapsedSeconds),
-                color = Color(0xFFFFB31A),
+                color = colors.primary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -116,9 +119,9 @@ private fun ActiveTimerChip(taskTitle: String, elapsedSeconds: Int, onOpenTask: 
                     }
                     .padding(horizontal = 16.dp, vertical = 8.dp),
             ) {
-                Text(text = "Timer activ", color = Color(0xFF9A9A9A), fontSize = 12.sp)
-                Text(text = taskTitle, color = Color(0xFFEAEAEA), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                Text(text = formatChipElapsed(elapsedSeconds), color = Color(0xFFFFB31A), fontSize = 14.sp)
+                Text(text = "Timer activ", color = colors.onSurfaceVariant, fontSize = 12.sp)
+                Text(text = taskTitle, color = colors.onBackground, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = formatChipElapsed(elapsedSeconds), color = colors.primary, fontSize = 14.sp)
             }
         }
     }
