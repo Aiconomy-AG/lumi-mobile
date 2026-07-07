@@ -9,12 +9,21 @@ import kotlinx.coroutines.launch
 import org.example.project.data.task.TaskMockApiService
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskApi
+import org.example.project.domain.task.TaskStatus
 
 data class TaskListUiState(
     val isLoading: Boolean = false,
     val tasks: List<Task> = emptyList(),
+    val searchQuery: String = "",
     val error: String? = null,
-)
+) {
+    val filteredTasks: List<Task>
+        get() = if (searchQuery.isBlank()) {
+            tasks
+        } else {
+            tasks.filter { it.title.contains(searchQuery, ignoreCase = true) }
+        }
+}
 
 class TaskListViewModel(
     private val api: TaskApi = TaskMockApiService(),
@@ -35,6 +44,21 @@ class TaskListViewModel(
                 _uiState.value = _uiState.value.copy(isLoading = false, tasks = tasks)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+            }
+        }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+    }
+
+    fun addTask(title: String, description: String, dueDate: String, status: TaskStatus) {
+        viewModelScope.launch {
+            try {
+                api.createTask(title = title, description = description, dueDate = dueDate, status = status)
+                loadTasks()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
             }
         }
     }

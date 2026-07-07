@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
 import org.example.project.presentation.tasks.ActiveTimerViewModel
+import org.example.project.presentation.tasks.AddTaskScreen
 import org.example.project.presentation.tasks.TaskDetailScreen
 import org.example.project.presentation.tasks.TaskDetailViewModel
 import feature.stock.data.MockStockRepository
@@ -33,6 +34,7 @@ fun MainScreen(
     val taskListViewModel = remember { TaskListViewModel() }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
+    var showAddTaskScreen by remember { mutableStateOf(false) }
     val taskTimeEntryApi = remember { TaskTimeEntryMockApiService() }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
     val colors = MaterialTheme.colorScheme
@@ -54,6 +56,7 @@ fun MainScreen(
                 onSectionSelected = { section ->
                     selectedSection = section
                     selectedTask = null
+                    showAddTaskScreen = false
                     scope.launch { drawerState.close() }
                 },
                 onLogout = onLogout
@@ -84,6 +87,7 @@ fun MainScreen(
                     onSectionSelected = { section ->
                         selectedSection = section
                         selectedTask = null
+                        showAddTaskScreen = false
                     }
                 )
             }
@@ -93,11 +97,21 @@ fun MainScreen(
                     val task = selectedTask
 
                     if (task == null) {
-                        TaskListScreen(
-                            viewModel = taskListViewModel,
-                            onTaskClick = { selectedTask = it },
-                            modifier = Modifier.padding(paddingValues),
-                        )
+                        if (showAddTaskScreen) {
+                            AddTaskScreen(
+                                viewModel = taskListViewModel,
+                                onTaskAdded = { showAddTaskScreen = false },
+                                onBackClick = { showAddTaskScreen = false },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        } else {
+                            TaskListScreen(
+                                viewModel = taskListViewModel,
+                                onTaskClick = { selectedTask = it },
+                                onAddTaskClick = { showAddTaskScreen = true },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        }
                     } else {
                         TaskDetailScreen(
                             task = task,

@@ -7,13 +7,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -31,6 +37,7 @@ import org.example.project.presentation.theme.AppColorPalette
 fun TaskListScreen(
     viewModel: TaskListViewModel,
     onTaskClick: (Task) -> Unit = {},
+    onAddTaskClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -54,8 +61,61 @@ fun TaskListScreen(
                 )
             }
             else -> {
-                TaskList(tasks = uiState.tasks, onTaskClick = onTaskClick)
+                Column(modifier = Modifier.fillMaxSize()) {
+                    TaskListToolbar(
+                        searchQuery = uiState.searchQuery,
+                        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                        onAddTaskClick = onAddTaskClick,
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TaskList(tasks = uiState.filteredTasks, onTaskClick = onTaskClick)
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun TaskListToolbar(
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
+    onAddTaskClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Column {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChanged,
+            placeholder = {
+                Text("Search tasks...", color = colors.onSurfaceVariant)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = colors.onBackground,
+                unfocusedTextColor = colors.onBackground,
+                cursorColor = colors.primary,
+                focusedBorderColor = colors.primary,
+                unfocusedBorderColor = colors.outline,
+                focusedLabelColor = colors.primary,
+                unfocusedLabelColor = colors.onSurfaceVariant,
+            )
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = onAddTaskClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.primary,
+                contentColor = colors.onPrimary,
+            )
+        ) {
+            Text("+ Add task")
         }
     }
 }
@@ -139,7 +199,7 @@ private fun StatusBadge(status: TaskStatus, modifier: Modifier = Modifier) {
     }
     Box(
         modifier = modifier
-            .padding(0.dp, 0.dp, 10.dp, 0.dp)
+            .padding(end = 10.dp)
             .background(color = statusColor.background, shape = MaterialTheme.shapes.extraSmall),
     ) {
         Text(
