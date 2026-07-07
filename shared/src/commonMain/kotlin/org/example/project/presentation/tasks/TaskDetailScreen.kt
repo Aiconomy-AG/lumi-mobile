@@ -27,17 +27,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
 
 @Composable
 fun TaskDetailScreen(
-    task: Task,
     viewModel: TaskDetailViewModel,
     onBack: () -> Unit,
+    onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val task = uiState.task
     val colors = MaterialTheme.colorScheme
 
     Column(
@@ -53,7 +53,17 @@ fun TaskDetailScreen(
                 modifier = Modifier.clickable(onClick = onBack),
             )
             Text(text = " / ", color = colors.onSurfaceVariant)
-            Text(text = task.title, color = colors.onSurfaceVariant)
+            Text(
+                text = task.title,
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "Edit",
+                color = colors.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickable(onClick = onEditClick),
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))

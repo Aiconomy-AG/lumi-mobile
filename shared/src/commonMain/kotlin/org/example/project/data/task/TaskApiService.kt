@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -23,12 +24,18 @@ class TaskApiService(
     override suspend fun createTask(title: String, description: String, dueDate: String, status: TaskStatus): Task =
         client.post("$baseUrl/tasks") {
             contentType(ContentType.Application.Json)
-            setBody(CreateTaskRequest(title = title, description = description, status = status, dueDate = dueDate))
+            setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate))
+        }.body()
+
+    override suspend fun updateTask(id: Int, title: String, description: String, dueDate: String, status: TaskStatus): Task =
+        client.put("$baseUrl/tasks/$id") {
+            contentType(ContentType.Application.Json)
+            setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate))
         }.body()
 }
 
 @Serializable
-private data class CreateTaskRequest(
+private data class TaskRequestBody(
     val title: String,
     val description: String,
     val status: TaskStatus,

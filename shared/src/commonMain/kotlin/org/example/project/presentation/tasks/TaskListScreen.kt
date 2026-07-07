@@ -174,11 +174,7 @@ private fun TaskRow(task: Task, onClick: () -> Unit) {
         Text(
             text = task.title,
             modifier = Modifier.weight(1.7f),
-            style = if (isDone) {
-                MaterialTheme.typography.bodyLarge.copy(textDecoration = TextDecoration.LineThrough)
-            } else {
-                MaterialTheme.typography.bodyLarge
-            },
+            style = MaterialTheme.typography.bodyLarge,
             color = if (isDone) colors.onSurfaceVariant else colors.onBackground,
         )
         Box(
