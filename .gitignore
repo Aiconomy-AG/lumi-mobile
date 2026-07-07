@@ -1,5 +1,7 @@
 .gradle/
+.gradle-user-home/
 .kotlin/
+.konan/
 build/
 */build/
 */*/build/
