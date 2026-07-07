@@ -314,7 +314,7 @@ private fun StockTableRow(
             color = when {
                 stockQuantity == 0 -> colors.error
                 stockQuantity <= 5 -> colors.primary
-                else -> AppColorPalette.StatusDone.content
+                else -> AppColorPalette.StatusComplete.content
             }
         )
 

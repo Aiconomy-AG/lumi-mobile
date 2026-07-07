@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.domain.task.Task
@@ -121,9 +122,10 @@ private fun StatusTabs(currentStatus: TaskStatus) {
 }
 
 private fun TaskStatus.label(): String = when (this) {
-    TaskStatus.TODO -> "To do"
+    TaskStatus.TO_DO -> "To do"
     TaskStatus.IN_PROGRESS -> "In progress"
-    TaskStatus.DONE -> "Done"
+    TaskStatus.COMPLETE -> "Complete"
+    TaskStatus.BLOCKED -> "Blocked"
 }
 
 @Composable
@@ -168,7 +170,8 @@ private fun TimeTrackingCard(
             Text(
                 text = if (isRunning) "■" else "▶",
                 color = colors.onPrimary,
-                fontSize = 18.sp,
+                fontSize = 24.sp,
+                textAlign = TextAlign.Center
             )
         }
     }

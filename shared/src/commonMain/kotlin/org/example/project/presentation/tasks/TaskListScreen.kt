@@ -152,8 +152,8 @@ private fun TaskListHeader() {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = "Task", modifier = Modifier.weight(2f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
-        Text(text = "Status", modifier = Modifier.weight(1f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = "Task", modifier = Modifier.weight(1.7f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = "Status", modifier = Modifier.weight(1.3f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
         Text(text = "Due", modifier = Modifier.weight(1f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
     }
 }
@@ -161,7 +161,7 @@ private fun TaskListHeader() {
 @Composable
 private fun TaskRow(task: Task, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val isDone = task.status == TaskStatus.DONE
+    val isDone = task.status == TaskStatus.COMPLETE
 
     Row(
         modifier = Modifier
@@ -173,7 +173,7 @@ private fun TaskRow(task: Task, onClick: () -> Unit) {
     ) {
         Text(
             text = task.title,
-            modifier = Modifier.weight(2f),
+            modifier = Modifier.weight(1.7f),
             style = if (isDone) {
                 MaterialTheme.typography.bodyLarge.copy(textDecoration = TextDecoration.LineThrough)
             } else {
@@ -181,7 +181,12 @@ private fun TaskRow(task: Task, onClick: () -> Unit) {
             },
             color = if (isDone) colors.onSurfaceVariant else colors.onBackground,
         )
-        StatusBadge(status = task.status, modifier = Modifier.weight(1f))
+        Box(
+            modifier = Modifier.weight(1.3f),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            StatusBadge(status = task.status)
+        }
         Text(
             text = task.dueDate,
             modifier = Modifier.weight(1f),
@@ -193,13 +198,13 @@ private fun TaskRow(task: Task, onClick: () -> Unit) {
 @Composable
 private fun StatusBadge(status: TaskStatus, modifier: Modifier = Modifier) {
     val (label, statusColor) = when (status) {
-        TaskStatus.TODO -> "To do" to AppColorPalette.StatusTodo
+        TaskStatus.TO_DO -> "To do" to AppColorPalette.StatusToDo
         TaskStatus.IN_PROGRESS -> "In progress" to AppColorPalette.StatusInProgress
-        TaskStatus.DONE -> "Done" to AppColorPalette.StatusDone
+        TaskStatus.COMPLETE -> "Complete" to AppColorPalette.StatusComplete
+        TaskStatus.BLOCKED -> "Blocked" to AppColorPalette.StatusBlocked
     }
     Box(
         modifier = modifier
-            .padding(end = 10.dp)
             .background(color = statusColor.background, shape = MaterialTheme.shapes.extraSmall),
     ) {
         Text(

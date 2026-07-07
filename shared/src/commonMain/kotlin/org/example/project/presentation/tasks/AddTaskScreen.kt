@@ -44,7 +44,7 @@ fun AddTaskScreen(
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var dueDate by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf(TaskStatus.TODO) }
+    var status by remember { mutableStateOf(TaskStatus.TO_DO) }
 
     Column(
         modifier = modifier
@@ -167,7 +167,8 @@ private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> U
 }
 
 private fun TaskStatus.label(): String = when (this) {
-    TaskStatus.TODO -> "To do"
+    TaskStatus.TO_DO -> "To do"
     TaskStatus.IN_PROGRESS -> "In progress"
-    TaskStatus.DONE -> "Done"
+    TaskStatus.COMPLETE -> "Complete"
+    TaskStatus.BLOCKED -> "Blocked"
 }
