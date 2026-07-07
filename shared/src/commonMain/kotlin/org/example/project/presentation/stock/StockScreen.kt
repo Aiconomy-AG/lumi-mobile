@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -174,7 +175,7 @@ private fun StockTable(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 385.dp)
+            .heightIn(max = 390.dp)
             .border(
                 width = 1.dp,
                 color = Color(0xFF2A2A2A),
@@ -189,7 +190,7 @@ private fun StockTable(
             modifier = Modifier
                 .verticalScroll(verticalScrollState)
                 .horizontalScroll(horizontalScrollState)
-                .padding(12.dp)
+                .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 26.dp)
                 .width(760.dp)
         ) {
             StockTableHeader()
@@ -217,6 +218,53 @@ private fun StockTable(
                 }
             }
         }
+
+        HorizontalScrollBar(
+            scrollValue = horizontalScrollState.value,
+            maxScrollValue = horizontalScrollState.maxValue,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun HorizontalScrollBar(
+    scrollValue: Int,
+    maxScrollValue: Int,
+    modifier: Modifier = Modifier
+) {
+    if (maxScrollValue <= 0) return
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(6.dp)
+            .background(
+                color = Color(0xFF2A2A2A),
+                shape = RoundedCornerShape(6.dp)
+            )
+    ) {
+        val density = LocalDensity.current
+        val trackWidth = maxWidth
+        val trackWidthPx = with(density) { trackWidth.toPx() }
+        val contentWidthPx = trackWidthPx + maxScrollValue
+        val thumbWidth = (trackWidth * (trackWidthPx / contentWidthPx)).coerceAtLeast(40.dp)
+        val maxThumbOffset = trackWidth - thumbWidth
+        val scrollProgress = scrollValue.toFloat() / maxScrollValue.toFloat()
+        val thumbOffset = maxThumbOffset * scrollProgress
+
+        Box(
+            modifier = Modifier
+                .offset(x = thumbOffset)
+                .width(thumbWidth)
+                .fillMaxHeight()
+                .background(
+                    color = Color(0xFFF5B11B),
+                    shape = RoundedCornerShape(6.dp)
+                )
+        )
     }
 }
 
