@@ -11,6 +11,9 @@ import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
+import org.example.project.domain.task.Task
+import org.example.project.presentation.tasks.TaskDetailScreen
+import org.example.project.presentation.tasks.TaskDetailViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
 
@@ -68,7 +71,23 @@ fun MainScreen(
         ) { paddingValues ->
             when (selectedSection) {
                 AppSection.TASKS -> {
-                    TaskListScreen(viewModel = taskListViewModel, modifier = Modifier.padding(paddingValues))
+                    var selectedTask by remember { mutableStateOf<Task?>(null) }
+                    val task = selectedTask
+
+                    if (task == null) {
+                        TaskListScreen(
+                            viewModel = taskListViewModel,
+                            onTaskClick = { selectedTask = it },
+                            modifier = Modifier.padding(paddingValues),
+                        )
+                    } else {
+                        TaskDetailScreen(
+                            task = task,
+                            viewModel = remember(task.id) { TaskDetailViewModel(task = task) },
+                            onBack = { selectedTask = null },
+                            modifier = Modifier.padding(paddingValues),
+                        )
+                    }
                 }
                 else -> {
                     EmptySectionScreen(
