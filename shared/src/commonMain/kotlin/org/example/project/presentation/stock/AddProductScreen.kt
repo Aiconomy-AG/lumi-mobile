@@ -5,17 +5,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.example.project.presentation.stock.StockViewModel
+import org.example.project.presentation.theme.AppColorPalette
+import org.example.project.presentation.theme.AppComponentDefaults
+import org.example.project.presentation.theme.AppDimensions
+import org.example.project.presentation.theme.AppTextStyles
 
 @Composable
 fun AddProductScreen(
@@ -23,7 +21,6 @@ fun AddProductScreen(
     onProductAdded: () -> Unit,
     onBackClick: () -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var imageUrl by remember { mutableStateOf("") }
@@ -36,18 +33,17 @@ fun AddProductScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.background)
+            .background(AppColorPalette.Background)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(AppDimensions.ScreenPadding)
     ) {
         Text(
             text = "Add product",
-            color = colors.onBackground,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
+            color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.PageTitle
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
         ProductInput(
             value = name,
@@ -97,7 +93,7 @@ fun AddProductScreen(
             label = "Stock quantity"
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
         Button(
             onClick = {
@@ -127,23 +123,17 @@ fun AddProductScreen(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colors.primary,
-                contentColor = colors.onPrimary
-            )
+            colors = AppComponentDefaults.primaryButtonColors()
         ) {
             Text("Save product")
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
 
         Button(
             onClick = onBackClick,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colors.primary,
-                contentColor = colors.onPrimary
-            )
+            colors = AppComponentDefaults.primaryButtonColors()
         ) {
             Text("Cancel")
         }
@@ -156,8 +146,6 @@ private fun ProductInput(
     onValueChange: (String) -> Unit,
     label: String
 ) {
-    val colors = MaterialTheme.colorScheme
-
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -166,16 +154,8 @@ private fun ProductInput(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp),
+            .padding(bottom = AppDimensions.SmallSpacing),
         singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = colors.onBackground,
-            unfocusedTextColor = colors.onBackground,
-            cursorColor = colors.primary,
-            focusedBorderColor = colors.primary,
-            unfocusedBorderColor = colors.outline,
-            focusedLabelColor = colors.primary,
-            unfocusedLabelColor = colors.onSurfaceVariant
-        )
+        colors = AppComponentDefaults.appTextFieldColors()
     )
 }
