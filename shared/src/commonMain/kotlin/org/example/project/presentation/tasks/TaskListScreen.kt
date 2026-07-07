@@ -26,13 +26,13 @@ import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
-fun TaskListScreen(viewModel: TaskListViewModel) {
+fun TaskListScreen(viewModel: TaskListViewModel, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsState()
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
     ) {
         when {
             uiState.isLoading && uiState.tasks.isEmpty() -> {

@@ -11,6 +11,8 @@ import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
+import org.example.project.presentation.tasks.TaskListScreen
+import org.example.project.presentation.tasks.TaskListViewModel
 
 @Composable
 fun MainScreen(
@@ -18,6 +20,7 @@ fun MainScreen(
     onLogout: () -> Unit
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
+    val taskListViewModel = remember { TaskListViewModel() }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -63,12 +66,19 @@ fun MainScreen(
                 )
             }
         ) { paddingValues ->
-            EmptySectionScreen(
-                title = selectedSection.title,
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .background(Color(0xFF0B0B0B))
-            )
+            when (selectedSection) {
+                AppSection.TASKS -> {
+                    TaskListScreen(viewModel = taskListViewModel, modifier = Modifier.padding(paddingValues))
+                }
+                else -> {
+                    EmptySectionScreen(
+                        title = selectedSection.title,
+                        modifier = Modifier
+                            .padding(paddingValues)
+                            .background(Color(0xFF0B0B0B))
+                    )
+                }
+            }
         }
     }
 }
