@@ -11,6 +11,7 @@ import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
+import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
 import org.example.project.presentation.tasks.TaskDetailScreen
 import org.example.project.presentation.tasks.TaskDetailViewModel
@@ -24,6 +25,7 @@ fun MainScreen(
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
     val taskListViewModel = remember { TaskListViewModel() }
+    val taskTimeEntryApi = remember { TaskTimeEntryMockApiService() }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -83,7 +85,9 @@ fun MainScreen(
                     } else {
                         TaskDetailScreen(
                             task = task,
-                            viewModel = remember(task.id) { TaskDetailViewModel(task = task) },
+                            viewModel = remember(task.id) {
+                                TaskDetailViewModel(task = task, employeeId = user.id, timeEntryApi = taskTimeEntryApi)
+                            },
                             onBack = { selectedTask = null },
                             modifier = Modifier.padding(paddingValues),
                         )

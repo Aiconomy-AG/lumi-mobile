@@ -3,12 +3,11 @@ package org.example.project.data.tasktimeentry
 import kotlinx.coroutines.delay
 import org.example.project.domain.tasktimeentry.TaskTimeEntry
 import org.example.project.domain.tasktimeentry.TaskTimeEntryApi
-import kotlin.time.TimeSource
+import kotlin.time.Clock
 
 class TaskTimeEntryMockApiService : TaskTimeEntryApi {
 
     private val entriesByTask = mutableMapOf<Int, MutableList<TaskTimeEntry>>()
-    private val startMarks = mutableMapOf<Int, TimeSource.Monotonic.ValueTimeMark>()
     private var nextId = 1
 
     override suspend fun getTimeEntries(taskId: Int): List<TaskTimeEntry> {
@@ -22,10 +21,9 @@ class TaskTimeEntryMockApiService : TaskTimeEntryApi {
             id = nextId++,
             taskId = taskId,
             employeeId = 1,
-            startedAt = "mock-start",
+            startedAt = Clock.System.now(),
         )
         entriesByTask.getOrPut(taskId) { mutableListOf() }.add(entry)
-        startMarks[entry.id] = TimeSource.Monotonic.markNow()
         return entry
     }
 
@@ -35,8 +33,10 @@ class TaskTimeEntryMockApiService : TaskTimeEntryApi {
         val index = list.indexOfFirst { it.id == entryId }
         require(index >= 0) { "Time entry $entryId not found for task $taskId" }
 
-        val elapsedSeconds = startMarks[entryId]?.elapsedNow()?.inWholeSeconds?.toInt() ?: 0
-        val updated = list[index].copy(stoppedAt = "mock-stop", durationSeconds = elapsedSeconds)
+        val entry = list[index]
+        val stoppedAt = Clock.System.now()
+        val durationSeconds = (stoppedAt - entry.startedAt).inWholeSeconds.toInt()
+        val updated = entry.copy(stoppedAt = stoppedAt, durationSeconds = durationSeconds)
         list[index] = updated
         return updated
     }

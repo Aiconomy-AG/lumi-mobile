@@ -12,6 +12,7 @@ import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
 import org.example.project.domain.tasktimeentry.TaskTimeEntry
 import org.example.project.domain.tasktimeentry.TaskTimeEntryApi
+import kotlin.time.Clock
 
 data class TaskDetailUiState(
     val isLoading: Boolean = false,
@@ -22,6 +23,7 @@ data class TaskDetailUiState(
 
 class TaskDetailViewModel(
     private val task: Task,
+    private val employeeId: Int,
     private val timeEntryApi: TaskTimeEntryApi = TaskTimeEntryMockApiService(),
 ) : ViewModel() {
 
@@ -39,11 +41,21 @@ class TaskDetailViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val entries = timeEntryApi.getTimeEntries(task.id)
-
+                val entries = timeEntryApi.getTimeEntries(task.id).filter { it.employeeId == employeeId }
+                val completed = entries.filter { it.stoppedAt != null }.sumOf { it.durationSeconds ?: 0 }
                 val running = entries.firstOrNull { it.stoppedAt == null }
                 activeEntry = running
-                _uiState.value = _uiState.value.copy(isLoading = false, isTimerRunning = running != null)
+
+                val elapsed = completed + (running?.let {
+                    (Clock.System.now() - it.startedAt).inWholeSeconds.toInt()
+                } ?: 0)
+
+                tickingJob?.cancel()
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isTimerRunning = running != null,
+                    elapsedSeconds = elapsed,
+                )
                 if (running != null) startTicking()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
@@ -59,7 +71,7 @@ class TaskDetailViewModel(
         viewModelScope.launch {
             try {
                 activeEntry = timeEntryApi.startTimer(task.id)
-                _uiState.value = _uiState.value.copy(isTimerRunning = true, elapsedSeconds = 0, error = null)
+                _uiState.value = _uiState.value.copy(isTimerRunning = true, error = null)
                 startTicking()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
@@ -74,7 +86,8 @@ class TaskDetailViewModel(
                 timeEntryApi.stopTimer(task.id, entry.id)
                 tickingJob?.cancel()
                 activeEntry = null
-                _uiState.value = _uiState.value.copy(isTimerRunning = false, elapsedSeconds = 0)
+                _uiState.value = _uiState.value.copy(isTimerRunning = false)
+                loadEntries()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
