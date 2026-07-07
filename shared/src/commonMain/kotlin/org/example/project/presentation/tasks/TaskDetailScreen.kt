@@ -78,6 +78,7 @@ fun TaskDetailScreen(
 
         TimeTrackingCard(
             elapsedSeconds = uiState.elapsedSeconds,
+            taskTotalSeconds = uiState.taskTotalSeconds,
             isRunning = uiState.isTimerRunning,
             onToggle = viewModel::toggleTimer,
         )
@@ -126,7 +127,12 @@ private fun TaskStatus.label(): String = when (this) {
 }
 
 @Composable
-private fun TimeTrackingCard(elapsedSeconds: Int, isRunning: Boolean, onToggle: () -> Unit) {
+private fun TimeTrackingCard(
+    elapsedSeconds: Int,
+    taskTotalSeconds: Int,
+    isRunning: Boolean,
+    onToggle: () -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
@@ -144,6 +150,12 @@ private fun TimeTrackingCard(elapsedSeconds: Int, isRunning: Boolean, onToggle: 
                 color = colors.onSurface,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Total task: ${formatElapsed(taskTotalSeconds)}",
+                color = colors.onSurfaceVariant,
+                fontSize = 13.sp,
             )
         }
         Box(

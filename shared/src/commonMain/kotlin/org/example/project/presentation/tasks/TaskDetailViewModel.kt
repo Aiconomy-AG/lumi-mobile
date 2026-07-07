@@ -18,6 +18,7 @@ data class TaskDetailUiState(
     val isLoading: Boolean = false,
     val isTimerRunning: Boolean = false,
     val elapsedSeconds: Int = 0,
+    val taskTotalSeconds: Int = 0,
     val error: String? = null,
 )
 
@@ -41,22 +42,29 @@ class TaskDetailViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val entries = timeEntryApi.getTimeEntries(task.id).filter { it.employeeId == employeeId }
-                val completed = entries.filter { it.stoppedAt != null }.sumOf { it.durationSeconds ?: 0 }
-                val running = entries.firstOrNull { it.stoppedAt == null }
-                activeEntry = running
+                val allEntries = timeEntryApi.getTimeEntries(task.id)
 
-                val elapsed = completed + (running?.let {
+                val myEntries = allEntries.filter { it.employeeId == employeeId }
+                val myCompleted = myEntries.filter { it.stoppedAt != null }.sumOf { it.durationSeconds ?: 0 }
+                val myRunning = myEntries.firstOrNull { it.stoppedAt == null }
+                activeEntry = myRunning
+                val myElapsed = myCompleted + (myRunning?.let {
                     (Clock.System.now() - it.startedAt).inWholeSeconds.toInt()
                 } ?: 0)
+
+                val allCompleted = allEntries.filter { it.stoppedAt != null }.sumOf { it.durationSeconds ?: 0 }
+                val allRunningElapsed = allEntries.filter { it.stoppedAt == null }.sumOf {
+                    (Clock.System.now() - it.startedAt).inWholeSeconds.toInt()
+                }
 
                 tickingJob?.cancel()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    isTimerRunning = running != null,
-                    elapsedSeconds = elapsed,
+                    isTimerRunning = myRunning != null,
+                    elapsedSeconds = myElapsed,
+                    taskTotalSeconds = allCompleted + allRunningElapsed,
                 )
-                if (running != null) startTicking()
+                if (myRunning != null) startTicking()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
             }
