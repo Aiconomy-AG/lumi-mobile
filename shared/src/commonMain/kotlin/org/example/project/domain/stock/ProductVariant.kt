@@ -1,8 +1,5 @@
-package org.example.project.domain.product
+package org.example.project.domain.stock
 
-import kotlinx.serialization.Serializable
-
-@Serializable
 data class ProductVariant(
     val id: Int,
     val productId: Int,
@@ -10,5 +7,5 @@ data class ProductVariant(
     val price: Double,
     val weight: Double,
     val weightUnit: String,
-    val stockQuantity: Int,
+    val stockQuantity: Int
 )
