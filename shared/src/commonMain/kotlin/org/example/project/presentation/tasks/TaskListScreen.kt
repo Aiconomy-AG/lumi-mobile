@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -20,17 +19,21 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun TaskListScreen(viewModel: TaskListViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         when {
             uiState.isLoading && uiState.tasks.isEmpty() -> {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -108,18 +111,18 @@ private fun TaskRow(task: Task) {
 
 @Composable
 private fun StatusBadge(status: TaskStatus, modifier: Modifier = Modifier) {
-    val (label, background, textColor) = when (status) {
-        TaskStatus.TODO -> Triple("To do", Color(0xFF3A3A3A), Color(0xFFE0E0E0))
-        TaskStatus.IN_PROGRESS -> Triple("In progress", Color(0xFF4A2E00), Color(0xFFFFA726))
-        TaskStatus.DONE -> Triple("Done", Color(0xFF0F3D2E), Color(0xFF4CAF50))
+    val (label, statusColor) = when (status) {
+        TaskStatus.TODO -> "To do" to AppColorPalette.StatusTodo
+        TaskStatus.IN_PROGRESS -> "In progress" to AppColorPalette.StatusInProgress
+        TaskStatus.DONE -> "Done" to AppColorPalette.StatusDone
     }
     Box(
-        modifier = modifier.background(color = background, shape = RoundedCornerShape(6.dp)),
+        modifier = modifier.background(color = statusColor.background, shape = MaterialTheme.shapes.extraSmall),
     ) {
         Text(
             text = label,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            color = textColor,
+            color = statusColor.content,
             style = MaterialTheme.typography.labelMedium,
         )
     }
