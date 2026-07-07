@@ -7,6 +7,7 @@ import org.example.project.data.auth.MockAuthRepository
 import org.example.project.data.auth.UserSession
 import org.example.project.presentation.auth.LoginScreen
 import org.example.project.presentation.auth.LoginViewModel
+import org.example.project.presentation.tasks.TaskListViewModel
 
 @Composable
 @Preview
