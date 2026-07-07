@@ -8,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -16,6 +15,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.example.project.presentation.theme.AppColorPalette
+import org.example.project.presentation.theme.AppComponentDefaults
 
 @Composable
 fun LoginScreen(
@@ -23,17 +24,10 @@ fun LoginScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    val background = Color(0xFF0B0B0B)
-    val cardBackground = Color(0xFF121212)
-    val borderColor = Color(0xFF2A2A2A)
-    val textWhite = Color(0xFFF5F5F5)
-    val textGray = Color(0xFF9A9A9A)
-    val yellow = Color(0xFFFFB31A)
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(background),
+            .background(AppColorPalette.Background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -43,11 +37,11 @@ fun LoginScreen(
                 .padding(horizontal = 20.dp)
                 .border(
                     width = 1.dp,
-                    color = borderColor,
+                    color = AppColorPalette.Border,
                     shape = RoundedCornerShape(18.dp)
                 )
                 .background(
-                    color = cardBackground,
+                    color = AppColorPalette.Surface,
                     shape = RoundedCornerShape(18.dp)
                 )
                 .padding(horizontal = 44.dp, vertical = 48.dp),
@@ -55,7 +49,7 @@ fun LoginScreen(
         ) {
             Text(
                 text = "Sign in",
-                color = textWhite,
+                color = AppColorPalette.TextPrimary,
                 fontSize = 34.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -80,7 +74,7 @@ fun LoginScreen(
             state.errorMessage?.let {
                 Text(
                     text = it,
-                    color = Color(0xFFFF5C5C),
+                    color = AppColorPalette.Error,
                     fontSize = 14.sp
                 )
             }
@@ -92,18 +86,13 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(58.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = yellow,
-                    contentColor = Color.Black,
-                    disabledContainerColor = yellow.copy(alpha = 0.5f),
-                    disabledContentColor = Color.Black.copy(alpha = 0.6f)
-                )
+                colors = AppComponentDefaults.loginButtonColors()
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
                         strokeWidth = 2.dp,
-                        color = Color.Black
+                        color = AppColorPalette.OnPrimary
                     )
                 } else {
                     Text(
@@ -114,33 +103,36 @@ fun LoginScreen(
                 }
             }
 
-            HorizontalDivider(color = borderColor)
+            HorizontalDivider(color = AppColorPalette.Border)
 
             Text(
                 text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = textGray)) {
-                        append("Mock users: ")
+                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
+                        append("Use Admin accounts: ")
                     }
-                    withStyle(SpanStyle(color = yellow)) {
+                    withStyle(SpanStyle(color = AppColorPalette.Primary)) {
                         append("admin@test.com")
                     }
-                    withStyle(SpanStyle(color = textGray)) {
+                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
                         append(" / ")
                     }
-                    withStyle(SpanStyle(color = yellow)) {
+                    withStyle(SpanStyle(color = AppColorPalette.Primary)) {
                         append("admin123")
                     }
-                    withStyle(SpanStyle(color = textGray)) {
+                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
                         append(" or\n")
                     }
-                    withStyle(SpanStyle(color = yellow)) {
+                    withStyle(SpanStyle(color = AppColorPalette.Primary)) {
                         append("employee@test.com")
                     }
-                    withStyle(SpanStyle(color = textGray)) {
+                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
                         append(" / ")
                     }
-                    withStyle(SpanStyle(color = yellow)) {
+                    withStyle(SpanStyle(color = AppColorPalette.Primary)) {
                         append("employee123")
+                    }
+                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
+                        append("\nNew users from Admin can sign in with their saved password.")
                     }
                 },
                 fontSize = 16.sp,
@@ -158,18 +150,12 @@ private fun LoginInput(
     placeholder: String,
     isPassword: Boolean = false
 ) {
-    val borderColor = Color(0xFF303030)
-    val focusedBorderColor = Color(0xFFFFB31A)
-    val textWhite = Color(0xFFF5F5F5)
-    val textGray = Color(0xFF9A9A9A)
-    val fieldBackground = Color(0xFF111111)
-
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
             text = label,
-            color = textWhite,
+            color = AppColorPalette.TextPrimary,
             fontSize = 18.sp
         )
 
@@ -179,7 +165,7 @@ private fun LoginInput(
             placeholder = {
                 Text(
                     text = placeholder,
-                    color = textGray,
+                    color = AppColorPalette.TextSecondary,
                     fontSize = 16.sp
                 )
             },
@@ -193,15 +179,7 @@ private fun LoginInput(
                 .fillMaxWidth()
                 .height(62.dp),
             shape = RoundedCornerShape(8.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = textWhite,
-                unfocusedTextColor = textWhite,
-                focusedBorderColor = focusedBorderColor,
-                unfocusedBorderColor = borderColor,
-                focusedContainerColor = fieldBackground,
-                unfocusedContainerColor = fieldBackground,
-                cursorColor = focusedBorderColor
-            )
+            colors = AppComponentDefaults.loginTextFieldColors()
         )
     }
 }

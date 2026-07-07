@@ -6,18 +6,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.lifecycle.viewmodel.compose.viewModel
 import feature.stock.data.MockStockRepository
 import feature.stock.presentation.AddProductScreen
+import org.example.project.data.accounts.MockUserRepository
+import org.example.project.presentation.accounts.AddUserScreen
+import org.example.project.presentation.accounts.AdminScreen
+import org.example.project.presentation.accounts.AdminViewModel
 import org.example.project.presentation.stock.StockScreen
 import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
+import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun MainScreen(
@@ -28,6 +33,9 @@ fun MainScreen(
     val taskListViewModel = remember { TaskListViewModel() }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
+
+    val adminViewModel = remember { AdminViewModel(MockUserRepository()) }
+    var showAddUserScreen by remember { mutableStateOf(false) }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -52,7 +60,7 @@ fun MainScreen(
         }
     ) {
         Scaffold(
-            containerColor = Color(0xFF0B0B0B),
+            containerColor = AppColorPalette.Background,
             contentWindowInsets = WindowInsets.safeDrawing,
             topBar = {
                 AppTopBar(
@@ -104,12 +112,35 @@ fun MainScreen(
                     }
                 }
 
+                AppSection.ADMIN -> {
+                    Box(modifier = Modifier.padding(paddingValues)) {
+                        if (showAddUserScreen) {
+                            AddUserScreen(
+                                viewModel = adminViewModel,
+                                onUserAdded = {
+                                    showAddUserScreen = false
+                                },
+                                onBackClick = {
+                                    showAddUserScreen = false
+                                }
+                            )
+                        } else {
+                            AdminScreen(
+                                viewModel = adminViewModel,
+                                onAddUserClick = {
+                                    showAddUserScreen = true
+                                }
+                            )
+                        }
+                    }
+                }
+
                 else -> {
                     EmptySectionScreen(
                         title = selectedSection.title,
                         modifier = Modifier
                             .padding(paddingValues)
-                            .background(Color(0xFF0B0B0B))
+                            .background(AppColorPalette.Background)
                     )
                 }
             }

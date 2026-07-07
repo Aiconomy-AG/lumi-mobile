@@ -5,17 +5,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.example.project.presentation.stock.StockViewModel
+import org.example.project.presentation.theme.AppColorPalette
+import org.example.project.presentation.theme.AppComponentDefaults
+import org.example.project.presentation.theme.AppDimensions
+import org.example.project.presentation.theme.AppTextStyles
 
 @Composable
 fun AddProductScreen(
@@ -35,18 +33,17 @@ fun AddProductScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0B0B0B))
+            .background(AppColorPalette.Background)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(AppDimensions.ScreenPadding)
     ) {
         Text(
             text = "Add product",
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
+            color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.PageTitle
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
         ProductInput(
             value = name,
@@ -96,7 +93,7 @@ fun AddProductScreen(
             label = "Stock quantity"
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
         Button(
             onClick = {
@@ -126,23 +123,17 @@ fun AddProductScreen(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF5B11B),
-                contentColor = Color(0xFF0B0B0B)
-            )
+            colors = AppComponentDefaults.primaryButtonColors()
         ) {
             Text("Save product")
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
 
         Button(
             onClick = onBackClick,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF5B11B),
-                contentColor = Color(0xFF0B0B0B)
-            )
+            colors = AppComponentDefaults.primaryButtonColors()
         ) {
             Text("Cancel")
         }
@@ -163,16 +154,8 @@ private fun ProductInput(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp),
+            .padding(bottom = AppDimensions.SmallSpacing),
         singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            cursorColor = Color(0xFFF5B11B),
-            focusedBorderColor = Color(0xFFF5B11B),
-            unfocusedBorderColor = Color(0xFF2A2A2A),
-            focusedLabelColor = Color(0xFFF5B11B),
-            unfocusedLabelColor = Color.Gray
-        )
+        colors = AppComponentDefaults.appTextFieldColors()
     )
 }

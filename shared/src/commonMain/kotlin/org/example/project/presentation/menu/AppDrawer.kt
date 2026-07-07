@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.data.auth.UserSession
+import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun AppDrawer(
@@ -25,7 +26,7 @@ fun AppDrawer(
     onLogout: () -> Unit
 ) {
     ModalDrawerSheet(
-        drawerContainerColor = Color(0xF20F0F0F),
+        drawerContainerColor = AppColorPalette.OverlaySurface,
         modifier = Modifier.width(260.dp)
     ) {
         Column(
@@ -39,12 +40,12 @@ fun AppDrawer(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .background(Color(0x1AE6E6E6), CircleShape),
+                        .background(AppColorPalette.SelectionOverlay, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "L",
-                        color = Color(0xFFE0E0E0),
+                        color = AppColorPalette.IconPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -53,7 +54,7 @@ fun AppDrawer(
 
                 Text(
                     text = "Lumi",
-                    color = Color(0xFFEAEAEA),
+                    color = AppColorPalette.TextPrimarySoft,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
@@ -63,13 +64,13 @@ fun AppDrawer(
 
             sections.forEach { section ->
                 val isSelected = section == selectedSection
-                val color = if (isSelected) Color(0xFFE0E0E0) else Color(0x8FC6C6C6)
+                val color = if (isSelected) AppColorPalette.IconPrimary else AppColorPalette.IconSecondaryTranslucent
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            color = if (isSelected) Color(0x1AE6E6E6) else Color.Transparent,
+                            color = if (isSelected) AppColorPalette.SelectionOverlay else Color.Transparent,
                             shape = RoundedCornerShape(14.dp)
                         )
                         .clickable { onSectionSelected(section) }
@@ -94,7 +95,7 @@ fun AppDrawer(
 
             Text(
                 text = "Logged in as ${user.name}",
-                color = Color(0x8FC6C6C6),
+                color = AppColorPalette.IconSecondaryTranslucent,
                 fontSize = 13.sp
             )
 
@@ -102,7 +103,7 @@ fun AppDrawer(
 
             Text(
                 text = "Logout",
-                color = Color(0xFFFF5C5C),
+                color = AppColorPalette.Error,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .clickable { onLogout() }

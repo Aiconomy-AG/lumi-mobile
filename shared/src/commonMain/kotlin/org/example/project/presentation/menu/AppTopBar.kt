@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.data.auth.UserSession
+import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun AppTopBar(
@@ -30,19 +31,19 @@ fun AppTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(statusBarTopPadding + 58.dp)
-            .background(Color(0xF20B0B0B))
-            .border(width = 0.5.dp, color = Color(0x1FE6E6E6))
+            .background(AppColorPalette.OverlayBackground)
+            .border(width = 0.5.dp, color = AppColorPalette.SubtleBorder)
             .padding(top = statusBarTopPadding)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onMenuClick) {
-            MenuGlyph(tint = Color(0xBFE0E0E0))
+            MenuGlyph(tint = AppColorPalette.IconPrimaryTranslucent)
         }
 
         Text(
             text = title,
-            color = Color(0xFFEAEAEA),
+            color = AppColorPalette.TextPrimarySoft,
             fontSize = 17.sp,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)
@@ -51,12 +52,12 @@ fun AppTopBar(
         Box(
             modifier = Modifier
                 .size(34.dp)
-                .background(Color(0x1AE6E6E6), CircleShape),
+                .background(AppColorPalette.SelectionOverlay, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = user.name.take(2).uppercase(),
-                color = Color(0xFFE0E0E0),
+                color = AppColorPalette.IconPrimary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )

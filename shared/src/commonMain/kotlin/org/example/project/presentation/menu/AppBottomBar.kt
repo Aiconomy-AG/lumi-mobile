@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun AppBottomBar(
@@ -23,20 +24,20 @@ fun AppBottomBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(76.dp)
-            .background(Color(0xF20F0F0F))
+            .background(AppColorPalette.OverlaySurface)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         sections.forEach { section ->
             val isSelected = section == selectedSection
-            val color = if (isSelected) Color(0xFFE0E0E0) else Color(0x8FC6C6C6)
+            val color = if (isSelected) AppColorPalette.IconPrimary else AppColorPalette.IconSecondaryTranslucent
 
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 2.dp)
                     .background(
-                        color = if (isSelected) Color(0x1AE6E6E6) else Color.Transparent,
+                        color = if (isSelected) AppColorPalette.SelectionOverlay else Color.Transparent,
                         shape = RoundedCornerShape(16.dp)
                     )
                     .clickable { onSectionSelected(section) }
