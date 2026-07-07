@@ -6,12 +6,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
+import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
+import org.example.project.domain.task.Task
+import org.example.project.presentation.tasks.ActiveTimerViewModel
+import org.example.project.presentation.tasks.TaskDetailScreen
+import org.example.project.presentation.tasks.TaskDetailViewModel
 import feature.stock.data.MockStockRepository
 import feature.stock.presentation.AddProductScreen
 import org.example.project.presentation.stock.StockScreen
@@ -25,9 +29,13 @@ fun MainScreen(
     onLogout: () -> Unit
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
     val taskListViewModel = remember { TaskListViewModel() }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
+    val taskTimeEntryApi = remember { TaskTimeEntryMockApiService() }
+    val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
+    val colors = MaterialTheme.colorScheme
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -45,6 +53,7 @@ fun MainScreen(
                 selectedSection = selectedSection,
                 onSectionSelected = { section ->
                     selectedSection = section
+                    selectedTask = null
                     scope.launch { drawerState.close() }
                 },
                 onLogout = onLogout
@@ -52,14 +61,19 @@ fun MainScreen(
         }
     ) {
         Scaffold(
-            containerColor = Color(0xFF0B0B0B),
+            containerColor = colors.background,
             contentWindowInsets = WindowInsets.safeDrawing,
             topBar = {
                 AppTopBar(
                     title = selectedSection.title,
                     user = user,
+                    activeTimerViewModel = activeTimerViewModel,
                     onMenuClick = {
                         scope.launch { drawerState.open() }
+                    },
+                    onOpenActiveTask = { task ->
+                        selectedSection = AppSection.TASKS
+                        selectedTask = task
                     }
                 )
             },
@@ -69,16 +83,36 @@ fun MainScreen(
                     selectedSection = selectedSection,
                     onSectionSelected = { section ->
                         selectedSection = section
+                        selectedTask = null
                     }
                 )
             }
         ) { paddingValues ->
             when (selectedSection) {
                 AppSection.TASKS -> {
-                    TaskListScreen(
-                        viewModel = taskListViewModel,
-                        modifier = Modifier.padding(paddingValues)
-                    )
+                    val task = selectedTask
+
+                    if (task == null) {
+                        TaskListScreen(
+                            viewModel = taskListViewModel,
+                            onTaskClick = { selectedTask = it },
+                            modifier = Modifier.padding(paddingValues),
+                        )
+                    } else {
+                        TaskDetailScreen(
+                            task = task,
+                            viewModel = remember(task.id) {
+                                TaskDetailViewModel(
+                                    task = task,
+                                    employeeId = user.id,
+                                    activeTimerViewModel = activeTimerViewModel,
+                                    timeEntryApi = taskTimeEntryApi,
+                                )
+                            },
+                            onBack = { selectedTask = null },
+                            modifier = Modifier.padding(paddingValues),
+                        )
+                    }
                 }
 
                 AppSection.STOCK -> {
@@ -109,7 +143,7 @@ fun MainScreen(
                         title = selectedSection.title,
                         modifier = Modifier
                             .padding(paddingValues)
-                            .background(Color(0xFF0B0B0B))
+                            .background(colors.background)
                     )
                 }
             }

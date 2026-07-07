@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -22,12 +23,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.domain.stock.Product
+import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun StockScreen(
     viewModel: StockViewModel,
     onAddProductClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     val state by viewModel.state.collectAsState()
     var currentPage by remember { mutableStateOf(0) }
     val pageSize = 5
@@ -46,7 +49,7 @@ fun StockScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0B0B0B))
+            .background(colors.background)
             .padding(16.dp)
     ) {
         StockHeader(
@@ -94,10 +97,12 @@ private fun StockHeader(
     onSearchQueryChanged: (String) -> Unit,
     onAddProductClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
+
     Column {
         Text(
             text = "Stock",
-            color = Color.White,
+            color = colors.onBackground,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
@@ -109,21 +114,21 @@ private fun StockHeader(
         ) {
             Text(
                 text = "$productCount products",
-                color = Color.Gray
+                color = colors.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Text(
                 text = "$lowStockCount low stock",
-                color = Color(0xFFF5B11B)
+                color = colors.primary
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Text(
                 text = "$outOfStockCount out of stock",
-                color = Color(0xFFFF5C5C)
+                color = colors.error
             )
         }
 
@@ -133,18 +138,18 @@ private fun StockHeader(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
             placeholder = {
-                Text("Search products...", color = Color.Gray)
+                Text("Search products...", color = colors.onSurfaceVariant)
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                cursorColor = Color(0xFFF5B11B),
-                focusedBorderColor = Color(0xFFF5B11B),
-                unfocusedBorderColor = Color(0xFF2A2A2A),
-                focusedLabelColor = Color(0xFFF5B11B),
-                unfocusedLabelColor = Color.Gray
+                focusedTextColor = colors.onBackground,
+                unfocusedTextColor = colors.onBackground,
+                cursorColor = colors.primary,
+                focusedBorderColor = colors.primary,
+                unfocusedBorderColor = colors.outline,
+                focusedLabelColor = colors.primary,
+                unfocusedLabelColor = colors.onSurfaceVariant
             )
         )
 
@@ -154,8 +159,8 @@ private fun StockHeader(
             onClick = onAddProductClick,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF5B11B),
-                contentColor = Color(0xFF0B0B0B)
+                containerColor = colors.primary,
+                contentColor = colors.onPrimary
             )
         ) {
             Text("+ Add product")
@@ -169,6 +174,7 @@ private fun StockTable(
     onDeleteProduct: (Int) -> Unit,
     onUpdateQuantity: (Int, Int, Int) -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
 
@@ -178,11 +184,11 @@ private fun StockTable(
             .heightIn(max = 390.dp)
             .border(
                 width = 1.dp,
-                color = Color(0xFF2A2A2A),
+                color = colors.outline,
                 shape = RoundedCornerShape(16.dp)
             )
             .background(
-                color = Color(0xFF121212),
+                color = colors.surface,
                 shape = RoundedCornerShape(16.dp)
             )
     ) {
@@ -290,6 +296,7 @@ private fun StockTableRow(
     onDeleteProduct: () -> Unit,
     onUpdateQuantity: (Int) -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     var showEditDialog by remember { mutableStateOf(false) }
 
     Row(
@@ -298,20 +305,20 @@ private fun StockTableRow(
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TableCell(product.name, 220, Color.White)
-        TableCell(sku, 150, Color.Gray)
+        TableCell(product.name, 220, colors.onBackground)
+        TableCell(sku, 150, colors.onSurfaceVariant)
 
         TableCell(
             text = if (stockQuantity == 0) "Out of stock" else stockQuantity.toString(),
             width = 120,
             color = when {
-                stockQuantity == 0 -> Color(0xFFFF5C5C)
-                stockQuantity <= 5 -> Color(0xFFF5B11B)
-                else -> Color(0xFF00D084)
+                stockQuantity == 0 -> colors.error
+                stockQuantity <= 5 -> colors.primary
+                else -> AppColorPalette.StatusDone.content
             }
         )
 
-        TableCell("${price} lei", 120, Color.White)
+        TableCell("${price} lei", 120, colors.onBackground)
 
         Row(
             modifier = Modifier.width(150.dp)
@@ -322,8 +329,8 @@ private fun StockTableRow(
                     showEditDialog = true
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF5B11B),
-                    contentColor = Color(0xFF0B0B0B)
+                    containerColor = colors.primary,
+                    contentColor = colors.onPrimary
                 ),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
             ) {
@@ -336,8 +343,8 @@ private fun StockTableRow(
                 modifier = Modifier.width(84.dp),
                 onClick = onDeleteProduct,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF5B11B),
-                    contentColor = Color(0xFF0B0B0B)
+                    containerColor = colors.primary,
+                    contentColor = colors.onPrimary
                 ),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
             ) {
@@ -367,6 +374,8 @@ private fun StockPagination(
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -376,10 +385,10 @@ private fun StockPagination(
             onClick = onPreviousClick,
             enabled = currentPage > 0,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF5B11B),
-                contentColor = Color(0xFF0B0B0B),
-                disabledContainerColor = Color(0xFF2A2A2A),
-                disabledContentColor = Color.Gray
+                containerColor = colors.primary,
+                contentColor = colors.onPrimary,
+                disabledContainerColor = colors.outline,
+                disabledContentColor = colors.onSurfaceVariant
             )
         ) {
             Text("Previous")
@@ -389,7 +398,7 @@ private fun StockPagination(
 
         Text(
             text = "Page ${currentPage + 1} of $totalPages",
-            color = Color.Gray
+            color = colors.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -398,10 +407,10 @@ private fun StockPagination(
             onClick = onNextClick,
             enabled = currentPage < totalPages - 1,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF5B11B),
-                contentColor = Color(0xFF0B0B0B),
-                disabledContainerColor = Color(0xFF2A2A2A),
-                disabledContentColor = Color.Gray
+                containerColor = colors.primary,
+                contentColor = colors.onPrimary,
+                disabledContainerColor = colors.outline,
+                disabledContentColor = colors.onSurfaceVariant
             )
         ) {
             Text("Next")
@@ -415,15 +424,16 @@ private fun EditQuantityDialog(
     onDismiss: () -> Unit,
     onSave: (Int) -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     var quantityText by remember {
         mutableStateOf(currentQuantity.toString())
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF121212),
-        titleContentColor = Color.White,
-        textContentColor = Color.White,
+        containerColor = colors.surface,
+        titleContentColor = colors.onBackground,
+        textContentColor = colors.onBackground,
         title = {
             Text("Edit")
         },
@@ -438,13 +448,13 @@ private fun EditQuantityDialog(
                 },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color(0xFFF5B11B),
-                    focusedBorderColor = Color(0xFFF5B11B),
-                    unfocusedBorderColor = Color(0xFF2A2A2A),
-                    focusedLabelColor = Color(0xFFF5B11B),
-                    unfocusedLabelColor = Color.Gray
+                    focusedTextColor = colors.onBackground,
+                    unfocusedTextColor = colors.onBackground,
+                    cursorColor = colors.primary,
+                    focusedBorderColor = colors.primary,
+                    unfocusedBorderColor = colors.outline,
+                    focusedLabelColor = colors.primary,
+                    unfocusedLabelColor = colors.onSurfaceVariant
                 )
             )
         },
@@ -458,7 +468,7 @@ private fun EditQuantityDialog(
                     }
                 },
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = Color(0xFFF5B11B)
+                    contentColor = colors.primary
                 )
             ) {
                 Text("Save")
@@ -468,7 +478,7 @@ private fun EditQuantityDialog(
             TextButton(
                 onClick = onDismiss,
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = Color.Gray
+                    contentColor = colors.onSurfaceVariant
                 )
             ) {
                 Text("Cancel")
@@ -484,7 +494,7 @@ private fun TableHeaderCell(
 ) {
     Text(
         text = text,
-        color = Color.Gray,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontWeight = FontWeight.Bold,
         modifier = Modifier.width(width.dp)
     )

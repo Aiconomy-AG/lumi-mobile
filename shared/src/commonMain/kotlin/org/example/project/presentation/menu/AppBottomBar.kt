@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,24 +20,26 @@ fun AppBottomBar(
     selectedSection: AppSection,
     onSectionSelected: (AppSection) -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(76.dp)
-            .background(Color(0xF20F0F0F))
+            .background(colors.background)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         sections.forEach { section ->
             val isSelected = section == selectedSection
-            val color = if (isSelected) Color(0xFFE0E0E0) else Color(0x8FC6C6C6)
+            val color = if (isSelected) colors.onBackground else colors.onSurfaceVariant
 
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 2.dp)
                     .background(
-                        color = if (isSelected) Color(0x1AE6E6E6) else Color.Transparent,
+                        color = if (isSelected) colors.surfaceVariant else Color.Transparent,
                         shape = RoundedCornerShape(16.dp)
                     )
                     .clickable { onSectionSelected(section) }

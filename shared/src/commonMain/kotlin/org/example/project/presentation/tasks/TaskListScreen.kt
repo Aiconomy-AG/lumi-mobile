@@ -1,6 +1,7 @@
 package org.example.project.presentation.tasks
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +27,11 @@ import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
-fun TaskListScreen(viewModel: TaskListViewModel, modifier: Modifier = Modifier) {
+fun TaskListScreen(
+    viewModel: TaskListViewModel,
+    onTaskClick: (Task) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     val uiState by viewModel.uiState.collectAsState()
 
     Box(
@@ -46,20 +51,20 @@ fun TaskListScreen(viewModel: TaskListViewModel, modifier: Modifier = Modifier) 
                 )
             }
             else -> {
-                TaskList(tasks = uiState.tasks)
+                TaskList(tasks = uiState.tasks, onTaskClick = onTaskClick)
             }
         }
     }
 }
 
 @Composable
-private fun TaskList(tasks: List<Task>) {
+private fun TaskList(tasks: List<Task>, onTaskClick: (Task) -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         TaskListHeader()
         HorizontalDivider()
         LazyColumn {
             items(tasks, key = { it.id }) { task ->
-                TaskRow(task)
+                TaskRow(task, onClick = { onTaskClick(task) })
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
@@ -81,11 +86,12 @@ private fun TaskListHeader() {
 }
 
 @Composable
-private fun TaskRow(task: Task) {
+private fun TaskRow(task: Task, onClick: () -> Unit) {
     val isDone = task.status == TaskStatus.DONE
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
