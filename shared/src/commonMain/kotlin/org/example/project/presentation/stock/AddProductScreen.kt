@@ -6,12 +6,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,6 +23,7 @@ fun AddProductScreen(
     onProductAdded: () -> Unit,
     onBackClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var imageUrl by remember { mutableStateOf("") }
@@ -35,13 +36,13 @@ fun AddProductScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0B0B0B))
+            .background(colors.background)
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Text(
             text = "Add product",
-            color = Color.White,
+            color = colors.onBackground,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
@@ -127,8 +128,8 @@ fun AddProductScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF5B11B),
-                contentColor = Color(0xFF0B0B0B)
+                containerColor = colors.primary,
+                contentColor = colors.onPrimary
             )
         ) {
             Text("Save product")
@@ -140,8 +141,8 @@ fun AddProductScreen(
             onClick = onBackClick,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF5B11B),
-                contentColor = Color(0xFF0B0B0B)
+                containerColor = colors.primary,
+                contentColor = colors.onPrimary
             )
         ) {
             Text("Cancel")
@@ -155,6 +156,8 @@ private fun ProductInput(
     onValueChange: (String) -> Unit,
     label: String
 ) {
+    val colors = MaterialTheme.colorScheme
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -166,13 +169,13 @@ private fun ProductInput(
             .padding(bottom = 12.dp),
         singleLine = true,
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            cursorColor = Color(0xFFF5B11B),
-            focusedBorderColor = Color(0xFFF5B11B),
-            unfocusedBorderColor = Color(0xFF2A2A2A),
-            focusedLabelColor = Color(0xFFF5B11B),
-            unfocusedLabelColor = Color.Gray
+            focusedTextColor = colors.onBackground,
+            unfocusedTextColor = colors.onBackground,
+            cursorColor = colors.primary,
+            focusedBorderColor = colors.primary,
+            unfocusedBorderColor = colors.outline,
+            focusedLabelColor = colors.primary,
+            unfocusedLabelColor = colors.onSurfaceVariant
         )
     )
 }

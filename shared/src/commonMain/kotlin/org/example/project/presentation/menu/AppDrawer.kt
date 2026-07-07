@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,8 +25,10 @@ fun AppDrawer(
     onSectionSelected: (AppSection) -> Unit,
     onLogout: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
+
     ModalDrawerSheet(
-        drawerContainerColor = Color(0xF20F0F0F),
+        drawerContainerColor = colors.background,
         modifier = Modifier.width(260.dp)
     ) {
         Column(
@@ -39,12 +42,12 @@ fun AppDrawer(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .background(Color(0x1AE6E6E6), CircleShape),
+                        .background(colors.surfaceVariant, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "L",
-                        color = Color(0xFFE0E0E0),
+                        color = colors.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -53,7 +56,7 @@ fun AppDrawer(
 
                 Text(
                     text = "Lumi",
-                    color = Color(0xFFEAEAEA),
+                    color = colors.onBackground,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
@@ -63,13 +66,13 @@ fun AppDrawer(
 
             sections.forEach { section ->
                 val isSelected = section == selectedSection
-                val color = if (isSelected) Color(0xFFE0E0E0) else Color(0x8FC6C6C6)
+                val color = if (isSelected) colors.onBackground else colors.onSurfaceVariant
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            color = if (isSelected) Color(0x1AE6E6E6) else Color.Transparent,
+                            color = if (isSelected) colors.surfaceVariant else Color.Transparent,
                             shape = RoundedCornerShape(14.dp)
                         )
                         .clickable { onSectionSelected(section) }
@@ -94,7 +97,7 @@ fun AppDrawer(
 
             Text(
                 text = "Logged in as ${user.name}",
-                color = Color(0x8FC6C6C6),
+                color = colors.onSurfaceVariant,
                 fontSize = 13.sp
             )
 
@@ -102,7 +105,7 @@ fun AppDrawer(
 
             Text(
                 text = "Logout",
-                color = Color(0xFFFF5C5C),
+                color = colors.error,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .clickable { onLogout() }
