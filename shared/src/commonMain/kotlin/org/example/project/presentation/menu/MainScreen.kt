@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
+import org.example.project.presentation.tasks.ActiveTimerViewModel
 import org.example.project.presentation.tasks.TaskDetailScreen
 import org.example.project.presentation.tasks.TaskDetailViewModel
 import feature.stock.data.MockStockRepository
@@ -29,10 +30,12 @@ fun MainScreen(
     onLogout: () -> Unit
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
     val taskListViewModel = remember { TaskListViewModel() }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
     val taskTimeEntryApi = remember { TaskTimeEntryMockApiService() }
+    val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -50,6 +53,7 @@ fun MainScreen(
                 selectedSection = selectedSection,
                 onSectionSelected = { section ->
                     selectedSection = section
+                    selectedTask = null
                     scope.launch { drawerState.close() }
                 },
                 onLogout = onLogout
@@ -63,8 +67,13 @@ fun MainScreen(
                 AppTopBar(
                     title = selectedSection.title,
                     user = user,
+                    activeTimerViewModel = activeTimerViewModel,
                     onMenuClick = {
                         scope.launch { drawerState.open() }
+                    },
+                    onOpenActiveTask = { task ->
+                        selectedSection = AppSection.TASKS
+                        selectedTask = task
                     }
                 )
             },
@@ -74,13 +83,13 @@ fun MainScreen(
                     selectedSection = selectedSection,
                     onSectionSelected = { section ->
                         selectedSection = section
+                        selectedTask = null
                     }
                 )
             }
         ) { paddingValues ->
             when (selectedSection) {
                 AppSection.TASKS -> {
-                    var selectedTask by remember { mutableStateOf<Task?>(null) }
                     val task = selectedTask
 
                     if (task == null) {
@@ -93,7 +102,12 @@ fun MainScreen(
                         TaskDetailScreen(
                             task = task,
                             viewModel = remember(task.id) {
-                                TaskDetailViewModel(task = task, employeeId = user.id, timeEntryApi = taskTimeEntryApi)
+                                TaskDetailViewModel(
+                                    task = task,
+                                    employeeId = user.id,
+                                    activeTimerViewModel = activeTimerViewModel,
+                                    timeEntryApi = taskTimeEntryApi,
+                                )
                             },
                             onBack = { selectedTask = null },
                             modifier = Modifier.padding(paddingValues),

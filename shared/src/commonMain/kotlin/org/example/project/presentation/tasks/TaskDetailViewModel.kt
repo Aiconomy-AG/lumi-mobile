@@ -2,17 +2,18 @@ package org.example.project.presentation.tasks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
-import org.example.project.domain.tasktimeentry.TaskTimeEntry
 import org.example.project.domain.tasktimeentry.TaskTimeEntryApi
-import kotlin.time.Clock
 
 data class TaskDetailUiState(
     val isLoading: Boolean = false,
@@ -22,97 +23,74 @@ data class TaskDetailUiState(
     val error: String? = null,
 )
 
+private data class HistoricalTotals(
+    val isLoading: Boolean = true,
+    val myPastSeconds: Int = 0,
+    val taskTotalPastSeconds: Int = 0,
+    val error: String? = null,
+)
+
 class TaskDetailViewModel(
     private val task: Task,
     private val employeeId: Int,
+    private val activeTimerViewModel: ActiveTimerViewModel,
     private val timeEntryApi: TaskTimeEntryApi = TaskTimeEntryMockApiService(),
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(TaskDetailUiState())
-    val uiState: StateFlow<TaskDetailUiState> = _uiState.asStateFlow()
+    private val historicalState = MutableStateFlow(HistoricalTotals())
 
-    private var activeEntry: TaskTimeEntry? = null
-    private var tickingJob: Job? = null
+    val uiState: StateFlow<TaskDetailUiState> =
+        combine(historicalState, activeTimerViewModel.uiState) { historical, active ->
+            val isMine = active.activeTask?.id == task.id
+            TaskDetailUiState(
+                isLoading = historical.isLoading,
+                isTimerRunning = isMine,
+                elapsedSeconds = historical.myPastSeconds + if (isMine) active.elapsedSeconds else 0,
+                taskTotalSeconds = historical.taskTotalPastSeconds + if (isMine) active.elapsedSeconds else 0,
+                error = historical.error ?: active.error,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TaskDetailUiState(isLoading = true))
 
     init {
         loadEntries()
+
+        viewModelScope.launch {
+            activeTimerViewModel.uiState
+                .map { it.activeTask?.id == task.id }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { isActiveNow -> if (!isActiveNow) loadEntries() }
+        }
     }
 
     private fun loadEntries() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            historicalState.value = historicalState.value.copy(isLoading = true, error = null)
             try {
                 val allEntries = timeEntryApi.getTimeEntries(task.id)
+                val myPast = allEntries
+                    .filter { it.employeeId == employeeId && it.stoppedAt != null }
+                    .sumOf { it.durationSeconds ?: 0 }
+                val allPast = allEntries
+                    .filter { it.stoppedAt != null }
+                    .sumOf { it.durationSeconds ?: 0 }
 
-                val myEntries = allEntries.filter { it.employeeId == employeeId }
-                val myCompleted = myEntries.filter { it.stoppedAt != null }.sumOf { it.durationSeconds ?: 0 }
-                val myRunning = myEntries.firstOrNull { it.stoppedAt == null }
-                activeEntry = myRunning
-                val myElapsed = myCompleted + (myRunning?.let {
-                    (Clock.System.now() - it.startedAt).inWholeSeconds.toInt()
-                } ?: 0)
-
-                val allCompleted = allEntries.filter { it.stoppedAt != null }.sumOf { it.durationSeconds ?: 0 }
-                val allRunningElapsed = allEntries.filter { it.stoppedAt == null }.sumOf {
-                    (Clock.System.now() - it.startedAt).inWholeSeconds.toInt()
-                }
-
-                tickingJob?.cancel()
-                _uiState.value = _uiState.value.copy(
+                historicalState.value = HistoricalTotals(
                     isLoading = false,
-                    isTimerRunning = myRunning != null,
-                    elapsedSeconds = myElapsed,
-                    taskTotalSeconds = allCompleted + allRunningElapsed,
+                    myPastSeconds = myPast,
+                    taskTotalPastSeconds = allPast,
                 )
-                if (myRunning != null) startTicking()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+                historicalState.value = historicalState.value.copy(isLoading = false, error = e.message)
             }
         }
     }
 
     fun toggleTimer() {
-        if (_uiState.value.isTimerRunning) stopTimer() else startTimer()
-    }
-
-    private fun startTimer() {
-        viewModelScope.launch {
-            try {
-                activeEntry = timeEntryApi.startTimer(task.id)
-                _uiState.value = _uiState.value.copy(isTimerRunning = true, error = null)
-                startTicking()
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
-            }
+        if (activeTimerViewModel.isActiveFor(task.id)) {
+            activeTimerViewModel.stop()
+        } else {
+            activeTimerViewModel.start(task)
         }
-    }
-
-    private fun stopTimer() {
-        val entry = activeEntry ?: return
-        viewModelScope.launch {
-            try {
-                timeEntryApi.stopTimer(task.id, entry.id)
-                tickingJob?.cancel()
-                activeEntry = null
-                _uiState.value = _uiState.value.copy(isTimerRunning = false)
-                loadEntries()
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
-            }
-        }
-    }
-
-    private fun startTicking() {
-        tickingJob?.cancel()
-        tickingJob = viewModelScope.launch {
-            while (true) {
-                delay(1000)
-                _uiState.value = _uiState.value.copy(elapsedSeconds = _uiState.value.elapsedSeconds + 1)
-            }
-        }
-    }
-
-    override fun onCleared() {
-        tickingJob?.cancel()
     }
 }
