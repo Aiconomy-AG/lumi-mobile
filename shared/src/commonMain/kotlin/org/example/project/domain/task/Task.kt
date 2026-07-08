@@ -26,4 +26,6 @@ data class Task(
     val status: TaskStatus,
     val createdBy: Int,
     val dueDate: String,
+    @SerialName("assignee_ids")
+    val assigneeIds: List<Int> = emptyList(),
 )

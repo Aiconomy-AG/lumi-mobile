@@ -11,8 +11,11 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.example.project.data.employee.EmployeeMockApiService
 import org.example.project.data.task.TaskMockApiService
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
+import org.example.project.domain.employee.Employee
+import org.example.project.domain.employee.EmployeeApi
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskApi
 import org.example.project.domain.task.TaskStatus
@@ -25,6 +28,8 @@ data class TaskDetailUiState(
     val elapsedSeconds: Int = 0,
     val taskTotalSeconds: Int = 0,
     val isSaving: Boolean = false,
+    val assignees: List<Employee> = emptyList(),
+    val allEmployees: List<Employee> = emptyList(),
     val error: String? = null,
 )
 
@@ -41,14 +46,16 @@ class TaskDetailViewModel(
     private val activeTimerViewModel: ActiveTimerViewModel,
     private val taskApi: TaskApi = TaskMockApiService(),
     private val timeEntryApi: TaskTimeEntryApi = TaskTimeEntryMockApiService(),
+    private val employeeApi: EmployeeApi = EmployeeMockApiService(),
 ) : ViewModel() {
 
     private val historicalState = MutableStateFlow(HistoricalTotals())
     private val currentTaskState = MutableStateFlow(task)
     private val savingState = MutableStateFlow(false to null as String?)
+    private val employeesState = MutableStateFlow<List<Employee>>(emptyList())
 
     val uiState: StateFlow<TaskDetailUiState> =
-        combine(historicalState, activeTimerViewModel.uiState, currentTaskState, savingState) { historical, active, currentTask, saving ->
+        combine(historicalState, activeTimerViewModel.uiState, currentTaskState, savingState, employeesState) { historical, active, currentTask, saving, employees ->
             val isMine = active.activeTask?.id == task.id
             TaskDetailUiState(
                 task = currentTask,
@@ -57,12 +64,15 @@ class TaskDetailViewModel(
                 elapsedSeconds = historical.myPastSeconds + if (isMine) active.elapsedSeconds else 0,
                 taskTotalSeconds = historical.taskTotalPastSeconds + if (isMine) active.elapsedSeconds else 0,
                 isSaving = saving.first,
+                assignees = currentTask.assigneeIds.mapNotNull { id -> employees.find { it.id == id } },
+                allEmployees = employees,
                 error = historical.error ?: active.error ?: saving.second,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TaskDetailUiState(task = task, isLoading = true))
 
     init {
         loadEntries()
+        loadEmployees()
 
         viewModelScope.launch {
             activeTimerViewModel.uiState
@@ -92,6 +102,36 @@ class TaskDetailViewModel(
                 )
             } catch (e: Exception) {
                 historicalState.value = historicalState.value.copy(isLoading = false, error = e.message)
+            }
+        }
+    }
+
+    private fun loadEmployees() {
+        viewModelScope.launch {
+            try {
+                employeesState.value = employeeApi.getEmployees()
+            } catch (e: Exception) {
+                savingState.value = false to e.message
+            }
+        }
+    }
+
+    fun assignUser(userId: Int) {
+        viewModelScope.launch {
+            try {
+                currentTaskState.value = taskApi.assignUser(task.id, userId)
+            } catch (e: Exception) {
+                savingState.value = false to e.message
+            }
+        }
+    }
+
+    fun unassignUser(userId: Int) {
+        viewModelScope.launch {
+            try {
+                currentTaskState.value = taskApi.unassignUser(task.id, userId)
+            } catch (e: Exception) {
+                savingState.value = false to e.message
             }
         }
     }

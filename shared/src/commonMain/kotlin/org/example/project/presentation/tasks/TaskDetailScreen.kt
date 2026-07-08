@@ -14,12 +14,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.example.project.domain.employee.Employee
 import org.example.project.domain.task.TaskStatus
 
 @Composable
@@ -105,6 +111,108 @@ fun TaskDetailScreen(
         Text(text = "Description", color = colors.onSurfaceVariant)
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = task.description, color = colors.onBackground)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        AssigneesSection(
+            assignees = uiState.assignees,
+            allEmployees = uiState.allEmployees,
+            onAssign = viewModel::assignUser,
+            onUnassign = viewModel::unassignUser,
+        )
+    }
+}
+
+@Composable
+private fun AssigneesSection(
+    assignees: List<Employee>,
+    allEmployees: List<Employee>,
+    onAssign: (Int) -> Unit,
+    onUnassign: (Int) -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    var pickerOpen by remember { mutableStateOf(false) }
+    val assignedIds = assignees.map { it.id }.toSet()
+
+    Text(text = "Assigned to", color = colors.onSurfaceVariant)
+    Spacer(modifier = Modifier.height(12.dp))
+
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        assignees.forEach { employee ->
+            AssigneeChip(employee = employee, onRemove = { onUnassign(employee.id) })
+        }
+
+        Box(
+            modifier = Modifier
+                .background(color = Color.Transparent, shape = RoundedCornerShape(20.dp))
+                .border(width = 1.dp, color = colors.outline, shape = RoundedCornerShape(20.dp))
+                .clickable { pickerOpen = !pickerOpen }
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+        ) {
+            Text(text = "+ Assign", color = colors.onSurfaceVariant, fontSize = 13.sp)
+        }
+    }
+
+    if (pickerOpen) {
+        Spacer(modifier = Modifier.height(12.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(width = 1.dp, color = colors.outline, shape = MaterialTheme.shapes.medium)
+                .background(color = colors.surface, shape = MaterialTheme.shapes.medium)
+                .padding(8.dp),
+        ) {
+            allEmployees.forEach { employee ->
+                val isAssigned = employee.id in assignedIds
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            if (isAssigned) onUnassign(employee.id) else onAssign(employee.id)
+                        }
+                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    EmployeeAvatar(employee = employee, size = 28.dp)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = employee.name,
+                        color = colors.onBackground,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (isAssigned) {
+                        Text(text = "✓", color = colors.primary, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AssigneeChip(employee: Employee, onRemove: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .background(color = colors.surface, shape = RoundedCornerShape(20.dp))
+            .border(width = 1.dp, color = colors.outline, shape = RoundedCornerShape(20.dp))
+            .padding(start = 6.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        EmployeeAvatar(employee = employee, size = 24.dp)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = employee.name, color = colors.onBackground, fontSize = 14.sp)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "✕",
+            color = colors.onSurfaceVariant,
+            fontSize = 13.sp,
+            modifier = Modifier.clickable(onClick = onRemove),
+        )
     }
 }
 

@@ -6,7 +6,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.example.project.data.employee.EmployeeMockApiService
 import org.example.project.data.task.TaskMockApiService
+import org.example.project.domain.employee.Employee
+import org.example.project.domain.employee.EmployeeApi
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskApi
 import org.example.project.domain.task.TaskStatus
@@ -14,6 +17,7 @@ import org.example.project.domain.task.TaskStatus
 data class TaskListUiState(
     val isLoading: Boolean = false,
     val tasks: List<Task> = emptyList(),
+    val employees: List<Employee> = emptyList(),
     val searchQuery: String = "",
     val error: String? = null,
 ) {
@@ -27,6 +31,7 @@ data class TaskListUiState(
 
 class TaskListViewModel(
     private val api: TaskApi = TaskMockApiService(),
+    private val employeeApi: EmployeeApi = EmployeeMockApiService(),
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TaskListUiState())
@@ -34,6 +39,7 @@ class TaskListViewModel(
 
     init {
         loadTasks()
+        loadEmployees()
     }
 
     fun loadTasks() {
@@ -48,14 +54,25 @@ class TaskListViewModel(
         }
     }
 
+    private fun loadEmployees() {
+        viewModelScope.launch {
+            try {
+                val employees = employeeApi.getEmployees()
+                _uiState.value = _uiState.value.copy(employees = employees)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
+            }
+        }
+    }
+
     fun onSearchQueryChanged(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 
-    fun addTask(title: String, description: String, dueDate: String, status: TaskStatus) {
+    fun addTask(title: String, description: String, dueDate: String, status: TaskStatus, assigneeIds: List<Int>) {
         viewModelScope.launch {
             try {
-                api.createTask(title = title, description = description, dueDate = dueDate, status = status)
+                api.createTask(title = title, description = description, dueDate = dueDate, status = status, assigneeIds = assigneeIds)
                 loadTasks()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)

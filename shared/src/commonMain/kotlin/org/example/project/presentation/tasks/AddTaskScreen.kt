@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -23,15 +24,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.example.project.domain.employee.Employee
 import org.example.project.domain.task.TaskStatus
 
 @Composable
@@ -42,10 +46,12 @@ fun AddTaskScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
+    val uiState by viewModel.uiState.collectAsState()
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var dueDate by remember { mutableStateOf("") }
     var status by remember { mutableStateOf(TaskStatus.TO_DO) }
+    var selectedAssignees by remember { mutableStateOf(emptySet<Int>()) }
 
     Column(
         modifier = modifier
@@ -75,6 +81,24 @@ fun AddTaskScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Text(text = "Assignees", color = colors.onSurfaceVariant)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        AssigneePicker(
+            employees = uiState.employees,
+            selectedIds = selectedAssignees,
+            onToggle = { id ->
+                selectedAssignees = if (id in selectedAssignees) {
+                    selectedAssignees - id
+                } else {
+                    selectedAssignees + id
+                }
+            },
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Button(
             onClick = {
                 if (title.isNotBlank() && dueDate.isNotBlank()) {
@@ -83,6 +107,7 @@ fun AddTaskScreen(
                         description = description,
                         dueDate = dueDate,
                         status = status,
+                        assigneeIds = selectedAssignees.toList(),
                     )
                     onTaskAdded()
                 }
@@ -165,6 +190,48 @@ private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> U
                 Text(
                     text = status.label(),
                     color = if (isSelected) colors.onSurface else colors.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AssigneePicker(
+    employees: List<Employee>,
+    selectedIds: Set<Int>,
+    onToggle: (Int) -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        employees.forEach { employee ->
+            val isSelected = employee.id in selectedIds
+            Row(
+                modifier = Modifier
+                    .background(
+                        color = if (isSelected) colors.surfaceVariant else Color.Transparent,
+                        shape = RoundedCornerShape(20.dp),
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = if (isSelected) colors.primary else colors.outline,
+                        shape = RoundedCornerShape(20.dp),
+                    )
+                    .clickable { onToggle(employee.id) }
+                    .padding(start = 6.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                EmployeeAvatar(employee = employee, size = 24.dp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = employee.name,
+                    color = if (isSelected) colors.onSurface else colors.onSurfaceVariant,
+                    fontSize = 14.sp,
                 )
             }
         }
