@@ -42,6 +42,7 @@ import org.example.project.presentation.chat.ChatViewModel
 import org.example.project.data.ApiConfig
 import org.example.project.data.accounts.UserApiService
 import org.example.project.data.createHttpClient
+import org.example.project.presentation.dashboard.DashboardScreen
 
 @Composable
 fun MainScreen(
@@ -150,6 +151,24 @@ fun MainScreen(
             }
         ) { paddingValues ->
             when (selectedSection) {
+                AppSection.DASHBOARD -> {
+                    DashboardScreen(
+                        viewModel = taskListViewModel,
+                        user = user,
+                        onTaskClick = { task ->
+                            selectedSection = AppSection.TASKS
+                            selectedTask = task
+                            selectedProject = null
+                            showEditTaskScreen = false
+                            showAddTaskScreen = false
+                            showAddProjectScreen = false
+                            showAddProductScreen = false
+                            showAddUserScreen = false
+                        },
+                        modifier = Modifier.padding(paddingValues),
+                    )
+                }
+
                 AppSection.TASKS -> {
                     val task = selectedTask
 
