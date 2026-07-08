@@ -29,7 +29,8 @@ fun AddUserScreen(
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var team by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
+    var languageFlag by remember { mutableStateOf("en") }
     var selectedRole by remember { mutableStateOf(AccountRole.EMPLOYEE) }
 
     Column(
@@ -66,9 +67,15 @@ fun AddUserScreen(
         )
 
         UserInput(
-            value = team,
-            onValueChange = { team = it },
-            label = "Team"
+            value = phoneNumber,
+            onValueChange = { phoneNumber = it },
+            label = "Phone number"
+        )
+
+        UserInput(
+            value = languageFlag,
+            onValueChange = { languageFlag = it },
+            label = "Language flag"
         )
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
@@ -104,18 +111,17 @@ fun AddUserScreen(
                 if (
                     fullName.isNotBlank() &&
                     email.isNotBlank() &&
-                    password.isNotBlank() &&
-                    team.isNotBlank()
+                    password.isNotBlank()
                 ) {
                     viewModel.addUser(
-                        fullName = fullName,
+                        name = fullName,
                         email = email,
                         password = password,
-                        team = team,
-                        role = selectedRole
+                        phoneNumber = phoneNumber,
+                        languageFlag = languageFlag.ifBlank { "en" },
+                        role = selectedRole,
+                        onSuccess = onUserAdded
                     )
-
-                    onUserAdded()
                 }
             },
             modifier = Modifier.fillMaxWidth(),

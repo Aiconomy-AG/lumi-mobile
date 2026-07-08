@@ -23,7 +23,6 @@ import org.example.project.presentation.tasks.TaskDetailScreen
 import org.example.project.presentation.tasks.TaskDetailViewModel
 import feature.stock.data.MockStockRepository
 import feature.stock.presentation.AddProductScreen
-import org.example.project.data.accounts.MockUserRepository
 import org.example.project.presentation.accounts.AddUserScreen
 import org.example.project.presentation.accounts.AdminScreen
 import org.example.project.presentation.accounts.AdminViewModel
@@ -40,6 +39,9 @@ import org.example.project.presentation.project.ProjectListViewModel
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
+import org.example.project.data.ApiConfig
+import org.example.project.data.accounts.UserApiService
+import org.example.project.data.createHttpClient
 
 @Composable
 fun MainScreen(
@@ -58,7 +60,17 @@ fun MainScreen(
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
-    val adminViewModel = remember { AdminViewModel(MockUserRepository()) }
+    val adminHttpClient = remember { createHttpClient() }
+    val adminViewModel = remember(user.token) {
+        AdminViewModel(
+            UserApiService(
+                client = adminHttpClient,
+                baseUrl = ApiConfig.BASE_URL,
+                token = user.token
+            )
+        )
+    }
+
     var showAddUserScreen by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
     var showEditTaskScreen by remember { mutableStateOf(false) }

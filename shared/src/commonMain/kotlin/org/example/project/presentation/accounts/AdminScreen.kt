@@ -5,21 +5,25 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.AlertDialog
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import org.example.project.data.accounts.User
@@ -62,11 +66,20 @@ fun AdminScreen(
             onAddUserClick = onAddUserClick
         )
 
+        state.errorMessage?.let { message ->
+            Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+            Text(
+                text = message,
+                color = AppColorPalette.Error,
+                style = AppTextStyles.Emphasis
+            )
+        }
+
         Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
         UsersTable(
             users = pagedUsers,
-            onDeleteUser = viewModel::deleteUser
+            onSetUserActive = viewModel::setUserActive
         )
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
@@ -138,7 +151,7 @@ private fun AdminHeader(
 @Composable
 private fun UsersTable(
     users: List<User>,
-    onDeleteUser: (Int) -> Unit
+    onSetUserActive: (Int, Boolean) -> Unit
 ) {
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
@@ -162,15 +175,15 @@ private fun UsersTable(
                 .verticalScroll(verticalScrollState)
                 .horizontalScroll(horizontalScrollState)
                 .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 26.dp)
-                .width(1176.dp)
+                .width(1180.dp)
         ) {
             UsersTableHeader()
 
             users.forEach { user ->
                 UserTableRow(
                     user = user,
-                    onDeleteUser = {
-                        onDeleteUser(user.id)
+                    onSetUserActive = {
+                        onSetUserActive(user.id, !user.isActive)
                     }
                 )
             }
@@ -195,20 +208,20 @@ private fun UsersTableHeader() {
     ) {
         TableHeaderCell("User", 260)
         TableHeaderCell("Email", 260)
-        TableHeaderCell("Password", 160)
-        TableHeaderCell("Team", 160)
+        TableHeaderCell("Phone", 160)
         TableHeaderCell("Role", 140)
         TableHeaderCell("Status", 120)
-        TableHeaderCell("Actions", 76)
+        TableHeaderCell("Active", 120)
+        TableHeaderCell("Actions", 120)
     }
 }
 
 @Composable
 private fun UserTableRow(
     user: User,
-    onDeleteUser: () -> Unit
+    onSetUserActive: () -> Unit
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showActiveDialog by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
@@ -225,15 +238,14 @@ private fun UserTableRow(
             Spacer(modifier = Modifier.width(12.dp))
 
             Text(
-                text = user.fullName,
+                text = user.name,
                 color = AppColorPalette.TextPrimary,
                 style = AppTextStyles.Emphasis
             )
         }
 
         TableCell(user.email, 260, AppColorPalette.TextSecondary)
-        TableCell(user.password, 160, AppColorPalette.TextSecondary)
-        TableCell(user.team, 160, AppColorPalette.TextSecondary)
+        TableCell(user.phoneNumber.ifBlank { "-" }, 160, AppColorPalette.TextSecondary)
 
         RoleBadge(
             role = user.role,
@@ -241,40 +253,56 @@ private fun UserTableRow(
         )
 
         StatusCell(
-            isOnline = user.isOnline,
+            status = user.status,
             modifier = Modifier.width(120.dp)
         )
 
-        IconActionButton(
-            onClick = {
-                showDeleteDialog = true
-            }
+        ActiveCell(
+            isActive = user.isActive,
+            modifier = Modifier.width(120.dp)
         )
+
+        Button(
+            onClick = {
+                showActiveDialog = true
+            },
+            modifier = Modifier.width(120.dp),
+            colors = AppComponentDefaults.primaryButtonColors(),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+        ) {
+            Text(if (user.isActive) "Deactivate" else "Reactivate")
+        }
     }
 
-    if (showDeleteDialog) {
+    if (showActiveDialog) {
         AlertDialog(
             onDismissRequest = {
-                showDeleteDialog = false
+                showActiveDialog = false
             },
             containerColor = AppColorPalette.Surface,
             titleContentColor = AppColorPalette.TextPrimary,
             textContentColor = AppColorPalette.TextPrimary,
             title = {
-                Text("Delete account?")
+                Text(if (user.isActive) "Deactivate account?" else "Reactivate account?")
             },
             text = {
-                Text("Are you sure you want to delete ${user.fullName}?")
+                Text(
+                    if (user.isActive) {
+                        "Are you sure you want to deactivate ${user.name}?"
+                    } else {
+                        "Are you sure you want to reactivate ${user.name}?"
+                    }
+                )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onDeleteUser()
-                        showDeleteDialog = false
+                        onSetUserActive()
+                        showActiveDialog = false
                     }
                 ) {
                     Text(
-                        text = "Delete",
+                        text = if (user.isActive) "Deactivate" else "Reactivate",
                         color = AppColorPalette.Primary
                     )
                 }
@@ -282,7 +310,7 @@ private fun UserTableRow(
             dismissButton = {
                 TextButton(
                     onClick = {
-                        showDeleteDialog = false
+                        showActiveDialog = false
                     }
                 ) {
                     Text(
@@ -291,78 +319,6 @@ private fun UserTableRow(
                     )
                 }
             }
-        )
-    }
-}
-
-@Composable
-private fun IconActionButton(
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier.width(76.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Button(
-            onClick = onClick,
-            modifier = Modifier.size(AppDimensions.ActionButtonSize),
-            colors = AppComponentDefaults.primaryButtonColors(),
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            DeleteIcon(tint = AppColorPalette.OnPrimary)
-        }
-    }
-}
-
-@Composable
-private fun DeleteIcon(
-    tint: Color,
-    modifier: Modifier = Modifier
-) {
-    androidx.compose.foundation.Canvas(modifier = modifier.size(AppDimensions.ActionIconSize)) {
-        val strokeWidth = size.width * 0.1f
-
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.24f, size.height * 0.34f),
-            end = Offset(size.width * 0.76f, size.height * 0.34f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.42f, size.height * 0.22f),
-            end = Offset(size.width * 0.58f, size.height * 0.22f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.48f, size.height * 0.16f),
-            end = Offset(size.width * 0.52f, size.height * 0.16f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawRoundRect(
-            color = tint,
-            topLeft = Offset(size.width * 0.32f, size.height * 0.42f),
-            size = androidx.compose.ui.geometry.Size(size.width * 0.36f, size.height * 0.42f),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.05f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.44f, size.height * 0.5f),
-            end = Offset(size.width * 0.44f, size.height * 0.76f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.5f, size.height * 0.5f),
-            end = Offset(size.width * 0.5f, size.height * 0.76f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
         )
     }
 }
@@ -506,12 +462,33 @@ private fun RoleBadge(
 
 @Composable
 private fun StatusCell(
-    isOnline: Boolean,
+    status: String,
+    modifier: Modifier = Modifier
+) {
+    val normalizedStatus = status.lowercase()
+    val color = when (normalizedStatus) {
+        "available" -> AppColorPalette.Success
+        "busy" -> AppColorPalette.Error
+        "away" -> AppColorPalette.Primary
+        else -> AppColorPalette.TextSecondary
+    }
+
+    Text(
+        text = status.replaceFirstChar { it.uppercase() },
+        color = color,
+        style = AppTextStyles.Emphasis,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun ActiveCell(
+    isActive: Boolean,
     modifier: Modifier = Modifier
 ) {
     Text(
-        text = if (isOnline) "Online" else "Offline",
-        color = if (isOnline) AppColorPalette.Success else AppColorPalette.TextSecondary,
+        text = if (isActive) "Active" else "Inactive",
+        color = if (isActive) AppColorPalette.Success else AppColorPalette.TextSecondary,
         style = AppTextStyles.Emphasis,
         modifier = modifier
     )

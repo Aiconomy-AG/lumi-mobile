@@ -102,42 +102,6 @@ fun LoginScreen(
                     )
                 }
             }
-
-            HorizontalDivider(color = AppColorPalette.Border)
-
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
-                        append("Use Admin accounts: ")
-                    }
-                    withStyle(SpanStyle(color = AppColorPalette.Primary)) {
-                        append("admin@test.com")
-                    }
-                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
-                        append(" / ")
-                    }
-                    withStyle(SpanStyle(color = AppColorPalette.Primary)) {
-                        append("admin123")
-                    }
-                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
-                        append(" or\n")
-                    }
-                    withStyle(SpanStyle(color = AppColorPalette.Primary)) {
-                        append("employee@test.com")
-                    }
-                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
-                        append(" / ")
-                    }
-                    withStyle(SpanStyle(color = AppColorPalette.Primary)) {
-                        append("employee123")
-                    }
-                    withStyle(SpanStyle(color = AppColorPalette.TextSecondary)) {
-                        append("\nNew users from Admin can sign in with their saved password.")
-                    }
-                },
-                fontSize = 16.sp,
-                lineHeight = 24.sp
-            )
         }
     }
 }
