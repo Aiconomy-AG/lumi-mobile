@@ -11,6 +11,7 @@ import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
+import org.example.project.data.employee.EmployeeMockApiService
 import org.example.project.data.task.TaskMockApiService
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
@@ -41,7 +42,8 @@ fun MainScreen(
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     val taskApi = remember { TaskMockApiService() }
-    val taskListViewModel = remember { TaskListViewModel(api = taskApi) }
+    val employeeApi = remember { EmployeeMockApiService() }
+    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, currentUserId = user.id) }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
@@ -154,6 +156,7 @@ fun MainScreen(
                                 activeTimerViewModel = activeTimerViewModel,
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
+                                employeeApi = employeeApi,
                             )
                         }
 

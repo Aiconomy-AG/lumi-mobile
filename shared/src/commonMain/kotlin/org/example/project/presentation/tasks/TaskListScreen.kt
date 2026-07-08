@@ -3,6 +3,8 @@ package org.example.project.presentation.tasks
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,6 +67,10 @@ fun TaskListScreen(
                     TaskListToolbar(
                         searchQuery = uiState.searchQuery,
                         onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                        statusFilter = uiState.statusFilter,
+                        onStatusFilterChanged = viewModel::onStatusFilterChanged,
+                        onlyMine = uiState.onlyMine,
+                        onToggleOnlyMine = viewModel::onToggleOnlyMine,
                         onAddTaskClick = onAddTaskClick,
                     )
 
@@ -81,6 +87,10 @@ fun TaskListScreen(
 private fun TaskListToolbar(
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
+    statusFilter: TaskStatus?,
+    onStatusFilterChanged: (TaskStatus?) -> Unit,
+    onlyMine: Boolean,
+    onToggleOnlyMine: () -> Unit,
     onAddTaskClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -107,16 +117,103 @@ private fun TaskListToolbar(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Button(
-            onClick = onAddTaskClick,
+        StatusFilterBar(selected = statusFilter, onSelect = onStatusFilterChanged)
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colors.primary,
-                contentColor = colors.onPrimary,
-            )
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("+ Add task")
+            MyTasksToggle(
+                active = onlyMine,
+                onToggle = onToggleOnlyMine,
+            )
+
+            Button(
+                onClick = onAddTaskClick,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.primary,
+                    contentColor = colors.onPrimary,
+                )
+            ) {
+                Text("+ Add task")
+            }
         }
+    }
+}
+
+@Composable
+private fun StatusFilterBar(
+    selected: TaskStatus?,
+    onSelect: (TaskStatus?) -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val options: List<Pair<String, TaskStatus?>> = listOf(
+        "All" to null,
+        "To do" to TaskStatus.TO_DO,
+        "In progress" to TaskStatus.IN_PROGRESS,
+        "Complete" to TaskStatus.COMPLETE,
+        "Blocked" to TaskStatus.BLOCKED,
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(width = 1.dp, color = colors.outline, shape = RoundedCornerShape(12.dp))
+            .background(color = colors.surface, shape = RoundedCornerShape(12.dp))
+            .horizontalScroll(rememberScrollState())
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        options.forEach { (label, status) ->
+            val isSelected = selected == status
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = if (isSelected) colors.primary else androidx.compose.ui.graphics.Color.Transparent,
+                        shape = RoundedCornerShape(8.dp),
+                    )
+                    .clickable { onSelect(status) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = label,
+                    color = if (isSelected) colors.onPrimary else colors.onSurfaceVariant,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MyTasksToggle(
+    active: Boolean,
+    onToggle: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .border(
+                width = 1.dp,
+                color = if (active) colors.primary else colors.outline,
+                shape = RoundedCornerShape(12.dp),
+            )
+            .background(
+                color = if (active) colors.primary else androidx.compose.ui.graphics.Color.Transparent,
+                shape = RoundedCornerShape(12.dp),
+            )
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        Text(
+            text = "My tasks",
+            color = if (active) colors.onPrimary else colors.onSurfaceVariant,
+            fontWeight = FontWeight.SemiBold,
+        )
     }
 }
 
