@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 
@@ -23,6 +24,7 @@ fun LoginScreen(
     viewModel: LoginViewModel
 ) {
     val state by viewModel.state.collectAsState()
+    val strings = LocalAppStrings.current
 
     Box(
         modifier = Modifier
@@ -48,7 +50,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
             Text(
-                text = "Sign in",
+                text = strings.text("Sign in"),
                 color = AppColorPalette.TextPrimary,
                 fontSize = 34.sp,
                 fontWeight = FontWeight.Bold
@@ -57,17 +59,17 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             LoginInput(
-                label = "Email",
+                label = strings.text("Email"),
                 value = state.email,
                 onValueChange = viewModel::onEmailChange,
-                placeholder = "Enter your email",
+                placeholder = strings.text("Enter your email"),
             )
 
             LoginInput(
-                label = "Password",
+                label = strings.text("Password"),
                 value = state.password,
                 onValueChange = viewModel::onPasswordChange,
-                placeholder = "Enter your password",
+                placeholder = strings.text("Enter your password"),
                 isPassword = true
             )
 
@@ -96,7 +98,7 @@ fun LoginScreen(
                     )
                 } else {
                     Text(
-                        text = "Login",
+                        text = strings.text("Login"),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )

@@ -40,6 +40,7 @@ import org.example.project.domain.employee.Employee
 import org.example.project.domain.project.Project
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.tasks.TaskListViewModel
 import org.example.project.presentation.theme.AppColorPalette
 
@@ -51,6 +52,7 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val strings = LocalAppStrings.current
     val todayIso = remember { currentIsoDate() }
     val dueTodayTasks = remember(uiState.tasks, todayIso) {
         uiState.tasks
@@ -77,7 +79,7 @@ fun DashboardScreen(
 
             uiState.error != null && uiState.tasks.isEmpty() -> {
                 Text(
-                    text = "Eroare: ${uiState.error}",
+                    text = strings.format("Error: {message}", "message" to (uiState.error ?: "")),
                     modifier = Modifier.align(Alignment.Center),
                     color = AppColorPalette.Error,
                 )
@@ -147,6 +149,8 @@ private fun DashboardMainColumn(
     onTaskClick: (Task) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val strings = LocalAppStrings.current
+
     Column(modifier = modifier) {
         Text(
             text = dateLabel,
@@ -158,7 +162,7 @@ private fun DashboardMainColumn(
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "Good evening, ${userName.firstName()}.",
+            text = strings.format("Good evening, {name}.", "name" to userName.firstName()),
             color = AppColorPalette.TextPrimary,
             fontSize = 34.sp,
             fontWeight = FontWeight.Bold,
@@ -169,7 +173,7 @@ private fun DashboardMainColumn(
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Due today",
+                text = strings.text("Due today"),
                 color = AppColorPalette.TextPrimarySoft,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -178,7 +182,10 @@ private fun DashboardMainColumn(
             Spacer(modifier = Modifier.width(10.dp))
 
             Text(
-                text = "${tasks.size} ${if (tasks.size == 1) "task" else "tasks"}",
+                text = strings.format(
+                    if (tasks.size == 1) "{count} task" else "{count} tasks",
+                    "count" to tasks.size.toString(),
+                ),
                 color = AppColorPalette.TextSecondary,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -275,11 +282,12 @@ private fun AlertDot(status: TaskStatus) {
 
 @Composable
 private fun DashboardStatusBadge(status: TaskStatus) {
+    val strings = LocalAppStrings.current
     val (label, statusColor) = when (status) {
-        TaskStatus.TO_DO -> "To do" to AppColorPalette.StatusToDo
-        TaskStatus.IN_PROGRESS -> "In progress" to AppColorPalette.StatusInProgress
-        TaskStatus.COMPLETE -> "Complete" to AppColorPalette.StatusComplete
-        TaskStatus.BLOCKED -> "Blocked" to AppColorPalette.StatusBlocked
+        TaskStatus.TO_DO -> strings.taskStatus(status) to AppColorPalette.StatusToDo
+        TaskStatus.IN_PROGRESS -> strings.taskStatus(status) to AppColorPalette.StatusInProgress
+        TaskStatus.COMPLETE -> strings.taskStatus(status) to AppColorPalette.StatusComplete
+        TaskStatus.BLOCKED -> strings.taskStatus(status) to AppColorPalette.StatusBlocked
     }
 
     Box(
@@ -311,7 +319,7 @@ private fun EmptyTodayState() {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "No tasks due today.",
+            text = LocalAppStrings.current.text("No tasks due today."),
             color = AppColorPalette.TextSecondary,
             fontWeight = FontWeight.SemiBold,
         )
@@ -323,10 +331,12 @@ private fun OnlinePeoplePanel(
     people: List<OnlinePerson>,
     modifier: Modifier = Modifier,
 ) {
+    val strings = LocalAppStrings.current
+
     Column(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Online now",
+                text = strings.text("Online now"),
                 color = AppColorPalette.TextPrimarySoft,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
@@ -335,7 +345,10 @@ private fun OnlinePeoplePanel(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "${people.size} ${if (people.size == 1) "person" else "people"}",
+                text = strings.format(
+                    if (people.size == 1) "{count} person" else "{count} people",
+                    "count" to people.size.toString(),
+                ),
                 color = AppColorPalette.TextSecondary,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
@@ -393,7 +406,7 @@ private fun OnlinePersonRow(person: OnlinePerson) {
             Spacer(modifier = Modifier.height(3.dp))
 
             Text(
-                text = "Available",
+                text = LocalAppStrings.current.text("Available"),
                 color = AppColorPalette.TextSecondary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -444,12 +457,14 @@ private fun weekdayName(year: Int, month: Int, day: Int): String {
     return weekdayNames[(index + 6) % 7]
 }
 
+@Composable
 private fun taskMeta(project: Project?, assignees: List<Employee>): String {
-    val projectName = project?.name ?: "No project"
+    val strings = LocalAppStrings.current
+    val projectName = project?.name ?: strings.text("No project")
     val assigneeText = assignees
         .take(3)
         .joinToString(" ") { initialsFor(it.name) }
-        .ifBlank { "Unassigned" }
+        .ifBlank { strings.text("Unassigned") }
 
     return "$projectName · $assigneeText"
 }

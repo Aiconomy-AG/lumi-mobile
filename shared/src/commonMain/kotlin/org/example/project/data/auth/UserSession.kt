@@ -9,5 +9,6 @@ data class UserSession(
     val role: UserRole,
     val phoneNumber: String,
     val status: String,
+    val languageFlag: String,
     val token: String
 )

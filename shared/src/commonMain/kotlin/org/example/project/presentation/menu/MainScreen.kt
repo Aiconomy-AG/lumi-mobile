@@ -43,10 +43,14 @@ import org.example.project.data.ApiConfig
 import org.example.project.data.accounts.UserApiService
 import org.example.project.data.createHttpClient
 import org.example.project.presentation.dashboard.DashboardScreen
+import org.example.project.presentation.localization.AppLanguage
+import org.example.project.presentation.localization.LocalAppStrings
 
 @Composable
 fun MainScreen(
     user: UserSession,
+    selectedLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
@@ -80,7 +84,7 @@ fun MainScreen(
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
     val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id) }
 
-    val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -115,7 +119,7 @@ fun MainScreen(
             contentWindowInsets = WindowInsets.safeDrawing,
             topBar = {
                 AppTopBar(
-                    title = selectedSection.title,
+                    title = strings.text(selectedSection.title),
                     user = user,
                     activeTimerViewModel = activeTimerViewModel,
                     onMenuClick = {
@@ -361,7 +365,7 @@ fun MainScreen(
 
                 else -> {
                     EmptySectionScreen(
-                        title = selectedSection.title,
+                        title = strings.text(selectedSection.title),
                         modifier = Modifier
                             .padding(paddingValues)
                             .background(AppColorPalette.Background)
@@ -372,6 +376,8 @@ fun MainScreen(
             if (showUserDetail) {
                 UserDetailDialog(
                     user = user,
+                    selectedLanguage = selectedLanguage,
+                    onLanguageSelected = onLanguageSelected,
                     onDismiss = { showUserDetail = false },
                     onLogout = onLogout,
                 )
