@@ -49,6 +49,7 @@ fun EditTaskScreen(
     var description by remember { mutableStateOf(initialTask.description) }
     var dueDate by remember { mutableStateOf(initialTask.dueDate) }
     var status by remember { mutableStateOf(initialTask.status) }
+    var selectedProjectId by remember { mutableStateOf(initialTask.projectId) }
 
     Column(
         modifier = modifier
@@ -70,6 +71,18 @@ fun EditTaskScreen(
         TaskInput(value = description, onValueChange = { description = it }, label = "Description")
         TaskInput(value = dueDate, onValueChange = { dueDate = it }, label = "Due date (YYYY-MM-DD)")
 
+        Text(text = "Project", color = colors.onSurfaceVariant)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        ProjectDropdown(
+            projects = uiState.allProjects,
+            selectedId = selectedProjectId,
+            onSelect = { selectedProjectId = it },
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text(text = "Status", color = colors.onSurfaceVariant)
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -85,17 +98,18 @@ fun EditTaskScreen(
 
         Button(
             onClick = {
-                if (title.isNotBlank() && dueDate.isNotBlank()) {
+                if (title.isNotBlank() && dueDate.isNotBlank() && selectedProjectId != 0) {
                     viewModel.updateTask(
                         title = title,
                         description = description,
                         dueDate = dueDate,
                         status = status,
+                        projectId = selectedProjectId,
                         onSuccess = onTaskUpdated,
                     )
                 }
             },
-            enabled = !uiState.isSaving,
+            enabled = !uiState.isSaving && selectedProjectId != 0,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = colors.primary,

@@ -58,7 +58,6 @@ fun AddTaskScreen(
     var selectedAssignees by remember { mutableStateOf(emptySet<Int>()) }
     var selectedProjectId by remember { mutableStateOf<Int?>(null) }
 
-    // When opened from a specific project, projectId is fixed; otherwise the user must pick one.
     val showProjectPicker = projectId == 0
     val effectiveProjectId = if (projectId != 0) projectId else selectedProjectId
 
@@ -222,7 +221,7 @@ private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> U
 }
 
 @Composable
-private fun ProjectDropdown(
+fun ProjectDropdown(
     projects: List<Project>,
     selectedId: Int?,
     onSelect: (Int) -> Unit,

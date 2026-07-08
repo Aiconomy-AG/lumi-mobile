@@ -34,6 +34,7 @@ data class TaskDetailUiState(
     val assignees: List<Employee> = emptyList(),
     val allEmployees: List<Employee> = emptyList(),
     val project: Project? = null,
+    val allProjects: List<Project> = emptyList(),
     val error: String? = null,
 )
 
@@ -77,6 +78,7 @@ class TaskDetailViewModel(
                 assignees = currentTask.assigneeIds.mapNotNull { id -> reference.employees.find { it.id == id } },
                 allEmployees = reference.employees,
                 project = reference.projects.find { it.id == currentTask.projectId },
+                allProjects = reference.projects,
                 error = historical.error ?: active.error ?: saving.second,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TaskDetailUiState(task = task, isLoading = true))
@@ -157,7 +159,7 @@ class TaskDetailViewModel(
         }
     }
 
-    fun updateTask(title: String, description: String, dueDate: String, status: TaskStatus, onSuccess: () -> Unit) {
+    fun updateTask(title: String, description: String, dueDate: String, status: TaskStatus, projectId: Int, onSuccess: () -> Unit) {
         viewModelScope.launch {
             savingState.value = true to null
             try {
@@ -167,6 +169,7 @@ class TaskDetailViewModel(
                     description = description,
                     dueDate = dueDate,
                     status = status,
+                    projectId = projectId,
                 )
                 currentTaskState.value = updated
                 savingState.value = false to null

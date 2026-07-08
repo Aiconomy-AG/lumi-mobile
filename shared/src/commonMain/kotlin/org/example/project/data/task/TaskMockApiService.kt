@@ -37,7 +37,7 @@ class TaskMockApiService : TaskApi {
         return newTask
     }
 
-    override suspend fun updateTask(id: Int, title: String, description: String, dueDate: String, status: TaskStatus): Task {
+    override suspend fun updateTask(id: Int, title: String, description: String, dueDate: String, status: TaskStatus, projectId: Int): Task {
         delay(300)
         val index = tasks.indexOfFirst { it.id == id }
         require(index >= 0) { "Task $id not found" }
@@ -46,6 +46,7 @@ class TaskMockApiService : TaskApi {
             description = description,
             dueDate = dueDate,
             status = status,
+            projectId = projectId,
         )
         tasks[index] = updated
         return updated
