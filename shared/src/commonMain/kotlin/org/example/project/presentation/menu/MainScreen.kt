@@ -198,8 +198,36 @@ fun MainScreen(
 
                 AppSection.PROJECTS -> {
                     val project = selectedProject
+                    val task = selectedTask
 
-                    if (project != null) {
+                    if (task != null) {
+                        val taskDetailViewModel = remember(task.id) {
+                            TaskDetailViewModel(
+                                task = task,
+                                employeeId = user.id,
+                                activeTimerViewModel = activeTimerViewModel,
+                                taskApi = taskApi,
+                                timeEntryApi = taskTimeEntryApi,
+                                employeeApi = employeeApi,
+                            )
+                        }
+
+                        if (showEditTaskScreen) {
+                            EditTaskScreen(
+                                viewModel = taskDetailViewModel,
+                                onTaskUpdated = { showEditTaskScreen = false },
+                                onBackClick = { showEditTaskScreen = false },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        } else {
+                            TaskDetailScreen(
+                                viewModel = taskDetailViewModel,
+                                onBack = { selectedTask = null },
+                                onEditClick = { showEditTaskScreen = true },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        }
+                    } else if (project != null) {
                         val projectDetailViewModel = remember(project.id) {
                             ProjectDetailViewModel(project = project, taskApi = taskApi)
                         }
@@ -207,6 +235,7 @@ fun MainScreen(
                             viewModel = projectDetailViewModel,
                             project = project,
                             onBack = { selectedProject = null },
+                            onTaskClick = { selectedTask = it },
                             modifier = Modifier.padding(paddingValues),
                         )
                     } else if (showAddProjectScreen) {
