@@ -21,8 +21,8 @@ import org.example.project.presentation.tasks.AddTaskScreen
 import org.example.project.presentation.tasks.EditTaskScreen
 import org.example.project.presentation.tasks.TaskDetailScreen
 import org.example.project.presentation.tasks.TaskDetailViewModel
-import feature.stock.data.MockStockRepository
 import feature.stock.presentation.AddProductScreen
+import org.example.project.data.ApiConfig
 import org.example.project.presentation.accounts.AddUserScreen
 import org.example.project.presentation.accounts.AdminScreen
 import org.example.project.presentation.accounts.AdminViewModel
@@ -39,9 +39,9 @@ import org.example.project.presentation.project.ProjectListViewModel
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
-import org.example.project.data.ApiConfig
 import org.example.project.data.accounts.UserApiService
 import org.example.project.data.createHttpClient
+import org.example.project.data.stock.StockApiService
 
 @Composable
 fun MainScreen(
@@ -57,20 +57,36 @@ fun MainScreen(
     val projectListViewModel = remember { ProjectListViewModel(api = projectApi) }
     var showAddProjectScreen by remember { mutableStateOf(false) }
     var selectedProject by remember { mutableStateOf<Project?>(null) }
-    val stockViewModel = remember { StockViewModel(MockStockRepository()) }
-    var showAddProductScreen by remember { mutableStateOf(false) }
 
-    val adminHttpClient = remember { createHttpClient() }
+    val appHttpClient = remember { createHttpClient() }
+
+    DisposableEffect(appHttpClient) {
+        onDispose {
+            appHttpClient.close()
+        }
+    }
+
     val adminViewModel = remember(user.token) {
         AdminViewModel(
             UserApiService(
-                client = adminHttpClient,
+                client = appHttpClient,
                 baseUrl = ApiConfig.BASE_URL,
                 token = user.token
             )
         )
     }
 
+    val stockViewModel = remember(user.token) {
+        StockViewModel(
+            StockApiService(
+                client = appHttpClient,
+                baseUrl = ApiConfig.BASE_URL,
+                token = user.token
+            )
+        )
+    }
+
+    var showAddProductScreen by remember { mutableStateOf(false) }
     var showAddUserScreen by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
     var showEditTaskScreen by remember { mutableStateOf(false) }

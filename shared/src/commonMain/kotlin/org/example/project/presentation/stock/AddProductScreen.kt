@@ -29,6 +29,7 @@ fun AddProductScreen(
     var weight by remember { mutableStateOf("") }
     var weightUnit by remember { mutableStateOf("") }
     var stockQuantity by remember { mutableStateOf("") }
+    var categoryId by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -93,20 +94,26 @@ fun AddProductScreen(
             label = "Stock quantity"
         )
 
+        ProductInput(
+            value = categoryId,
+            onValueChange = { categoryId = it },
+            label = "Category"
+        )
+
         Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
         Button(
             onClick = {
                 val priceValue = price.toDoubleOrNull()
-                val weightValue = weight.toDoubleOrNull()
                 val stockValue = stockQuantity.toIntOrNull()
+                val categoryIdValue = categoryId.toIntOrNull()
 
                 if (
                     name.isNotBlank() &&
                     sku.isNotBlank() &&
                     priceValue != null &&
-                    weightValue != null &&
-                    stockValue != null
+                    stockValue != null &&
+                    categoryIdValue != null
                 ) {
                     viewModel.addProduct(
                         name = name,
@@ -114,9 +121,8 @@ fun AddProductScreen(
                         imageUrl = imageUrl,
                         sku = sku,
                         price = priceValue,
-                        weight = weightValue,
-                        weightUnit = weightUnit,
-                        stockQuantity = stockValue
+                        stockQuantity = stockValue,
+                        categoryId = categoryIdValue
                     )
 
                     onProductAdded()

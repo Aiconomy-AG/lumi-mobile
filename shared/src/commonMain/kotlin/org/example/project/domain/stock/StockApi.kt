@@ -1,0 +1,22 @@
+package org.example.project.domain.stock
+
+interface StockApi {
+    suspend fun getProducts(): Result<List<Product>>
+
+    suspend fun updateStockQuantity(
+        productId: Int,
+        variantId: Int,
+        newQuantity: Int
+    ): Result<Product>
+
+    suspend fun deleteProductVariant(
+        productId: Int,
+        variantId: Int
+    ): Result<Unit>
+
+    suspend fun deleteProduct(productId: Int): Result<Unit>
+
+    suspend fun addProduct(product: Product): Result<Product>
+
+    suspend fun addProductVariant(productVariant: ProductVariant): Result<Product>
+}

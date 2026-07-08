@@ -1,15 +1,14 @@
 package org.example.project.presentation.stock
 
-import feature.stock.data.MockStockRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.example.project.data.stock.StockApiService
 import org.example.project.domain.stock.Product
-import org.example.project.domain.stock.ProductVariant
 
-class StockViewModel (private val repository: MockStockRepository) {
+class StockViewModel (private val repository: StockApiService) {
     private val viewModelScope = CoroutineScope(Dispatchers.Default)
 
     private val _state = MutableStateFlow(StockState())
@@ -23,12 +22,21 @@ class StockViewModel (private val repository: MockStockRepository) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
 
-            val products = repository.getProducts()
+            val result = repository.getProducts()
 
-            _state.value = _state.value.copy(
-                products = products,
-                isLoading = false
-            )
+            result
+                .onSuccess { products ->
+                    _state.value = _state.value.copy(
+                        products = products,
+                        isLoading = false,
+
+                    )
+                }
+                .onFailure { exception ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                    )
+                }
         }
     }
 
@@ -64,33 +72,20 @@ class StockViewModel (private val repository: MockStockRepository) {
         imageUrl: String,
         sku: String,
         price: Double,
-        weight: Double,
-        weightUnit: String,
-        stockQuantity: Int
+        stockQuantity: Int,
+        categoryId: Int
     ) {
         viewModelScope.launch {
-            val currentProducts = repository.getProducts()
-
-            val newProductId = (currentProducts.maxOfOrNull { it.id } ?: 0) + 1
-
             val product = Product(
-                id = newProductId,
                 name = name,
+                price = price,
                 description = description,
-                imageUrl = imageUrl,
-                variants = listOf(
-                    ProductVariant(
-                        id = newProductId,
-                        productId = newProductId,
-                        sku = sku,
-                        price = price,
-                        weight = weight,
-                        weightUnit = weightUnit,
-                        stockQuantity = stockQuantity
-                    )
-                )
+                image_url = imageUrl,
+                sku = sku,
+                stock_quantity = stockQuantity,
+                category_id = categoryId,
+                variants = null
             )
-
             repository.addProduct(product)
             loadProducts()
         }
