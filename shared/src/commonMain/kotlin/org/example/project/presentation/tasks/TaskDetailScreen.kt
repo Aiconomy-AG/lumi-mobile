@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,19 +24,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
 
 @Composable
 fun TaskDetailScreen(
-    task: Task,
     viewModel: TaskDetailViewModel,
     onBack: () -> Unit,
+    onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val task = uiState.task
     val colors = MaterialTheme.colorScheme
 
     Column(
@@ -51,7 +53,17 @@ fun TaskDetailScreen(
                 modifier = Modifier.clickable(onClick = onBack),
             )
             Text(text = " / ", color = colors.onSurfaceVariant)
-            Text(text = task.title, color = colors.onSurfaceVariant)
+            Text(
+                text = task.title,
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "Edit",
+                color = colors.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickable(onClick = onEditClick),
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -99,7 +111,11 @@ fun TaskDetailScreen(
 @Composable
 private fun StatusTabs(currentStatus: TaskStatus) {
     val colors = MaterialTheme.colorScheme
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         TaskStatus.entries.forEach { status ->
             val selected = status == currentStatus
             Box(
@@ -121,9 +137,10 @@ private fun StatusTabs(currentStatus: TaskStatus) {
 }
 
 private fun TaskStatus.label(): String = when (this) {
-    TaskStatus.TODO -> "To do"
+    TaskStatus.TO_DO -> "To do"
     TaskStatus.IN_PROGRESS -> "In progress"
-    TaskStatus.DONE -> "Done"
+    TaskStatus.COMPLETE -> "Complete"
+    TaskStatus.BLOCKED -> "Blocked"
 }
 
 @Composable
@@ -168,7 +185,8 @@ private fun TimeTrackingCard(
             Text(
                 text = if (isRunning) "■" else "▶",
                 color = colors.onPrimary,
-                fontSize = 18.sp,
+                fontSize = 24.sp,
+                textAlign = TextAlign.Center
             )
         }
     }

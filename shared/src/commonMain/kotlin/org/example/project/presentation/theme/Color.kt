@@ -35,9 +35,10 @@ object AppColorPalette {
     val AdminAvatarBackground = Color(0xFF4A2408)
     val EmployeeAvatarBackground = Color(0xFF123B34)
 
-    val StatusTodo = StatusColor(Color(0xFF3A3A3A), Color(0xFFE0E0E0))
+    val StatusToDo = StatusColor(Color(0xFF3A3A3A), Color(0xFFE0E0E0))
     val StatusInProgress = StatusColor(Color(0xFF4A2E00), Color(0xFFFFA726))
-    val StatusDone = StatusColor(Color(0xFF0F3D2E), Color(0xFF4CAF50))
+    val StatusComplete = StatusColor(Color(0xFF0F3D2E), Color(0xFF4CAF50))
+    val StatusBlocked = StatusColor(Color(0xFF3D0F0F), Color(0xFFFF5C5C))
 
     val AvatarPalette = listOf(
         Color(0xFFCB6E17),

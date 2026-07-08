@@ -11,8 +11,14 @@ import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
+import org.example.project.data.task.TaskMockApiService
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
+import org.example.project.presentation.tasks.ActiveTimerViewModel
+import org.example.project.presentation.tasks.AddTaskScreen
+import org.example.project.presentation.tasks.EditTaskScreen
+import org.example.project.presentation.tasks.TaskDetailScreen
+import org.example.project.presentation.tasks.TaskDetailViewModel
 import feature.stock.data.MockStockRepository
 import feature.stock.presentation.AddProductScreen
 import org.example.project.data.accounts.MockUserRepository
@@ -36,15 +42,19 @@ fun MainScreen(
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
-    val taskListViewModel = remember { TaskListViewModel() }
+    val taskApi = remember { TaskMockApiService() }
+    val taskListViewModel = remember { TaskListViewModel(api = taskApi) }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
     val adminViewModel = remember { AdminViewModel(MockUserRepository()) }
     var showAddUserScreen by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
+    var showEditTaskScreen by remember { mutableStateOf(false) }
+    val taskTimeEntryApi = remember { TaskTimeEntryMockApiService() }
     val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
+    val colors = MaterialTheme.colorScheme
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -64,6 +74,7 @@ fun MainScreen(
                     selectedSection = section
                     selectedTask = null
                     showAddTaskScreen = false
+                    showEditTaskScreen = false
                     showAddProductScreen = false
                     showAddUserScreen = false
                     scope.launch { drawerState.close() }
@@ -80,9 +91,13 @@ fun MainScreen(
                     title = selectedSection.title,
                     user = user,
                     activeTimerViewModel = activeTimerViewModel,
+                    onMenuClick = {
+                        scope.launch { drawerState.open() }
+                    },
                     onOpenActiveTask = { task ->
                         selectedSection = AppSection.TASKS
                         selectedTask = task
+                        showEditTaskScreen = false
                         showAddTaskScreen = false
                         showAddProductScreen = false
                         showAddUserScreen = false
@@ -100,6 +115,7 @@ fun MainScreen(
                         selectedSection = section
                         selectedTask = null
                         showAddTaskScreen = false
+                        showEditTaskScreen = false
                         showAddProductScreen = false
                         showAddUserScreen = false
                     }
@@ -135,21 +151,34 @@ fun MainScreen(
                             )
                         }
                     } else {
-                        TaskDetailScreen(
-                            task = task,
-                            viewModel = remember(task.id) {
-                                TaskDetailViewModel(
-                                    task = task,
-                                    employeeId = user.id,
-                                    activeTimerViewModel = activeTimerViewModel,
-                                    timeEntryApi = taskTimeEntryApi
-                                )
-                            },
-                            onBack = {
-                                selectedTask = null
-                            },
-                            modifier = Modifier.padding(paddingValues)
-                        )
+                        val taskDetailViewModel = remember(task.id) {
+                            TaskDetailViewModel(
+                                task = task,
+                                employeeId = user.id,
+                                activeTimerViewModel = activeTimerViewModel,
+                                taskApi = taskApi,
+                                timeEntryApi = taskTimeEntryApi,
+                            )
+                        }
+
+                        if (showEditTaskScreen) {
+                            EditTaskScreen(
+                                viewModel = taskDetailViewModel,
+                                onTaskUpdated = { showEditTaskScreen = false },
+                                onBackClick = { showEditTaskScreen = false },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        } else {
+                            TaskDetailScreen(
+                                viewModel = taskDetailViewModel,
+                                onBack = {
+                                    selectedTask = null
+                                    taskListViewModel.loadTasks()
+                                },
+                                onEditClick = { showEditTaskScreen = true },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        }
                     }
                 }
 
