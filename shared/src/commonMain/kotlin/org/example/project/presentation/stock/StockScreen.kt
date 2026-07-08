@@ -68,7 +68,8 @@ fun StockScreen(
         StockTable(
             products = pagedProducts,
             onDeleteProduct = viewModel::deleteProduct,
-            onUpdateQuantity = viewModel::updateStockQuantity
+            onUpdateQuantity = viewModel::updateStockQuantity,
+            onAddVariant = viewModel::addProductVariant
         )
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
@@ -160,8 +161,18 @@ private fun StockHeader(
 private fun StockTable(
     products: List<Product>,
     onDeleteProduct: (Int) -> Unit,
-    onUpdateQuantity: (Int, Int, Int) -> Unit
-) {
+    onUpdateQuantity: (Int, Int, Int) -> Unit,
+    onAddVariant: (
+        productId: Int,
+        sku: String,
+        name: String,
+        colour: String,
+        weight: Double?,
+        weightUnit: String,
+        price: Double,
+        stockQuantity: Int
+    ) -> Unit
+){
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
 
@@ -184,7 +195,7 @@ private fun StockTable(
                 .verticalScroll(verticalScrollState)
                 .horizontalScroll(horizontalScrollState)
                 .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 26.dp)
-                .width(846.dp)
+                .width(886.dp)
         ) {
             StockTableHeader()
 
@@ -192,7 +203,8 @@ private fun StockTable(
                 ProductStockRow(
                     product = product,
                     onDeleteProduct = onDeleteProduct,
-                    onUpdateQuantity = onUpdateQuantity
+                    onUpdateQuantity = onUpdateQuantity,
+                    onAddVariant = onAddVariant
                 )
             }
         }
@@ -212,8 +224,18 @@ private fun StockTable(
 private fun ProductStockRow(
     product: Product,
     onDeleteProduct: (Int) -> Unit,
-    onUpdateQuantity: (Int, Int, Int) -> Unit
-) {
+    onUpdateQuantity: (Int, Int, Int) -> Unit,
+    onAddVariant: (
+        productId: Int,
+        sku: String,
+        name: String,
+        colour: String,
+        weight: Double?,
+        weightUnit: String,
+        price: Double,
+        stockQuantity: Int
+    ) -> Unit
+){
     val productId = product.id ?: return
     val variants = product.variants.orEmpty()
 
@@ -255,6 +277,18 @@ private fun ProductStockRow(
                     newQuantity
                 )
             }
+        },
+        onAddVariant = { sku, name, colour, weight, weightUnit, price, stockQuantity ->
+            onAddVariant(
+                productId,
+                sku,
+                name,
+                colour,
+                weight,
+                weightUnit,
+                price,
+                stockQuantity
+            )
         }
     )
 }
@@ -307,7 +341,7 @@ private fun StockTableHeader() {
         TableHeaderCell("SKU", 150)
         TableHeaderCell("Stock", 120)
         TableHeaderCell("Price", 120)
-        TableHeaderCell("Actions", 76)
+        TableHeaderCell("Actions", 116)
     }
 }
 
@@ -323,9 +357,19 @@ private fun StockTableRow(
     price: Double,
     canEditQuantity: Boolean,
     onDeleteProduct: () -> Unit,
-    onUpdateQuantity: (Int) -> Unit
+    onUpdateQuantity: (Int) -> Unit,
+    onAddVariant: (
+        sku: String,
+        name: String,
+        colour: String,
+        weight: Double?,
+        weightUnit: String,
+        price: Double,
+        stockQuantity: Int
+    ) -> Unit
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
+    var showAddVariantDialog by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
@@ -358,7 +402,7 @@ private fun StockTableRow(
         TableCell("${price} lei", 120, AppColorPalette.TextPrimary)
 
         Row(
-            modifier = Modifier.width(76.dp)
+            modifier = Modifier.width(116.dp)
         ) {
             Button(
                 modifier = Modifier.size(AppDimensions.ActionButtonSize),
@@ -382,6 +426,18 @@ private fun StockTableRow(
             ) {
                 DeleteIcon(tint = AppColorPalette.OnPrimary)
             }
+            Spacer(modifier = Modifier.width(4.dp))
+
+            Button(
+                modifier = Modifier.size(AppDimensions.ActionButtonSize),
+                onClick = {
+                    showAddVariantDialog = true
+                },
+                colors = AppComponentDefaults.primaryButtonColors(),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text("+")
+            }
         }
     }
 
@@ -394,6 +450,28 @@ private fun StockTableRow(
             onSave = { newQuantity ->
                 onUpdateQuantity(newQuantity)
                 showEditDialog = false
+            }
+        )
+    }
+
+    if (showAddVariantDialog) {
+        AddVariantDialog(
+            defaultPrice = price,
+            onDismiss = {
+                showAddVariantDialog = false
+            },
+            onSave = { variantSku, variantName, colour, weight, weightUnit, variantPrice, variantStock ->
+                showAddVariantDialog = false
+
+                onAddVariant(
+                    variantSku,
+                    variantName,
+                    colour,
+                    weight,
+                    weightUnit,
+                    variantPrice,
+                    variantStock
+                )
             }
         )
     }
@@ -667,6 +745,139 @@ private fun EditQuantityDialog(
                 Text("Cancel", color = AppColorPalette.TextSecondary)
             }
         }
+    )
+}
+
+@Composable
+private fun AddVariantDialog(
+    defaultPrice: Double,
+    onDismiss: () -> Unit,
+    onSave: (
+        sku: String,
+        name: String,
+        colour: String,
+        weight: Double?,
+        weightUnit: String,
+        price: Double,
+        stockQuantity: Int
+    ) -> Unit
+) {
+    var sku by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var colour by remember { mutableStateOf("") }
+    var weight by remember { mutableStateOf("") }
+    var weightUnit by remember { mutableStateOf("g") }
+    var price by remember { mutableStateOf(defaultPrice.toString()) }
+    var stockQuantity by remember { mutableStateOf("0") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = AppColorPalette.Surface,
+        titleContentColor = AppColorPalette.TextPrimary,
+        textContentColor = AppColorPalette.TextPrimary,
+        title = {
+            Text("Add variant")
+        },
+        text = {
+            Column {
+                VariantInput(
+                    value = sku,
+                    onValueChange = { sku = it },
+                    label = "SKU"
+                )
+
+                VariantInput(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "Variant name"
+                )
+
+                VariantInput(
+                    value = colour,
+                    onValueChange = { colour = it },
+                    label = "Colour"
+                )
+
+                VariantInput(
+                    value = weight,
+                    onValueChange = { weight = it },
+                    label = "Weight"
+                )
+
+                VariantInput(
+                    value = weightUnit,
+                    onValueChange = { weightUnit = it },
+                    label = "Weight unit"
+                )
+
+                VariantInput(
+                    value = price,
+                    onValueChange = { price = it },
+                    label = "Price"
+                )
+
+                VariantInput(
+                    value = stockQuantity,
+                    onValueChange = { stockQuantity = it },
+                    label = "Stock quantity"
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val priceValue = price.trim().toDoubleOrNull()
+                    val stockValue = stockQuantity.trim().toIntOrNull()
+                    val weightValue = weight.trim().toDoubleOrNull()
+
+                    if (
+                        sku.isNotBlank() &&
+                        priceValue != null &&
+                        stockValue != null &&
+                        stockValue >= 0
+                    ) {
+                        onSave(
+                            sku,
+                            name,
+                            colour,
+                            weightValue,
+                            weightUnit,
+                            priceValue,
+                            stockValue
+                        )
+                    }
+                }
+            ) {
+                Text("Save", color = AppColorPalette.Primary)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text("Cancel", color = AppColorPalette.TextSecondary)
+            }
+        }
+    )
+}
+
+@Composable
+private fun VariantInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = {
+            Text(label)
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = AppDimensions.SmallSpacing),
+        singleLine = true,
+        colors = AppComponentDefaults.appTextFieldColors()
     )
 }
 

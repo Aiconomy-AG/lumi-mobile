@@ -77,8 +77,7 @@ class StockApiService(
                         imageUrl = product.image_url,
                         sku = product.sku,
                         stockQuantity = product.stock_quantity,
-                        categoryId = product.category_id,
-                        variants = product.variants?.map { it.toCreateVariantRequest() }
+                        categoryId = product.category_id
                     )
                 )
             }
@@ -293,14 +292,17 @@ private data class CreateProductRequest(
     val name: String,
     val price: Double,
     val description: String? = null,
+
     @SerialName("image_url")
     val imageUrl: String? = null,
+
     val sku: String? = null,
+
     @SerialName("stock_quantity")
     val stockQuantity: Int,
+
     @SerialName("category_id")
-    val categoryId: Int?=null,
-    val variants: List<CreateProductVariantRequest>? = null
+    val categoryId: Int?
 )
 
 @Serializable

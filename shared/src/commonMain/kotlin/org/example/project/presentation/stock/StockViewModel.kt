@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.example.project.data.stock.StockApiService
 import org.example.project.domain.stock.Product
+import org.example.project.domain.stock.ProductVariant
 
 class StockViewModel (private val repository: StockApiService) {
     private val viewModelScope = CoroutineScope(Dispatchers.Default)
@@ -98,15 +99,61 @@ class StockViewModel (private val repository: StockApiService) {
             val product = Product(
                 name = name,
                 price = price,
-                description = description,
-                image_url = imageUrl,
+                description = description.ifBlank { null },
+                image_url = imageUrl.ifBlank { null },
                 sku = sku,
                 stock_quantity = stockQuantity,
                 category_id = categoryId,
                 variants = null
             )
-            repository.addProduct(product)
-            loadProducts()
+
+            val result = repository.addProduct(product)
+
+            result
+                .onSuccess {
+                    loadProducts()
+                }
+                .onFailure { exception ->
+                    _state.value = _state.value.copy(
+                        errorMessage = exception.message ?: "Could not create product."
+                    )
+                }
+        }
+    }
+
+    fun addProductVariant(
+        productId: Int,
+        sku: String,
+        name: String,
+        colour: String,
+        weight: Double?,
+        weightUnit: String,
+        price: Double,
+        stockQuantity: Int
+    ) {
+        viewModelScope.launch {
+            val result = repository.addProductVariant(
+                ProductVariant(
+                    product_id = productId,
+                    sku = sku,
+                    name = name.ifBlank { null },
+                    colour = colour.ifBlank { null },
+                    weight = weight,
+                    weight_unit = weightUnit.ifBlank { null },
+                    price = price,
+                    stock_quantity = stockQuantity
+                )
+            )
+
+            result
+                .onSuccess {
+                    loadProducts()
+                }
+                .onFailure { exception ->
+                    _state.value = _state.value.copy(
+                        errorMessage = exception.message ?: "Could not create variant."
+                    )
+                }
         }
     }
 }

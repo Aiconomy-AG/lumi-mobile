@@ -30,8 +30,6 @@ fun AddProductScreen(
     var imageUrl by remember { mutableStateOf("") }
     var sku by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
-    var weightUnit by remember { mutableStateOf("") }
     var stockQuantity by remember { mutableStateOf("") }
     val state by viewModel.state.collectAsState()
     var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
@@ -79,18 +77,6 @@ fun AddProductScreen(
             value = price,
             onValueChange = { price = it },
             label = "Price"
-        )
-
-        ProductInput(
-            value = weight,
-            onValueChange = { weight = it },
-            label = "Weight"
-        )
-
-        ProductInput(
-            value = weightUnit,
-            onValueChange = { weightUnit = it },
-            label = "Weight unit"
         )
 
         ProductInput(
