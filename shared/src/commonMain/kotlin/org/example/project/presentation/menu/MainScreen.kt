@@ -12,6 +12,7 @@ import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import org.example.project.data.employee.EmployeeMockApiService
+import org.example.project.data.project.ProjectMockApiService
 import org.example.project.data.task.TaskMockApiService
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
@@ -49,8 +50,9 @@ fun MainScreen(
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     val taskApi = remember { TaskMockApiService() }
     val employeeApi = remember { EmployeeMockApiService() }
-    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, currentUserId = user.id) }
-    val projectListViewModel = remember { ProjectListViewModel() }
+    val projectApi = remember { ProjectMockApiService() }
+    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, projectApi = projectApi, currentUserId = user.id) }
+    val projectListViewModel = remember { ProjectListViewModel(api = projectApi) }
     var showAddProjectScreen by remember { mutableStateOf(false) }
     var selectedProject by remember { mutableStateOf<Project?>(null) }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
@@ -172,6 +174,7 @@ fun MainScreen(
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
                                 employeeApi = employeeApi,
+                                projectApi = projectApi,
                             )
                         }
 
@@ -209,6 +212,7 @@ fun MainScreen(
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
                                 employeeApi = employeeApi,
+                                projectApi = projectApi,
                             )
                         }
 

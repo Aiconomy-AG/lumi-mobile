@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -36,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.domain.employee.Employee
+import org.example.project.domain.project.Project
 import org.example.project.domain.task.TaskStatus
 
 @Composable
@@ -53,6 +56,11 @@ fun AddTaskScreen(
     var dueDate by remember { mutableStateOf("") }
     var status by remember { mutableStateOf(TaskStatus.TO_DO) }
     var selectedAssignees by remember { mutableStateOf(emptySet<Int>()) }
+    var selectedProjectId by remember { mutableStateOf<Int?>(null) }
+
+    // When opened from a specific project, projectId is fixed; otherwise the user must pick one.
+    val showProjectPicker = projectId == 0
+    val effectiveProjectId = if (projectId != 0) projectId else selectedProjectId
 
     Column(
         modifier = modifier
@@ -73,6 +81,20 @@ fun AddTaskScreen(
         TaskInput(value = title, onValueChange = { title = it }, label = "Title")
         TaskInput(value = description, onValueChange = { description = it }, label = "Description")
         TaskInput(value = dueDate, onValueChange = { dueDate = it }, label = "Due date (YYYY-MM-DD)")
+
+        if (showProjectPicker) {
+            Text(text = "Project", color = colors.onSurfaceVariant)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ProjectDropdown(
+                projects = uiState.projects,
+                selectedId = selectedProjectId,
+                onSelect = { selectedProjectId = it },
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         Text(text = "Status", color = colors.onSurfaceVariant)
 
@@ -102,18 +124,19 @@ fun AddTaskScreen(
 
         Button(
             onClick = {
-                if (title.isNotBlank() && dueDate.isNotBlank()) {
+                if (title.isNotBlank() && dueDate.isNotBlank() && effectiveProjectId != null) {
                     viewModel.addTask(
                         title = title,
                         description = description,
                         dueDate = dueDate,
                         status = status,
                         assigneeIds = selectedAssignees.toList(),
-                        projectId = projectId,
+                        projectId = effectiveProjectId,
                     )
                     onTaskAdded()
                 }
             },
+            enabled = title.isNotBlank() && dueDate.isNotBlank() && effectiveProjectId != null,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = colors.primary,
@@ -192,6 +215,50 @@ private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> U
                 Text(
                     text = status.label(),
                     color = if (isSelected) colors.onSurface else colors.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProjectDropdown(
+    projects: List<Project>,
+    selectedId: Int?,
+    onSelect: (Int) -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    var expanded by remember { mutableStateOf(false) }
+    val selectedName = projects.find { it.id == selectedId }?.name ?: "Select project"
+
+    Box {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(width = 1.dp, color = colors.outline, shape = RoundedCornerShape(8.dp))
+                .clickable { expanded = true }
+                .padding(horizontal = 14.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = selectedName,
+                color = if (selectedId == null) colors.onSurfaceVariant else colors.onBackground,
+                modifier = Modifier.weight(1f),
+            )
+            Text(text = "▾", color = colors.onSurfaceVariant)
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            projects.forEach { project ->
+                DropdownMenuItem(
+                    text = { Text(project.name) },
+                    onClick = {
+                        onSelect(project.id)
+                        expanded = false
+                    },
                 )
             }
         }
