@@ -29,7 +29,7 @@ class TaskApiService(
             setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate, projectId = projectId, assigneeIds = assigneeIds))
         }.body()
 
-    override suspend fun updateTask(id: Int, title: String, description: String, dueDate: String, status: TaskStatus): Task =
+    override suspend fun updateTask(id: Int, title: String, description: String, dueDate: String, status: TaskStatus, projectId: Int): Task =
         client.put("$baseUrl/tasks/$id") {
             contentType(ContentType.Application.Json)
             setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate))
