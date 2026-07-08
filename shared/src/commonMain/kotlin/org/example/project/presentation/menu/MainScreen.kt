@@ -41,7 +41,7 @@ fun MainScreen(
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     val taskApi = remember { TaskMockApiService() }
     val employeeApi = remember { EmployeeMockApiService() }
-    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi) }
+    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, currentUserId = user.id) }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
