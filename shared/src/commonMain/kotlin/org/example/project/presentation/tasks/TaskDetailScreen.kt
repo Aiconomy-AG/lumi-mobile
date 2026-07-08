@@ -3,6 +3,7 @@ package org.example.project.presentation.tasks
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,9 +16,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -46,10 +52,22 @@ fun TaskDetailScreen(
     val task = uiState.task
     val colors = MaterialTheme.colorScheme
 
+    var assigneePickerOpen by remember { mutableStateOf(false) }
+    var assigneeQuery by remember { mutableStateOf("") }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(colors.background)
+            .pointerInput(assigneePickerOpen) {
+                detectTapGestures(onTap = {
+                    if (assigneePickerOpen) {
+                        assigneePickerOpen = false
+                        assigneeQuery = ""
+                    }
+                })
+            }
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -119,6 +137,10 @@ fun TaskDetailScreen(
             allEmployees = uiState.allEmployees,
             onAssign = viewModel::assignUser,
             onUnassign = viewModel::unassignUser,
+            pickerOpen = assigneePickerOpen,
+            onSetPickerOpen = { assigneePickerOpen = it },
+            query = assigneeQuery,
+            onQueryChange = { assigneeQuery = it },
         )
     }
 }
@@ -129,9 +151,12 @@ private fun AssigneesSection(
     allEmployees: List<Employee>,
     onAssign: (Int) -> Unit,
     onUnassign: (Int) -> Unit,
+    pickerOpen: Boolean,
+    onSetPickerOpen: (Boolean) -> Unit,
+    query: String,
+    onQueryChange: (String) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    var pickerOpen by remember { mutableStateOf(false) }
     val assignedIds = assignees.map { it.id }.toSet()
 
     Text(text = "Assigned to", color = colors.onSurfaceVariant)
@@ -150,14 +175,20 @@ private fun AssigneesSection(
             modifier = Modifier
                 .background(color = Color.Transparent, shape = RoundedCornerShape(20.dp))
                 .border(width = 1.dp, color = colors.outline, shape = RoundedCornerShape(20.dp))
-                .clickable { pickerOpen = !pickerOpen }
-                .padding(horizontal = 14.dp, vertical = 8.dp),
+                .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp)
+                .clickable {
+                    val newOpen = !pickerOpen
+                    onSetPickerOpen(newOpen)
+                    if (!newOpen) onQueryChange("")
+                }
         ) {
-            Text(text = "+ Assign", color = colors.onSurfaceVariant, fontSize = 13.sp)
+            Text(text = "+ Assign", color = colors.onSurfaceVariant, fontSize = 14.sp)
         }
     }
 
     if (pickerOpen) {
+        val filtered = allEmployees.filter { it.name.contains(query, ignoreCase = true) }
+
         Spacer(modifier = Modifier.height(12.dp))
         Column(
             modifier = Modifier
@@ -166,26 +197,51 @@ private fun AssigneesSection(
                 .background(color = colors.surface, shape = MaterialTheme.shapes.medium)
                 .padding(8.dp),
         ) {
-            allEmployees.forEach { employee ->
-                val isAssigned = employee.id in assignedIds
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            if (isAssigned) onUnassign(employee.id) else onAssign(employee.id)
+            OutlinedTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = { Text("Search by name...", color = colors.onSurfaceVariant) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = colors.onBackground,
+                    unfocusedTextColor = colors.onBackground,
+                    cursorColor = colors.primary,
+                    focusedBorderColor = colors.primary,
+                    unfocusedBorderColor = colors.outline,
+                ),
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (filtered.isEmpty()) {
+                Text(
+                    text = "No users found",
+                    color = colors.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
+                )
+            } else {
+                filtered.forEach { employee ->
+                    val isAssigned = employee.id in assignedIds
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (isAssigned) onUnassign(employee.id) else onAssign(employee.id)
+                            }
+                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        EmployeeAvatar(employee = employee, size = 28.dp)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = employee.name,
+                            color = colors.onBackground,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (isAssigned) {
+                            Text(text = "✓", color = colors.primary, fontWeight = FontWeight.Bold)
                         }
-                        .padding(vertical = 8.dp, horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    EmployeeAvatar(employee = employee, size = 28.dp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = employee.name,
-                        color = colors.onBackground,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (isAssigned) {
-                        Text(text = "✓", color = colors.primary, fontWeight = FontWeight.Bold)
                     }
                 }
             }
