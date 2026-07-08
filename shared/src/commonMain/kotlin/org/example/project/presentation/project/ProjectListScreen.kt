@@ -174,7 +174,7 @@ private fun ProjectRow(project: Project, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ProjectStatusBadge(status: ProjectStatus, modifier: Modifier = Modifier) {
+fun ProjectStatusBadge(status: ProjectStatus, modifier: Modifier = Modifier) {
     val (label, statusColor) = when (status) {
         ProjectStatus.TO_DO -> "To do" to AppColorPalette.StatusToDo
         ProjectStatus.IN_PROGRESS -> "In progress" to AppColorPalette.StatusInProgress

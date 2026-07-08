@@ -8,12 +8,12 @@ import org.example.project.domain.task.TaskStatus
 class TaskMockApiService : TaskApi {
 
     private val tasks = mutableListOf(
-        Task(id = 1, title = "Configurare Ktor", description = "Adaugă clientul HTTP în proiect", status = TaskStatus.COMPLETE, createdBy = 1, dueDate = "2026-07-01", assigneeIds = listOf(1, 3)),
-        Task(id = 2, title = "Ecran listă produse", description = "Construiește UI-ul pentru catalogul de produse", status = TaskStatus.IN_PROGRESS, createdBy = 2, dueDate = "2026-07-10", assigneeIds = listOf(2, 4)),
-        Task(id = 3, title = "Autentificare", description = "Implementează login și înregistrare", status = TaskStatus.TO_DO, createdBy = 1, dueDate = "2026-07-15", assigneeIds = listOf(1)),
-        Task(id = 4, title = "Coș de cumpărături", description = "Adaugă/elimină produse din coș", status = TaskStatus.BLOCKED, createdBy = 2, dueDate = "2026-07-18", assigneeIds = emptyList()),
-        Task(id = 5, title = "Notificări push", description = "Integrare notificări pentru comenzi", status = TaskStatus.TO_DO, createdBy = 5, dueDate = "2026-07-22", assigneeIds = listOf(5, 6)),
-        Task(id = 6, title = "Testare plăți", description = "Testează fluxul de plată end-to-end", status = TaskStatus.IN_PROGRESS, createdBy = 1, dueDate = "2026-07-25", assigneeIds = listOf(3)),
+        Task(id = 1, title = "Configurare Ktor", description = "Adaugă clientul HTTP în proiect", status = TaskStatus.COMPLETE, createdBy = 1, dueDate = "2026-07-01", projectId = 1, assigneeIds = listOf(1, 3)),
+        Task(id = 2, title = "Ecran listă produse", description = "Construiește UI-ul pentru catalogul de produse", status = TaskStatus.IN_PROGRESS, createdBy = 2, dueDate = "2026-07-10", projectId = 1, assigneeIds = listOf(2, 4)),
+        Task(id = 3, title = "Autentificare", description = "Implementează login și înregistrare", status = TaskStatus.TO_DO, createdBy = 1, dueDate = "2026-07-15", projectId = 2, assigneeIds = listOf(1)),
+        Task(id = 4, title = "Coș de cumpărături", description = "Adaugă/elimină produse din coș", status = TaskStatus.BLOCKED, createdBy = 2, dueDate = "2026-07-18", projectId = 1, assigneeIds = emptyList()),
+        Task(id = 5, title = "Notificări push", description = "Integrare notificări pentru comenzi", status = TaskStatus.TO_DO, createdBy = 5, dueDate = "2026-07-22", projectId = 3, assigneeIds = listOf(5, 6)),
+        Task(id = 6, title = "Testare plăți", description = "Testează fluxul de plată end-to-end", status = TaskStatus.IN_PROGRESS, createdBy = 1, dueDate = "2026-07-25", projectId = 2, assigneeIds = listOf(3)),
     )
 
     override suspend fun getTasks(): List<Task> {

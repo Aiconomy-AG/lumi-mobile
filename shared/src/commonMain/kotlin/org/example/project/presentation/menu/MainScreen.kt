@@ -30,7 +30,10 @@ import org.example.project.presentation.stock.StockScreen
 import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
+import org.example.project.domain.project.Project
 import org.example.project.presentation.project.AddProjectScreen
+import org.example.project.presentation.project.ProjectDetailScreen
+import org.example.project.presentation.project.ProjectDetailViewModel
 import org.example.project.presentation.project.ProjectListScreen
 import org.example.project.presentation.project.ProjectListViewModel
 import org.example.project.presentation.theme.AppColorPalette
@@ -49,6 +52,7 @@ fun MainScreen(
     val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, currentUserId = user.id) }
     val projectListViewModel = remember { ProjectListViewModel() }
     var showAddProjectScreen by remember { mutableStateOf(false) }
+    var selectedProject by remember { mutableStateOf<Project?>(null) }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
@@ -79,6 +83,7 @@ fun MainScreen(
                 onSectionSelected = { section ->
                     selectedSection = section
                     selectedTask = null
+                    selectedProject = null
                     showAddTaskScreen = false
                     showEditTaskScreen = false
                     showAddProjectScreen = false
@@ -104,6 +109,7 @@ fun MainScreen(
                     onOpenActiveTask = { task ->
                         selectedSection = AppSection.TASKS
                         selectedTask = task
+                        selectedProject = null
                         showEditTaskScreen = false
                         showAddTaskScreen = false
                         showAddProjectScreen = false
@@ -119,6 +125,7 @@ fun MainScreen(
                     onSectionSelected = { section ->
                         selectedSection = section
                         selectedTask = null
+                        selectedProject = null
                         showAddTaskScreen = false
                         showEditTaskScreen = false
                         showAddProjectScreen = false
@@ -190,7 +197,19 @@ fun MainScreen(
                 }
 
                 AppSection.PROJECTS -> {
-                    if (showAddProjectScreen) {
+                    val project = selectedProject
+
+                    if (project != null) {
+                        val projectDetailViewModel = remember(project.id) {
+                            ProjectDetailViewModel(project = project, taskApi = taskApi)
+                        }
+                        ProjectDetailScreen(
+                            viewModel = projectDetailViewModel,
+                            project = project,
+                            onBack = { selectedProject = null },
+                            modifier = Modifier.padding(paddingValues),
+                        )
+                    } else if (showAddProjectScreen) {
                         AddProjectScreen(
                             viewModel = projectListViewModel,
                             onProjectAdded = { showAddProjectScreen = false },
@@ -200,6 +219,7 @@ fun MainScreen(
                     } else {
                         ProjectListScreen(
                             viewModel = projectListViewModel,
+                            onProjectClick = { selectedProject = it },
                             onAddProjectClick = { showAddProjectScreen = true },
                             modifier = Modifier.padding(paddingValues),
                         )
