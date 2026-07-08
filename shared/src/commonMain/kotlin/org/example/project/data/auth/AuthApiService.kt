@@ -40,6 +40,8 @@ class AuthApiService(
                     name = loginResponse.user.name,
                     email = loginResponse.user.email,
                     role = loginResponse.user.role.toUserRole(),
+                    phoneNumber = loginResponse.user.phoneNumber ?: "",
+                    status = loginResponse.user.status ?: "",
                     token = loginResponse.token
                 )
             )
