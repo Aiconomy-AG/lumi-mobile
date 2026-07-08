@@ -5,14 +5,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import org.example.project.data.accounts.MockUserRepository
-import org.example.project.data.accounts.User
+import org.example.project.data.accounts.UserRepository
 import org.example.project.domain.accounts.AccountRole
 
 class AdminViewModel(
-    private val repository: MockUserRepository
+    private val repository: UserRepository
 ) {
-    private val viewModelScope = CoroutineScope(Dispatchers.Default)
+    private val viewModelScope = CoroutineScope(Dispatchers.Main)
 
     private val _state = MutableStateFlow(AdminState())
     val state: StateFlow<AdminState> = _state
@@ -23,14 +22,21 @@ class AdminViewModel(
 
     fun loadUsers() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
+            _state.value = _state.value.copy(isLoading = true, errorMessage = null)
 
-            val users = repository.getUsers()
-
-            _state.value = _state.value.copy(
-                users = users,
-                isLoading = false
-            )
+            repository.getUsers()
+                .onSuccess { users ->
+                    _state.value = _state.value.copy(
+                        users = users,
+                        isLoading = false
+                    )
+                }
+                .onFailure { error ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Could not load users."
+                    )
+                }
         }
     }
 
@@ -38,36 +44,60 @@ class AdminViewModel(
         _state.value = _state.value.copy(searchQuery = query)
     }
 
-    fun deleteUser(userId: Int) {
+    fun clearError() {
+        _state.value = _state.value.copy(errorMessage = null)
+    }
+
+    fun setUserActive(userId: Int, isActive: Boolean) {
         viewModelScope.launch {
-            repository.deleteUser(userId)
-            loadUsers()
+            _state.value = _state.value.copy(isLoading = true, errorMessage = null)
+
+            repository.setUserActive(userId = userId, isActive = isActive)
+                .onSuccess {
+                    loadUsers()
+                }
+                .onFailure { error ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Could not update user."
+                    )
+                }
         }
     }
 
     fun addUser(
-        fullName: String,
+        name: String,
         email: String,
         password: String,
-        team: String,
-        role: AccountRole
+        phoneNumber: String,
+        languageFlag: String,
+        role: AccountRole,
+        onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
-            val currentUsers = repository.getUsers()
-            val newId = (currentUsers.maxOfOrNull { it.id } ?: 0) + 1
+            _state.value = _state.value.copy(isSaving = true, errorMessage = null)
 
-            val newUser = User(
-                id = newId,
-                fullName = fullName,
+            repository.addUser(
+                name = name,
                 email = email,
                 password = password,
-                team = team,
                 role = role,
-                isOnline = false
+                phoneNumber = phoneNumber,
+                languageFlag = languageFlag,
+                status = "offline",
+                isActive = true
             )
-
-            repository.addUser(newUser)
-            loadUsers()
+                .onSuccess {
+                    _state.value = _state.value.copy(isSaving = false)
+                    loadUsers()
+                    onSuccess()
+                }
+                .onFailure { error ->
+                    _state.value = _state.value.copy(
+                        isSaving = false,
+                        errorMessage = error.message ?: "Could not create user."
+                    )
+                }
         }
     }
 }

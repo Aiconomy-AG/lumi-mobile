@@ -4,15 +4,16 @@ import org.example.project.domain.accounts.AccountRole
 
 data class User(
     val id: Int,
-    val fullName: String,
+    val name: String,
     val email: String,
-    val password: String,
-    val team: String,
     val role: AccountRole,
-    val isOnline: Boolean
+    val status: String,
+    val phoneNumber: String,
+    val languageFlag: String,
+    val isActive: Boolean
 ) {
     val initials: String
-        get() = fullName
+        get() = name
             .split(" ")
             .mapNotNull { it.firstOrNull()?.uppercase() }
             .take(2)
