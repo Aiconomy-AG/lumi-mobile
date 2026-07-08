@@ -30,6 +30,8 @@ import org.example.project.presentation.stock.StockScreen
 import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
+import org.example.project.presentation.project.ProjectListScreen
+import org.example.project.presentation.project.ProjectListViewModel
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
@@ -44,6 +46,7 @@ fun MainScreen(
     val taskApi = remember { TaskMockApiService() }
     val employeeApi = remember { EmployeeMockApiService() }
     val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, currentUserId = user.id) }
+    val projectListViewModel = remember { ProjectListViewModel() }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
@@ -179,6 +182,13 @@ fun MainScreen(
                             )
                         }
                     }
+                }
+
+                AppSection.PROJECTS -> {
+                    ProjectListScreen(
+                        viewModel = projectListViewModel,
+                        modifier = Modifier.padding(paddingValues),
+                    )
                 }
 
                 AppSection.STOCK -> {
