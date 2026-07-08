@@ -41,6 +41,8 @@ import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
 import org.example.project.data.ApiConfig
 import org.example.project.data.accounts.UserApiService
+import org.example.project.data.task.TaskApiService
+import org.example.project.data.project.ProjectApiService
 import org.example.project.data.createHttpClient
 
 @Composable
@@ -50,9 +52,14 @@ fun MainScreen(
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
-    val taskApi = remember { TaskMockApiService() }
+    val apiHttpClient = remember { createHttpClient() }
+    val taskApi = remember(user.token) {
+        TaskApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
     val employeeApi = remember { EmployeeMockApiService() }
-    val projectApi = remember { ProjectMockApiService() }
+    val projectApi = remember(user.token) {
+        ProjectApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
     val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, projectApi = projectApi, currentUserId = user.id) }
     val projectListViewModel = remember { ProjectListViewModel(api = projectApi) }
     var showAddProjectScreen by remember { mutableStateOf(false) }
