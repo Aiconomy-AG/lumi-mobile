@@ -1,10 +1,21 @@
 package org.example.project.domain.task
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 enum class TaskStatus {
-    TODO, IN_PROGRESS, DONE
+    @SerialName("to_do")
+    TO_DO,
+
+    @SerialName("in_progress")
+    IN_PROGRESS,
+
+    @SerialName("complete")
+    COMPLETE,
+
+    @SerialName("blocked")
+    BLOCKED,
 }
 
 @Serializable

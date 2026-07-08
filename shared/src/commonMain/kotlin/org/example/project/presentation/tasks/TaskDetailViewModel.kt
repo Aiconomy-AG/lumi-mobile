@@ -11,15 +11,20 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.example.project.data.task.TaskMockApiService
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
+import org.example.project.domain.task.TaskApi
+import org.example.project.domain.task.TaskStatus
 import org.example.project.domain.tasktimeentry.TaskTimeEntryApi
 
 data class TaskDetailUiState(
+    val task: Task,
     val isLoading: Boolean = false,
     val isTimerRunning: Boolean = false,
     val elapsedSeconds: Int = 0,
     val taskTotalSeconds: Int = 0,
+    val isSaving: Boolean = false,
     val error: String? = null,
 )
 
@@ -34,22 +39,27 @@ class TaskDetailViewModel(
     private val task: Task,
     private val employeeId: Int,
     private val activeTimerViewModel: ActiveTimerViewModel,
+    private val taskApi: TaskApi = TaskMockApiService(),
     private val timeEntryApi: TaskTimeEntryApi = TaskTimeEntryMockApiService(),
 ) : ViewModel() {
 
     private val historicalState = MutableStateFlow(HistoricalTotals())
+    private val currentTaskState = MutableStateFlow(task)
+    private val savingState = MutableStateFlow(false to null as String?)
 
     val uiState: StateFlow<TaskDetailUiState> =
-        combine(historicalState, activeTimerViewModel.uiState) { historical, active ->
+        combine(historicalState, activeTimerViewModel.uiState, currentTaskState, savingState) { historical, active, currentTask, saving ->
             val isMine = active.activeTask?.id == task.id
             TaskDetailUiState(
+                task = currentTask,
                 isLoading = historical.isLoading,
                 isTimerRunning = isMine,
                 elapsedSeconds = historical.myPastSeconds + if (isMine) active.elapsedSeconds else 0,
                 taskTotalSeconds = historical.taskTotalPastSeconds + if (isMine) active.elapsedSeconds else 0,
-                error = historical.error ?: active.error,
+                isSaving = saving.first,
+                error = historical.error ?: active.error ?: saving.second,
             )
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TaskDetailUiState(isLoading = true))
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TaskDetailUiState(task = task, isLoading = true))
 
     init {
         loadEntries()
@@ -91,6 +101,26 @@ class TaskDetailViewModel(
             activeTimerViewModel.stop()
         } else {
             activeTimerViewModel.start(task)
+        }
+    }
+
+    fun updateTask(title: String, description: String, dueDate: String, status: TaskStatus, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            savingState.value = true to null
+            try {
+                val updated = taskApi.updateTask(
+                    id = task.id,
+                    title = title,
+                    description = description,
+                    dueDate = dueDate,
+                    status = status,
+                )
+                currentTaskState.value = updated
+                savingState.value = false to null
+                onSuccess()
+            } catch (e: Exception) {
+                savingState.value = false to e.message
+            }
         }
     }
 }

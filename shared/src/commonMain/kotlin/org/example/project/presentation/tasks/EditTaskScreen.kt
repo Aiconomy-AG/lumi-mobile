@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +22,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,17 +35,20 @@ import androidx.compose.ui.unit.sp
 import org.example.project.domain.task.TaskStatus
 
 @Composable
-fun AddTaskScreen(
-    viewModel: TaskListViewModel,
-    onTaskAdded: () -> Unit,
+fun EditTaskScreen(
+    viewModel: TaskDetailViewModel,
+    onTaskUpdated: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var dueDate by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf(TaskStatus.TO_DO) }
+    val uiState by viewModel.uiState.collectAsState()
+    val initialTask = uiState.task
+
+    var title by remember { mutableStateOf(initialTask.title) }
+    var description by remember { mutableStateOf(initialTask.description) }
+    var dueDate by remember { mutableStateOf(initialTask.dueDate) }
+    var status by remember { mutableStateOf(initialTask.status) }
 
     Column(
         modifier = modifier
@@ -55,7 +58,7 @@ fun AddTaskScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Add task",
+            text = "Edit task",
             color = colors.onBackground,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
@@ -73,27 +76,33 @@ fun AddTaskScreen(
 
         TaskStatusPicker(selected = status, onSelected = { status = it })
 
+        uiState.error?.let { message ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = message, color = colors.error)
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
                 if (title.isNotBlank() && dueDate.isNotBlank()) {
-                    viewModel.addTask(
+                    viewModel.updateTask(
                         title = title,
                         description = description,
                         dueDate = dueDate,
                         status = status,
+                        onSuccess = onTaskUpdated,
                     )
-                    onTaskAdded()
                 }
             },
+            enabled = !uiState.isSaving,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = colors.primary,
                 contentColor = colors.onPrimary
             )
         ) {
-            Text("Save task")
+            Text(if (uiState.isSaving) "Saving..." else "Save changes")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
