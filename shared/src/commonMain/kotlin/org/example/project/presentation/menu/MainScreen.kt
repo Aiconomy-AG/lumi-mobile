@@ -31,6 +31,8 @@ import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
 import org.example.project.presentation.theme.AppColorPalette
+import org.example.project.presentation.chat.ChatScreen
+import org.example.project.presentation.chat.ChatViewModel
 
 @Composable
 fun MainScreen(
@@ -51,6 +53,8 @@ fun MainScreen(
     var showEditTaskScreen by remember { mutableStateOf(false) }
     val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
+    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id) }
+
     val colors = MaterialTheme.colorScheme
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -198,6 +202,14 @@ fun MainScreen(
                             )
                         }
                     }
+                }
+
+                AppSection.CHAT -> {
+                    ChatScreen(
+                        viewModel = chatViewModel,
+                        currentEmployeeId = user.id,
+                        modifier = Modifier.padding(paddingValues),
+                    )
                 }
 
                 AppSection.ADMIN -> {
