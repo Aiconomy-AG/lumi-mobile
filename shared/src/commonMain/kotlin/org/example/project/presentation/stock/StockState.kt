@@ -1,12 +1,14 @@
 package org.example.project.presentation.stock
 
+import org.example.project.data.stock.Category
 import org.example.project.domain.stock.Product
 
 data class StockState(
     val products: List<Product> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val categories: List<Category> = emptyList()
 ) {
     val filteredProducts: List<Product>
         get() {

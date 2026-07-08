@@ -20,10 +20,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.Product
+import org.example.project.domain.stock.ProductVariant
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 
 @Composable
 fun StockScreen(
@@ -181,34 +184,16 @@ private fun StockTable(
                 .verticalScroll(verticalScrollState)
                 .horizontalScroll(horizontalScrollState)
                 .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 26.dp)
-                .width(686.dp)
+                .width(846.dp)
         ) {
             StockTableHeader()
 
             products.forEach { product ->
-                val variant = product.variants?.firstOrNull()
-
-                val productId = product.id
-                val variantId = variant?.id
-
-                if (variant != null && productId != null && variantId != null) {
-                    StockTableRow(
-                        product = product,
-                        sku = variant.sku,
-                        stockQuantity = variant.stock_quantity ?: 0,
-                        price = variant.price ?: product.price,
-                        onDeleteProduct = {
-                            onDeleteProduct(productId)
-                        },
-                        onUpdateQuantity = { newQuantity ->
-                            onUpdateQuantity(
-                                productId,
-                                variantId,
-                                newQuantity
-                            )
-                        }
-                    )
-                }
+                ProductStockRow(
+                    product = product,
+                    onDeleteProduct = onDeleteProduct,
+                    onUpdateQuantity = onUpdateQuantity
+                )
             }
         }
 
@@ -222,6 +207,57 @@ private fun StockTable(
     }
 }
 
+
+@Composable
+private fun ProductStockRow(
+    product: Product,
+    onDeleteProduct: (Int) -> Unit,
+    onUpdateQuantity: (Int, Int, Int) -> Unit
+) {
+    val productId = product.id ?: return
+    val variants = product.variants.orEmpty()
+
+    var selectedVariantId by remember(product.id) {
+        mutableStateOf(variants.firstOrNull()?.id)
+    }
+
+    val selectedVariant = variants.firstOrNull { variant ->
+        variant.id == selectedVariantId
+    } ?: variants.firstOrNull()
+
+    val displayedVariantLabel = selectedVariant?.let { variantLabel(it) } ?: "-"
+    val displayedSku = selectedVariant?.sku ?: product.sku ?: "-"
+    val displayedStockQuantity = selectedVariant?.stock_quantity ?: product.stock_quantity
+    val displayedPrice = selectedVariant?.price ?: product.price
+
+    StockTableRow(
+        product = product,
+        variants = variants,
+        selectedVariant = selectedVariant,
+        onVariantSelected = { variant ->
+            selectedVariantId = variant.id
+        },
+        variantLabel = displayedVariantLabel,
+        sku = displayedSku,
+        stockQuantity = displayedStockQuantity,
+        price = displayedPrice,
+        canEditQuantity = selectedVariant?.id != null,
+        onDeleteProduct = {
+            onDeleteProduct(productId)
+        },
+        onUpdateQuantity = { newQuantity ->
+            val variantId = selectedVariant?.id
+
+            if (variantId != null) {
+                onUpdateQuantity(
+                    productId,
+                    variantId,
+                    newQuantity
+                )
+            }
+        }
+    )
+}
 @Composable
 private fun HorizontalScrollBar(
     scrollValue: Int,
@@ -267,6 +303,7 @@ private fun StockTableHeader() {
         modifier = Modifier.fillMaxWidth()
     ) {
         TableHeaderCell("Product", 220)
+        TableHeaderCell("Variant", 160)
         TableHeaderCell("SKU", 150)
         TableHeaderCell("Stock", 120)
         TableHeaderCell("Price", 120)
@@ -277,9 +314,14 @@ private fun StockTableHeader() {
 @Composable
 private fun StockTableRow(
     product: Product,
+    variants: List<ProductVariant>,
+    selectedVariant: ProductVariant?,
+    onVariantSelected: (ProductVariant) -> Unit,
+    variantLabel: String,
     sku: String,
     stockQuantity: Int,
     price: Double,
+    canEditQuantity: Boolean,
     onDeleteProduct: () -> Unit,
     onUpdateQuantity: (Int) -> Unit
 ) {
@@ -292,6 +334,15 @@ private fun StockTableRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         TableCell(product.name, 220, AppColorPalette.TextPrimary)
+
+        VariantCell(
+            variants = variants,
+            selectedVariant = selectedVariant,
+            fallbackLabel = variantLabel,
+            onVariantSelected = onVariantSelected,
+            width = 160
+        )
+
         TableCell(sku, 150, AppColorPalette.TextSecondary)
 
         TableCell(
@@ -311,6 +362,7 @@ private fun StockTableRow(
         ) {
             Button(
                 modifier = Modifier.size(AppDimensions.ActionButtonSize),
+                enabled = canEditQuantity,
                 onClick = {
                     showEditDialog = true
                 },
@@ -345,6 +397,85 @@ private fun StockTableRow(
             }
         )
     }
+}
+
+@Composable
+private fun VariantCell(
+    variants: List<ProductVariant>,
+    selectedVariant: ProductVariant?,
+    fallbackLabel: String,
+    onVariantSelected: (ProductVariant) -> Unit,
+    width: Int
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier.width(width.dp)
+    ) {
+        if (variants.size <= 1) {
+            Text(
+                text = fallbackLabel,
+                color = AppColorPalette.TextSecondary
+            )
+        } else {
+            Button(
+                onClick = {
+                    expanded = true
+                },
+                colors = AppComponentDefaults.paginationButtonColors(),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+            ) {
+                Text(
+                    text = selectedVariant?.let { variant ->
+                        variantLabel(variant)
+                    } ?: fallbackLabel,
+                    color = AppColorPalette.TextPrimary
+                )
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = {
+                    expanded = false
+                }
+            ) {
+                variants.forEach { variant ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(variantLabel(variant))
+                        },
+                        onClick = {
+                            onVariantSelected(variant)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun variantLabel(variant: ProductVariant): String {
+    val parts = mutableListOf<String>()
+
+    if (!variant.colour.isNullOrBlank()) {
+        parts.add(variant.colour)
+    }
+
+    if (variant.weight != null && variant.weight > 0) {
+        val unit = variant.weight_unit.orEmpty()
+        parts.add("${variant.weight}${unit}")
+    }
+
+    if (parts.isNotEmpty()) {
+        return parts.joinToString(" / ")
+    }
+
+    if (!variant.name.isNullOrBlank()) {
+        return variant.name
+    }
+
+    return "Default variant"
 }
 
 @Composable
