@@ -3,13 +3,13 @@ package org.example.project.presentation.auth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.example.project.data.auth.MockAuthRepository
-import org.example.project.data.auth.UserSession
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.example.project.data.auth.AuthRepository
+import org.example.project.data.auth.UserSession
 
 class LoginViewModel(
-    private val authRepository: MockAuthRepository,
+    private val authRepository: AuthRepository,
     private val onLoginSuccess: (UserSession) -> Unit
 ) {
     private val viewModelScope = CoroutineScope(Dispatchers.Main)
@@ -29,7 +29,7 @@ class LoginViewModel(
         val currentState = _state.value
 
         if (currentState.email.isBlank() || currentState.password.isBlank()) {
-            _state.value = currentState.copy(errorMessage = "Please enter email or password")
+            _state.value = currentState.copy(errorMessage = "Please enter email and password")
             return
         }
 
