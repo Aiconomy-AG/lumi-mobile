@@ -218,7 +218,7 @@ private fun MyTasksToggle(
 }
 
 @Composable
-private fun TaskList(tasks: List<Task>, onTaskClick: (Task) -> Unit) {
+fun TaskList(tasks: List<Task>, onTaskClick: (Task) -> Unit = {}) {
     val colors = MaterialTheme.colorScheme
 
     Box(

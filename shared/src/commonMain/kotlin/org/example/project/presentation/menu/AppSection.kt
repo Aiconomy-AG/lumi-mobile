@@ -6,6 +6,7 @@ enum class AppSection(
 ) {
     DASHBOARD("Dashboard"),
     TASKS("Tasks"),
+    PROJECTS("Projects"),
     CHAT("Chat"),
     STOCK("Stock"),
     ADMIN("Admin", adminOnly = true)

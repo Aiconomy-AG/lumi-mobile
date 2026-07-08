@@ -7,9 +7,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.example.project.data.employee.EmployeeMockApiService
+import org.example.project.data.project.ProjectMockApiService
 import org.example.project.data.task.TaskMockApiService
 import org.example.project.domain.employee.Employee
 import org.example.project.domain.employee.EmployeeApi
+import org.example.project.domain.project.Project
+import org.example.project.domain.project.ProjectApi
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskApi
 import org.example.project.domain.task.TaskStatus
@@ -18,6 +21,7 @@ data class TaskListUiState(
     val isLoading: Boolean = false,
     val tasks: List<Task> = emptyList(),
     val employees: List<Employee> = emptyList(),
+    val projects: List<Project> = emptyList(),
     val searchQuery: String = "",
     val statusFilter: TaskStatus? = null,
     val onlyMine: Boolean = false,
@@ -35,6 +39,7 @@ data class TaskListUiState(
 class TaskListViewModel(
     private val api: TaskApi = TaskMockApiService(),
     private val employeeApi: EmployeeApi = EmployeeMockApiService(),
+    private val projectApi: ProjectApi = ProjectMockApiService(),
     private val currentUserId: Int = 0,
 ) : ViewModel() {
 
@@ -44,6 +49,7 @@ class TaskListViewModel(
     init {
         loadTasks()
         loadEmployees()
+        loadProjects()
     }
 
     fun loadTasks() {
@@ -69,6 +75,17 @@ class TaskListViewModel(
         }
     }
 
+    private fun loadProjects() {
+        viewModelScope.launch {
+            try {
+                val projects = projectApi.getProjects()
+                _uiState.value = _uiState.value.copy(projects = projects)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
+            }
+        }
+    }
+
     fun onSearchQueryChanged(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
     }
@@ -81,10 +98,10 @@ class TaskListViewModel(
         _uiState.value = _uiState.value.copy(onlyMine = !_uiState.value.onlyMine)
     }
 
-    fun addTask(title: String, description: String, dueDate: String, status: TaskStatus, assigneeIds: List<Int>) {
+    fun addTask(title: String, description: String, dueDate: String, status: TaskStatus, assigneeIds: List<Int>, projectId: Int = 0) {
         viewModelScope.launch {
             try {
-                api.createTask(title = title, description = description, dueDate = dueDate, status = status, assigneeIds = assigneeIds)
+                api.createTask(title = title, description = description, dueDate = dueDate, status = status, projectId = projectId, assigneeIds = assigneeIds)
                 loadTasks()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)

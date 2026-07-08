@@ -1,0 +1,195 @@
+ package org.example.project.presentation.project
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import org.example.project.domain.project.Project
+import org.example.project.domain.project.ProjectStatus
+import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.theme.AppColorPalette
+
+@Composable
+fun ProjectListScreen(
+    viewModel: ProjectListViewModel,
+    onProjectClick: (Project) -> Unit = {},
+    onAddProjectClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val uiState by viewModel.uiState.collectAsState()
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .padding(16.dp),
+    ) {
+        when {
+            uiState.isLoading && uiState.projects.isEmpty() -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+            uiState.error != null -> {
+                Text(
+                    text = "Eroare: ${uiState.error}",
+                    modifier = Modifier.align(Alignment.Center),
+                    color = colors.error,
+                )
+            }
+            else -> {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    OutlinedTextField(
+                        value = uiState.searchQuery,
+                        onValueChange = viewModel::onSearchQueryChanged,
+                        placeholder = {
+                            Text("Search projects...", color = colors.onSurfaceVariant)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = colors.onBackground,
+                            unfocusedTextColor = colors.onBackground,
+                            cursorColor = colors.primary,
+                            focusedBorderColor = colors.primary,
+                            unfocusedBorderColor = colors.outline,
+                            focusedLabelColor = colors.primary,
+                            unfocusedLabelColor = colors.onSurfaceVariant,
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = onAddProjectClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.primary,
+                            contentColor = colors.onPrimary,
+                        )
+                    ) {
+                        Text("+ Add project")
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ProjectList(projects = uiState.filteredProjects, onProjectClick = onProjectClick)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProjectList(projects: List<Project>, onProjectClick: (Project) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(width = 1.dp, color = colors.outline, shape = RoundedCornerShape(16.dp))
+            .background(color = colors.surface, shape = RoundedCornerShape(16.dp))
+            .padding(12.dp),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            ProjectListHeader()
+            HorizontalDivider(color = colors.outline, modifier = Modifier.padding(vertical = 8.dp))
+            projects.forEachIndexed { index, project ->
+                ProjectRow(project, onClick = { onProjectClick(project) })
+                if (index != projects.lastIndex) {
+                    HorizontalDivider(color = colors.outlineVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProjectListHeader() {
+    val colors = MaterialTheme.colorScheme
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(text = "Project", modifier = Modifier.weight(1.7f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = "Status", modifier = Modifier.weight(1.3f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = "Deadline", modifier = Modifier.weight(1f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun ProjectRow(project: Project, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = project.name,
+            modifier = Modifier.weight(1.7f),
+            style = MaterialTheme.typography.bodyLarge,
+            color = colors.onBackground,
+        )
+        Box(
+            modifier = Modifier.weight(1.3f),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            ProjectStatusBadge(status = project.status)
+        }
+        Text(
+            text = project.deadline,
+            modifier = Modifier.weight(1f),
+            color = colors.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+fun ProjectStatusBadge(status: ProjectStatus, modifier: Modifier = Modifier) {
+    val (label, statusColor) = when (status) {
+        ProjectStatus.TO_DO -> "To do" to AppColorPalette.StatusToDo
+        ProjectStatus.IN_PROGRESS -> "In progress" to AppColorPalette.StatusInProgress
+        ProjectStatus.COMPLETE -> "Complete" to AppColorPalette.StatusComplete
+        ProjectStatus.BLOCKED -> "Blocked" to AppColorPalette.StatusBlocked
+    }
+    Box(
+        modifier = modifier
+            .background(color = statusColor.background, shape = MaterialTheme.shapes.extraSmall),
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            color = statusColor.content,
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+}

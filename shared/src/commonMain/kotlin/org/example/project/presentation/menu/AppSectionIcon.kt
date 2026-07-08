@@ -90,6 +90,38 @@ fun AppSectionIcon(
                 )
             }
 
+            AppSection.PROJECTS -> {
+                // Folder outline
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.16f, h * 0.28f),
+                    end = Offset(w * 0.44f, h * 0.28f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.44f, h * 0.28f),
+                    end = Offset(w * 0.52f, h * 0.38f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.16f, h * 0.28f),
+                    size = Size(w * 0.68f, h * 0.44f),
+                    cornerRadius = CornerRadius(w * 0.08f),
+                    style = stroke
+                )
+                drawLine(
+                    color = tint.copy(alpha = 0.6f),
+                    start = Offset(w * 0.3f, h * 0.5f),
+                    end = Offset(w * 0.7f, h * 0.5f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+            }
+
             AppSection.CHAT -> {
                 drawRoundRect(
                     color = tint,

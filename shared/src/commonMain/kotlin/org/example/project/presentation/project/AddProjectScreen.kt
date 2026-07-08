@@ -1,4 +1,4 @@
-package org.example.project.presentation.tasks
+package org.example.project.presentation.project
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,7 +22,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,24 +31,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.domain.task.TaskStatus
+import org.example.project.domain.project.ProjectStatus
 
 @Composable
-fun EditTaskScreen(
-    viewModel: TaskDetailViewModel,
-    onTaskUpdated: () -> Unit,
+fun AddProjectScreen(
+    viewModel: ProjectListViewModel,
+    onProjectAdded: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    val uiState by viewModel.uiState.collectAsState()
-    val initialTask = uiState.task
-
-    var title by remember { mutableStateOf(initialTask.title) }
-    var description by remember { mutableStateOf(initialTask.description) }
-    var dueDate by remember { mutableStateOf(initialTask.dueDate) }
-    var status by remember { mutableStateOf(initialTask.status) }
-    var selectedProjectId by remember { mutableStateOf(initialTask.projectId) }
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var deadline by remember { mutableStateOf("") }
+    var status by remember { mutableStateOf(ProjectStatus.TO_DO) }
 
     Column(
         modifier = modifier
@@ -59,7 +54,7 @@ fun EditTaskScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Edit task",
+            text = "Add project",
             color = colors.onBackground,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
@@ -67,56 +62,37 @@ fun EditTaskScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TaskInput(value = title, onValueChange = { title = it }, label = "Title")
-        TaskInput(value = description, onValueChange = { description = it }, label = "Description")
-        TaskInput(value = dueDate, onValueChange = { dueDate = it }, label = "Due date (YYYY-MM-DD)")
-
-        Text(text = "Project", color = colors.onSurfaceVariant)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ProjectDropdown(
-            projects = uiState.allProjects,
-            selectedId = selectedProjectId,
-            onSelect = { selectedProjectId = it },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
+        ProjectInput(value = name, onValueChange = { name = it }, label = "Name")
+        ProjectInput(value = description, onValueChange = { description = it }, label = "Description")
+        ProjectInput(value = deadline, onValueChange = { deadline = it }, label = "Deadline (YYYY-MM-DD)")
 
         Text(text = "Status", color = colors.onSurfaceVariant)
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TaskStatusPicker(selected = status, onSelected = { status = it })
-
-        uiState.error?.let { message ->
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = message, color = colors.error)
-        }
+        ProjectStatusPicker(selected = status, onSelected = { status = it })
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
-                if (title.isNotBlank() && dueDate.isNotBlank() && selectedProjectId != 0) {
-                    viewModel.updateTask(
-                        title = title,
+                if (name.isNotBlank() && deadline.isNotBlank()) {
+                    viewModel.addProject(
+                        name = name,
                         description = description,
-                        dueDate = dueDate,
+                        deadline = deadline,
                         status = status,
-                        projectId = selectedProjectId,
-                        onSuccess = onTaskUpdated,
                     )
+                    onProjectAdded()
                 }
             },
-            enabled = !uiState.isSaving && selectedProjectId != 0,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = colors.primary,
                 contentColor = colors.onPrimary
             )
         ) {
-            Text(if (uiState.isSaving) "Saving..." else "Save changes")
+            Text("Save project")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -135,7 +111,7 @@ fun EditTaskScreen(
 }
 
 @Composable
-private fun TaskInput(
+private fun ProjectInput(
     value: String,
     onValueChange: (String) -> Unit,
     label: String
@@ -165,7 +141,7 @@ private fun TaskInput(
 }
 
 @Composable
-private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> Unit) {
+private fun ProjectStatusPicker(selected: ProjectStatus, onSelected: (ProjectStatus) -> Unit) {
     val colors = MaterialTheme.colorScheme
 
     FlowRow(
@@ -173,7 +149,7 @@ private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> U
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        TaskStatus.entries.forEach { status ->
+        ProjectStatus.entries.forEach { status ->
             val isSelected = status == selected
             Box(
                 modifier = Modifier
@@ -194,9 +170,9 @@ private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> U
     }
 }
 
-private fun TaskStatus.label(): String = when (this) {
-    TaskStatus.TO_DO -> "To do"
-    TaskStatus.IN_PROGRESS -> "In progress"
-    TaskStatus.COMPLETE -> "Complete"
-    TaskStatus.BLOCKED -> "Blocked"
+private fun ProjectStatus.label(): String = when (this) {
+    ProjectStatus.TO_DO -> "To do"
+    ProjectStatus.IN_PROGRESS -> "In progress"
+    ProjectStatus.COMPLETE -> "Complete"
+    ProjectStatus.BLOCKED -> "Blocked"
 }
