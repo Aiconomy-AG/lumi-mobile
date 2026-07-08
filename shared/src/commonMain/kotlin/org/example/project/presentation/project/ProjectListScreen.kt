@@ -1,4 +1,4 @@
- package org.example.project.presentation.project
+package org.example.project.presentation.project
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,7 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.project.Project
 import org.example.project.domain.project.ProjectStatus
-import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
@@ -41,6 +41,7 @@ fun ProjectListScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
 
     Box(
@@ -55,7 +56,7 @@ fun ProjectListScreen(
             }
             uiState.error != null -> {
                 Text(
-                    text = "Eroare: ${uiState.error}",
+                    text = strings.format("Error: {message}", "message" to (uiState.error ?: "")),
                     modifier = Modifier.align(Alignment.Center),
                     color = colors.error,
                 )
@@ -66,7 +67,7 @@ fun ProjectListScreen(
                         value = uiState.searchQuery,
                         onValueChange = viewModel::onSearchQueryChanged,
                         placeholder = {
-                            Text("Search projects...", color = colors.onSurfaceVariant)
+                            Text(strings.text("Search projects..."), color = colors.onSurfaceVariant)
                         },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -91,7 +92,7 @@ fun ProjectListScreen(
                             contentColor = colors.onPrimary,
                         )
                     ) {
-                        Text("+ Add project")
+                        Text(strings.text("+ Add project"))
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -130,14 +131,15 @@ private fun ProjectList(projects: List<Project>, onProjectClick: (Project) -> Un
 @Composable
 private fun ProjectListHeader() {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = "Project", modifier = Modifier.weight(1.7f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
-        Text(text = "Status", modifier = Modifier.weight(1.3f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
-        Text(text = "Deadline", modifier = Modifier.weight(1f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = strings.text("Project"), modifier = Modifier.weight(1.7f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = strings.text("Status"), modifier = Modifier.weight(1.3f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = strings.text("Deadline"), modifier = Modifier.weight(1f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -175,11 +177,12 @@ private fun ProjectRow(project: Project, onClick: () -> Unit) {
 
 @Composable
 fun ProjectStatusBadge(status: ProjectStatus, modifier: Modifier = Modifier) {
+    val strings = LocalAppStrings.current
     val (label, statusColor) = when (status) {
-        ProjectStatus.TO_DO -> "To do" to AppColorPalette.StatusToDo
-        ProjectStatus.IN_PROGRESS -> "In progress" to AppColorPalette.StatusInProgress
-        ProjectStatus.COMPLETE -> "Complete" to AppColorPalette.StatusComplete
-        ProjectStatus.BLOCKED -> "Blocked" to AppColorPalette.StatusBlocked
+        ProjectStatus.TO_DO -> strings.projectStatus(status) to AppColorPalette.StatusToDo
+        ProjectStatus.IN_PROGRESS -> strings.projectStatus(status) to AppColorPalette.StatusInProgress
+        ProjectStatus.COMPLETE -> strings.projectStatus(status) to AppColorPalette.StatusComplete
+        ProjectStatus.BLOCKED -> strings.projectStatus(status) to AppColorPalette.StatusBlocked
     }
     Box(
         modifier = modifier

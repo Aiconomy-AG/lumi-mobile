@@ -27,14 +27,20 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
+import org.example.project.presentation.localization.AppLanguage
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun UserDetailDialog(
     user: UserSession,
+    selectedLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
     onDismiss: () -> Unit,
     onLogout: () -> Unit,
 ) {
+    val strings = LocalAppStrings.current
+
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -81,10 +87,17 @@ fun UserDetailDialog(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            InfoRow(label = "Email", value = user.email)
-            InfoRow(label = "Phone", value = user.phoneNumber.ifBlank { "—" })
+            InfoRow(label = strings.text("Email"), value = user.email)
+            InfoRow(label = strings.text("Phone"), value = user.phoneNumber.ifBlank { "-" })
             StatusRow(status = user.status)
-            InfoRow(label = "Role", value = user.role.label())
+            InfoRow(label = strings.text("Role"), value = strings.userRole(user.role))
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            LanguageSelector(
+                selectedLanguage = selectedLanguage,
+                onLanguageSelected = onLanguageSelected,
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -92,17 +105,17 @@ fun UserDetailDialog(
                 onClick = onLogout,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AppColorPalette.Error,
+                    containerColor = AppColorPalette.LogoutDanger,
                     contentColor = AppColorPalette.TextPrimary,
                 ),
             ) {
-                Text("Log out")
+                Text(strings.text("Log out"))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Close",
+                text = strings.text("Close"),
                 color = AppColorPalette.TextSecondary,
                 fontSize = 14.sp,
                 modifier = Modifier
@@ -115,13 +128,15 @@ fun UserDetailDialog(
 
 @Composable
 private fun RoleBadge(role: UserRole) {
+    val strings = LocalAppStrings.current
+
     Box(
         modifier = Modifier
             .background(color = AppColorPalette.SelectionOverlay, shape = RoundedCornerShape(20.dp))
             .padding(horizontal = 14.dp, vertical = 6.dp),
     ) {
         Text(
-            text = role.label(),
+            text = strings.userRole(role),
             color = AppColorPalette.Primary,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
@@ -131,9 +146,10 @@ private fun RoleBadge(role: UserRole) {
 
 @Composable
 private fun StatusRow(status: String) {
+    val strings = LocalAppStrings.current
     val isAvailable = status.equals("available", ignoreCase = true)
     val statusColor = if (isAvailable) AppColorPalette.Success else AppColorPalette.Error
-    val label = status.ifBlank { "—" }.replaceFirstChar { it.uppercase() }
+    val label = if (status.isBlank()) "-" else strings.accountStatus(status)
 
     Row(
         modifier = Modifier
@@ -142,7 +158,7 @@ private fun StatusRow(status: String) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = "Status", color = AppColorPalette.TextSecondary, fontSize = 14.sp)
+        Text(text = strings.text("Status"), color = AppColorPalette.TextSecondary, fontSize = 14.sp)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
@@ -161,6 +177,49 @@ private fun StatusRow(status: String) {
 }
 
 @Composable
+private fun LanguageSelector(
+    selectedLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
+) {
+    val strings = LocalAppStrings.current
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = strings.text("Language"),
+            color = AppColorPalette.TextSecondary,
+            fontSize = 14.sp,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AppLanguage.values().forEach { language ->
+                val selected = language == selectedLanguage
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(
+                            color = if (selected) AppColorPalette.Primary else AppColorPalette.SurfaceVariant,
+                            shape = RoundedCornerShape(10.dp),
+                        )
+                        .clickable { onLanguageSelected(language) }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = language.label,
+                        color = if (selected) AppColorPalette.OnPrimary else AppColorPalette.TextPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun InfoRow(label: String, value: String) {
     Row(
         modifier = Modifier
@@ -171,9 +230,4 @@ private fun InfoRow(label: String, value: String) {
         Text(text = label, color = AppColorPalette.TextSecondary, fontSize = 14.sp)
         Text(text = value, color = AppColorPalette.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
-}
-
-private fun UserRole.label(): String = when (this) {
-    UserRole.ADMIN -> "Administrator"
-    UserRole.EMPLOYEE -> "Employee"
 }
