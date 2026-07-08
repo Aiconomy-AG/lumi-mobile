@@ -1,5 +1,7 @@
 package org.example.project.domain.stock
 
+import org.example.project.data.stock.Category
+
 interface StockApi {
     suspend fun getProducts(): Result<List<Product>>
 
@@ -19,4 +21,6 @@ interface StockApi {
     suspend fun addProduct(product: Product): Result<Product>
 
     suspend fun addProductVariant(productVariant: ProductVariant): Result<Product>
+
+    suspend fun getCategories(): Result<List<Category>>
 }

@@ -18,6 +18,8 @@ import kotlinx.serialization.json.Json
 import org.example.project.domain.stock.Product
 import org.example.project.domain.stock.ProductVariant
 import org.example.project.domain.stock.StockApi
+import io.ktor.client.request.parameter
+import io.ktor.client.request.patch
 
 class StockApiService(
     private val client: HttpClient,
@@ -27,19 +29,36 @@ class StockApiService(
 
     override suspend fun getProducts(): Result<List<Product>> {
         return try {
-            val response = client.get("$baseUrl/v1/admin/products") {
-                bearerAuth()
-            }
+            val allProducts = mutableListOf<Product>()
 
-            val responseText = response.bodyAsText()
+            var page = 1
+            var lastPage = 1
 
-            if (response.status != HttpStatusCode.OK) {
-                return Result.failure(Exception(parseErrorMessage(responseText)))
-            }
+            do {
+                val response = client.get("$baseUrl/v1/admin/products") {
+                    bearerAuth()
+                    parameter("page", page)
+                    parameter("per_page", 100)
+                }
 
-            val body = stockJson.decodeFromString<ProductListResponse>(responseText)
+                val responseText = response.bodyAsText()
 
-            Result.success(body.data.map { it.toProduct() })
+                if (response.status != HttpStatusCode.OK) {
+                    return Result.failure(Exception(parseErrorMessage(responseText)))
+                }
+
+                val body = stockJson.decodeFromString<ProductListResponse>(responseText)
+
+                allProducts.addAll(
+                    body.data.map { it.toProduct() }
+                )
+
+                lastPage = body.meta?.lastPage ?: page
+                page++
+
+            } while (page <= lastPage)
+
+            Result.success(allProducts)
         } catch (exception: Exception) {
             Result.failure(Exception(exception.message ?: "Could not load products."))
         }
@@ -106,10 +125,14 @@ class StockApiService(
         newQuantity: Int
     ): Result<Product> {
         return try {
-            val response = client.put("$baseUrl/v1/admin/products/$productId/variants/$variantId") {
+            val response = client.patch("$baseUrl/v1/admin/products/$productId/variants/$variantId") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
-                setBody(UpdateProductVariantStockRequest(newStock = newQuantity))
+                setBody(
+                    UpdateProductVariantStockRequest(
+                        stockQuantity = newQuantity
+                    )
+                )
             }
 
             val responseText = response.bodyAsText()
@@ -165,6 +188,37 @@ class StockApiService(
         }
     }
 
+    override suspend fun getCategories(): Result<List<Category>> {
+        return try {
+            val response = client.get("$baseUrl/v1/shop/categories") {
+                bearerAuth()
+            }
+
+            val responseText = response.bodyAsText()
+
+            if (response.status != HttpStatusCode.OK) {
+                return Result.failure(Exception(parseErrorMessage(responseText)))
+            }
+
+            val categories = try {
+                stockJson.decodeFromString<CategoryListResponse>(responseText)
+                    .data
+                    .map { it.toCategory() }
+            } catch (exception: Exception) {
+                stockJson.decodeFromString<List<CategoryDto>>(responseText)
+                    .map { it.toCategory() }
+            }
+
+            Result.success(
+                categories.filter { category ->
+                    category.name in shopifyCategoryNames
+                }
+            )
+        } catch (exception: Exception) {
+            Result.failure(Exception(exception.message ?: "Could not load categories."))
+        }
+    }
+
     private fun io.ktor.client.request.HttpRequestBuilder.bearerAuth() {
         header(HttpHeaders.Authorization, "Bearer $token")
         header(HttpHeaders.Accept, "application/json")
@@ -181,7 +235,22 @@ class StockApiService(
 
 @Serializable
 private data class ProductListResponse(
-    val data: List<ProductDto>
+    val data: List<ProductDto>,
+    val meta: PaginationMeta? = null
+)
+
+@Serializable
+private data class PaginationMeta(
+    @SerialName("current_page")
+    val currentPage: Int,
+
+    @SerialName("last_page")
+    val lastPage: Int,
+
+    @SerialName("per_page")
+    val perPage: Int,
+
+    val total: Int
 )
 
 @Serializable
@@ -250,7 +319,8 @@ private data class CreateProductVariantRequest(
 
 @Serializable
 private data class UpdateProductVariantStockRequest(
-    val newStock: Int
+    @SerialName("stock_quantity")
+    val stockQuantity: Int
 )
 
 @Serializable
@@ -299,7 +369,9 @@ private data class ProductVariantDto(
     val stockQuantity: Int? = null,
 
     val options: List<String>? = null
-) {
+)
+
+{
     fun toProductVariant(): ProductVariant {
         return ProductVariant(
             id = id,
@@ -315,3 +387,39 @@ private data class ProductVariantDto(
         )
     }
 }
+
+@Serializable
+data class Category(
+    val id: Int,
+    val name: String
+)
+
+@Serializable
+private data class CategoryListResponse(
+    val data: List<CategoryDto>
+)
+
+@Serializable
+private data class CategoryDto(
+    val id: Int,
+    val name: String
+) {
+    fun toCategory(): Category {
+        return Category(
+            id = id,
+            name = name
+        )
+    }
+}
+
+private val shopifyCategoryNames = setOf(
+    "Baden",
+    "Duschen",
+    "Geschenke & Co.",
+    "Gesicht",
+    "Haare",
+    "Körper",
+    "Düfte",
+    "New",
+    "Limited"
+)

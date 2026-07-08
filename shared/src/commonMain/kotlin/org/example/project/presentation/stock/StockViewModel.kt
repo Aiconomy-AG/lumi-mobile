@@ -16,6 +16,7 @@ class StockViewModel (private val repository: StockApiService) {
 
     init {
         loadProducts()
+        loadCategories()
     }
 
     fun loadProducts() {
@@ -35,6 +36,24 @@ class StockViewModel (private val repository: StockApiService) {
                 .onFailure { exception ->
                     _state.value = _state.value.copy(
                         isLoading = false,
+                    )
+                }
+        }
+    }
+
+    fun loadCategories() {
+        viewModelScope.launch {
+            val result = repository.getCategories()
+
+            result
+                .onSuccess { categories ->
+                    _state.value = _state.value.copy(
+                        categories = categories
+                    )
+                }
+                .onFailure { exception ->
+                    _state.value = _state.value.copy(
+                        errorMessage = exception.message ?: "Could not load categories."
                     )
                 }
         }
