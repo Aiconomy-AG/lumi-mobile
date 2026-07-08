@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import org.example.project.data.project.ProjectMockApiService
 import org.example.project.domain.project.Project
 import org.example.project.domain.project.ProjectApi
+import org.example.project.domain.project.ProjectStatus
 
 data class ProjectListUiState(
     val isLoading: Boolean = false,
@@ -49,5 +50,16 @@ class ProjectListViewModel(
 
     fun onSearchQueryChanged(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
+    }
+
+    fun addProject(name: String, description: String, deadline: String, status: ProjectStatus) {
+        viewModelScope.launch {
+            try {
+                api.createProject(name = name, description = description, deadline = deadline, status = status)
+                loadProjects()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
+            }
+        }
     }
 }

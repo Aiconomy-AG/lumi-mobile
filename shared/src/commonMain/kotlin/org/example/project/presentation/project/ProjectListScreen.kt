@@ -1,4 +1,4 @@
-package org.example.project.presentation.project
+ package org.example.project.presentation.project
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -28,12 +30,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.project.Project
 import org.example.project.domain.project.ProjectStatus
+import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
 fun ProjectListScreen(
     viewModel: ProjectListViewModel,
     onProjectClick: (Project) -> Unit = {},
+    onAddProjectClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -76,6 +80,19 @@ fun ProjectListScreen(
                             unfocusedLabelColor = colors.onSurfaceVariant,
                         )
                     )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = onAddProjectClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.primary,
+                            contentColor = colors.onPrimary,
+                        )
+                    ) {
+                        Text("+ Add project")
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -159,10 +176,10 @@ private fun ProjectRow(project: Project, onClick: () -> Unit) {
 @Composable
 private fun ProjectStatusBadge(status: ProjectStatus, modifier: Modifier = Modifier) {
     val (label, statusColor) = when (status) {
-        ProjectStatus.TO_DO -> "Planning" to AppColorPalette.StatusToDo
-        ProjectStatus.IN_PROGRESS -> "Active" to AppColorPalette.StatusInProgress
-        ProjectStatus.BLOCKED -> "On hold" to AppColorPalette.StatusBlocked
-        ProjectStatus.COMPLETE -> "Completed" to AppColorPalette.StatusComplete
+        ProjectStatus.TO_DO -> "To do" to AppColorPalette.StatusToDo
+        ProjectStatus.IN_PROGRESS -> "In progress" to AppColorPalette.StatusInProgress
+        ProjectStatus.COMPLETE -> "Complete" to AppColorPalette.StatusComplete
+        ProjectStatus.BLOCKED -> "Blocked" to AppColorPalette.StatusBlocked
     }
     Box(
         modifier = modifier

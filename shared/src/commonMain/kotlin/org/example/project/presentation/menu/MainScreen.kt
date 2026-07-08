@@ -30,6 +30,7 @@ import org.example.project.presentation.stock.StockScreen
 import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
+import org.example.project.presentation.project.AddProjectScreen
 import org.example.project.presentation.project.ProjectListScreen
 import org.example.project.presentation.project.ProjectListViewModel
 import org.example.project.presentation.theme.AppColorPalette
@@ -47,6 +48,7 @@ fun MainScreen(
     val employeeApi = remember { EmployeeMockApiService() }
     val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, currentUserId = user.id) }
     val projectListViewModel = remember { ProjectListViewModel() }
+    var showAddProjectScreen by remember { mutableStateOf(false) }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
@@ -79,6 +81,7 @@ fun MainScreen(
                     selectedTask = null
                     showAddTaskScreen = false
                     showEditTaskScreen = false
+                    showAddProjectScreen = false
                     showAddProductScreen = false
                     showAddUserScreen = false
                     scope.launch { drawerState.close() }
@@ -103,6 +106,7 @@ fun MainScreen(
                         selectedTask = task
                         showEditTaskScreen = false
                         showAddTaskScreen = false
+                        showAddProjectScreen = false
                         showAddProductScreen = false
                         showAddUserScreen = false
                     },
@@ -117,6 +121,7 @@ fun MainScreen(
                         selectedTask = null
                         showAddTaskScreen = false
                         showEditTaskScreen = false
+                        showAddProjectScreen = false
                         showAddProductScreen = false
                         showAddUserScreen = false
                     }
@@ -185,10 +190,20 @@ fun MainScreen(
                 }
 
                 AppSection.PROJECTS -> {
-                    ProjectListScreen(
-                        viewModel = projectListViewModel,
-                        modifier = Modifier.padding(paddingValues),
-                    )
+                    if (showAddProjectScreen) {
+                        AddProjectScreen(
+                            viewModel = projectListViewModel,
+                            onProjectAdded = { showAddProjectScreen = false },
+                            onBackClick = { showAddProjectScreen = false },
+                            modifier = Modifier.padding(paddingValues),
+                        )
+                    } else {
+                        ProjectListScreen(
+                            viewModel = projectListViewModel,
+                            onAddProjectClick = { showAddProjectScreen = true },
+                            modifier = Modifier.padding(paddingValues),
+                        )
+                    }
                 }
 
                 AppSection.STOCK -> {
