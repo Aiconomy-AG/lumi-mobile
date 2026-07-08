@@ -186,21 +186,24 @@ private fun StockTable(
             StockTableHeader()
 
             products.forEach { product ->
-                val variant = product.variants.firstOrNull()
+                val variant = product.variants?.firstOrNull()
 
-                if (variant != null) {
+                val productId = product.id
+                val variantId = variant?.id
+
+                if (variant != null && productId != null && variantId != null) {
                     StockTableRow(
                         product = product,
                         sku = variant.sku,
-                        stockQuantity = variant.stockQuantity,
-                        price = variant.price,
+                        stockQuantity = variant.stock_quantity ?: 0,
+                        price = variant.price ?: product.price,
                         onDeleteProduct = {
-                            onDeleteProduct(product.id)
+                            onDeleteProduct(productId)
                         },
                         onUpdateQuantity = { newQuantity ->
                             onUpdateQuantity(
-                                product.id,
-                                variant.id,
+                                productId,
+                                variantId,
                                 newQuantity
                             )
                         }
