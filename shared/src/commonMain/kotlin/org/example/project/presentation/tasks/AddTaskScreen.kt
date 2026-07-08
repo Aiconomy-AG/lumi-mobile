@@ -44,6 +44,7 @@ fun AddTaskScreen(
     onTaskAdded: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    projectId: Int = 0,
 ) {
     val colors = MaterialTheme.colorScheme
     val uiState by viewModel.uiState.collectAsState()
@@ -108,6 +109,7 @@ fun AddTaskScreen(
                         dueDate = dueDate,
                         status = status,
                         assigneeIds = selectedAssignees.toList(),
+                        projectId = projectId,
                     )
                     onTaskAdded()
                 }

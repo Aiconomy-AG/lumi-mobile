@@ -21,7 +21,7 @@ class TaskMockApiService : TaskApi {
         return tasks.toList()
     }
 
-    override suspend fun createTask(title: String, description: String, dueDate: String, status: TaskStatus, assigneeIds: List<Int>): Task {
+    override suspend fun createTask(title: String, description: String, dueDate: String, status: TaskStatus, projectId: Int, assigneeIds: List<Int>): Task {
         delay(300)
         val newTask = Task(
             id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
@@ -30,6 +30,7 @@ class TaskMockApiService : TaskApi {
             status = status,
             createdBy = 1,
             dueDate = dueDate,
+            projectId = projectId,
             assigneeIds = assigneeIds.distinct(),
         )
         tasks.add(newTask)

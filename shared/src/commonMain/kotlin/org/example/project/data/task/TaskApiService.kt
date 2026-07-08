@@ -23,10 +23,10 @@ class TaskApiService(
     override suspend fun getTasks(): List<Task> =
         client.get("$baseUrl/tasks").body()
 
-    override suspend fun createTask(title: String, description: String, dueDate: String, status: TaskStatus, assigneeIds: List<Int>): Task =
+    override suspend fun createTask(title: String, description: String, dueDate: String, status: TaskStatus, projectId: Int, assigneeIds: List<Int>): Task =
         client.post("$baseUrl/tasks") {
             contentType(ContentType.Application.Json)
-            setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate, assigneeIds = assigneeIds))
+            setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate, projectId = projectId, assigneeIds = assigneeIds))
         }.body()
 
     override suspend fun updateTask(id: Int, title: String, description: String, dueDate: String, status: TaskStatus): Task =
@@ -51,6 +51,8 @@ private data class TaskRequestBody(
     val description: String,
     val status: TaskStatus,
     val dueDate: String,
+    @SerialName("project_id")
+    val projectId: Int? = null,
     @SerialName("assignee_ids")
     val assigneeIds: List<Int> = emptyList(),
 )

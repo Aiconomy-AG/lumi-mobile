@@ -33,6 +33,7 @@ fun ProjectDetailScreen(
     project: Project,
     onBack: () -> Unit,
     onTaskClick: (Task) -> Unit = {},
+    onAddTaskClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -87,7 +88,15 @@ fun ProjectDetailScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(text = "Tasks", color = colors.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "Tasks", color = colors.onSurfaceVariant, modifier = Modifier.weight(1f))
+            Text(
+                text = "+ Add task",
+                color = colors.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickable(onClick = onAddTaskClick),
+            )
+        }
         Spacer(modifier = Modifier.height(12.dp))
 
         when {

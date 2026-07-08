@@ -81,10 +81,10 @@ class TaskListViewModel(
         _uiState.value = _uiState.value.copy(onlyMine = !_uiState.value.onlyMine)
     }
 
-    fun addTask(title: String, description: String, dueDate: String, status: TaskStatus, assigneeIds: List<Int>) {
+    fun addTask(title: String, description: String, dueDate: String, status: TaskStatus, assigneeIds: List<Int>, projectId: Int = 0) {
         viewModelScope.launch {
             try {
-                api.createTask(title = title, description = description, dueDate = dueDate, status = status, assigneeIds = assigneeIds)
+                api.createTask(title = title, description = description, dueDate = dueDate, status = status, projectId = projectId, assigneeIds = assigneeIds)
                 loadTasks()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)

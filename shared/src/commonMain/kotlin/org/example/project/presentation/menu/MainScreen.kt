@@ -231,13 +231,27 @@ fun MainScreen(
                         val projectDetailViewModel = remember(project.id) {
                             ProjectDetailViewModel(project = project, taskApi = taskApi)
                         }
-                        ProjectDetailScreen(
-                            viewModel = projectDetailViewModel,
-                            project = project,
-                            onBack = { selectedProject = null },
-                            onTaskClick = { selectedTask = it },
-                            modifier = Modifier.padding(paddingValues),
-                        )
+                        if (showAddTaskScreen) {
+                            AddTaskScreen(
+                                viewModel = taskListViewModel,
+                                projectId = project.id,
+                                onTaskAdded = {
+                                    showAddTaskScreen = false
+                                    projectDetailViewModel.loadTasks()
+                                },
+                                onBackClick = { showAddTaskScreen = false },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        } else {
+                            ProjectDetailScreen(
+                                viewModel = projectDetailViewModel,
+                                project = project,
+                                onBack = { selectedProject = null },
+                                onTaskClick = { selectedTask = it },
+                                onAddTaskClick = { showAddTaskScreen = true },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        }
                     } else if (showAddProjectScreen) {
                         AddProjectScreen(
                             viewModel = projectListViewModel,
