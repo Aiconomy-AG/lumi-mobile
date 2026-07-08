@@ -72,6 +72,7 @@ fun MainScreen(
     }
 
     var showAddUserScreen by remember { mutableStateOf(false) }
+    var showUserDetail by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
     var showEditTaskScreen by remember { mutableStateOf(false) }
     val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
@@ -120,6 +121,7 @@ fun MainScreen(
                     onMenuClick = {
                         scope.launch { drawerState.open() }
                     },
+                    onProfileClick = { showUserDetail = true },
                     onOpenActiveTask = { task ->
                         selectedSection = AppSection.TASKS
                         selectedTask = task
@@ -347,6 +349,14 @@ fun MainScreen(
                             .background(AppColorPalette.Background)
                     )
                 }
+            }
+
+            if (showUserDetail) {
+                UserDetailDialog(
+                    user = user,
+                    onDismiss = { showUserDetail = false },
+                    onLogout = onLogout,
+                )
             }
         }
     }

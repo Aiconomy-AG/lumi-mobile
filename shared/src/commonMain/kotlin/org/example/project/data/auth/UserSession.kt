@@ -7,5 +7,7 @@ data class UserSession(
     val name: String,
     val email: String,
     val role: UserRole,
+    val phoneNumber: String,
+    val status: String,
     val token: String
 )
