@@ -27,10 +27,6 @@ import org.example.project.presentation.accounts.AdminScreen
 import org.example.project.presentation.accounts.AdminViewModel
 import org.example.project.presentation.stock.StockScreen
 import org.example.project.presentation.stock.StockViewModel
-import org.example.project.presentation.tasks.ActiveTimerViewModel
-import org.example.project.presentation.tasks.AddTaskScreen
-import org.example.project.presentation.tasks.TaskDetailScreen
-import org.example.project.presentation.tasks.TaskDetailViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
 import org.example.project.presentation.theme.AppColorPalette
@@ -51,7 +47,6 @@ fun MainScreen(
     var showAddUserScreen by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
     var showEditTaskScreen by remember { mutableStateOf(false) }
-    val taskTimeEntryApi = remember { TaskTimeEntryMockApiService() }
     val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
     val colors = MaterialTheme.colorScheme
@@ -102,9 +97,6 @@ fun MainScreen(
                         showAddProductScreen = false
                         showAddUserScreen = false
                     },
-                    onMenuClick = {
-                        scope.launch { drawerState.open() }
-                    }
                 )
             },
             bottomBar = {
