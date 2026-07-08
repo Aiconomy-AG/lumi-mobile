@@ -1,10 +1,10 @@
-package org.example.project.domain.task
+package org.example.project.domain.project
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class TaskStatus {
+enum class ProjectStatus {
     @SerialName("to_do")
     TO_DO,
 
@@ -19,15 +19,10 @@ enum class TaskStatus {
 }
 
 @Serializable
-data class Task(
+data class Project(
     val id: Int,
-    val title: String,
+    val name: String,
     val description: String,
-    val status: TaskStatus,
-    val createdBy: Int,
-    val dueDate: String,
-    @SerialName("project_id")
-    val projectId: Int = 0,
-    @SerialName("assignee_ids")
-    val assigneeIds: List<Int> = emptyList(),
+    val deadline: String,
+    val status: ProjectStatus,
 )

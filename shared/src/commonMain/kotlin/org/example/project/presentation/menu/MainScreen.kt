@@ -12,6 +12,7 @@ import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import org.example.project.data.employee.EmployeeMockApiService
+import org.example.project.data.project.ProjectMockApiService
 import org.example.project.data.task.TaskMockApiService
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.task.Task
@@ -30,6 +31,12 @@ import org.example.project.presentation.stock.StockScreen
 import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
+import org.example.project.domain.project.Project
+import org.example.project.presentation.project.AddProjectScreen
+import org.example.project.presentation.project.ProjectDetailScreen
+import org.example.project.presentation.project.ProjectDetailViewModel
+import org.example.project.presentation.project.ProjectListScreen
+import org.example.project.presentation.project.ProjectListViewModel
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
@@ -43,7 +50,11 @@ fun MainScreen(
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     val taskApi = remember { TaskMockApiService() }
     val employeeApi = remember { EmployeeMockApiService() }
-    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, currentUserId = user.id) }
+    val projectApi = remember { ProjectMockApiService() }
+    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, projectApi = projectApi, currentUserId = user.id) }
+    val projectListViewModel = remember { ProjectListViewModel(api = projectApi) }
+    var showAddProjectScreen by remember { mutableStateOf(false) }
+    var selectedProject by remember { mutableStateOf<Project?>(null) }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
@@ -74,8 +85,10 @@ fun MainScreen(
                 onSectionSelected = { section ->
                     selectedSection = section
                     selectedTask = null
+                    selectedProject = null
                     showAddTaskScreen = false
                     showEditTaskScreen = false
+                    showAddProjectScreen = false
                     showAddProductScreen = false
                     showAddUserScreen = false
                     scope.launch { drawerState.close() }
@@ -98,8 +111,10 @@ fun MainScreen(
                     onOpenActiveTask = { task ->
                         selectedSection = AppSection.TASKS
                         selectedTask = task
+                        selectedProject = null
                         showEditTaskScreen = false
                         showAddTaskScreen = false
+                        showAddProjectScreen = false
                         showAddProductScreen = false
                         showAddUserScreen = false
                     },
@@ -112,8 +127,10 @@ fun MainScreen(
                     onSectionSelected = { section ->
                         selectedSection = section
                         selectedTask = null
+                        selectedProject = null
                         showAddTaskScreen = false
                         showEditTaskScreen = false
+                        showAddProjectScreen = false
                         showAddProductScreen = false
                         showAddUserScreen = false
                     }
@@ -157,6 +174,7 @@ fun MainScreen(
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
                                 employeeApi = employeeApi,
+                                projectApi = projectApi,
                             )
                         }
 
@@ -178,6 +196,80 @@ fun MainScreen(
                                 modifier = Modifier.padding(paddingValues),
                             )
                         }
+                    }
+                }
+
+                AppSection.PROJECTS -> {
+                    val project = selectedProject
+                    val task = selectedTask
+
+                    if (task != null) {
+                        val taskDetailViewModel = remember(task.id) {
+                            TaskDetailViewModel(
+                                task = task,
+                                employeeId = user.id,
+                                activeTimerViewModel = activeTimerViewModel,
+                                taskApi = taskApi,
+                                timeEntryApi = taskTimeEntryApi,
+                                employeeApi = employeeApi,
+                                projectApi = projectApi,
+                            )
+                        }
+
+                        if (showEditTaskScreen) {
+                            EditTaskScreen(
+                                viewModel = taskDetailViewModel,
+                                onTaskUpdated = { showEditTaskScreen = false },
+                                onBackClick = { showEditTaskScreen = false },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        } else {
+                            TaskDetailScreen(
+                                viewModel = taskDetailViewModel,
+                                onBack = { selectedTask = null },
+                                onEditClick = { showEditTaskScreen = true },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        }
+                    } else if (project != null) {
+                        val projectDetailViewModel = remember(project.id) {
+                            ProjectDetailViewModel(project = project, taskApi = taskApi)
+                        }
+                        if (showAddTaskScreen) {
+                            AddTaskScreen(
+                                viewModel = taskListViewModel,
+                                projectId = project.id,
+                                onTaskAdded = {
+                                    showAddTaskScreen = false
+                                    projectDetailViewModel.loadTasks()
+                                },
+                                onBackClick = { showAddTaskScreen = false },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        } else {
+                            ProjectDetailScreen(
+                                viewModel = projectDetailViewModel,
+                                project = project,
+                                onBack = { selectedProject = null },
+                                onTaskClick = { selectedTask = it },
+                                onAddTaskClick = { showAddTaskScreen = true },
+                                modifier = Modifier.padding(paddingValues),
+                            )
+                        }
+                    } else if (showAddProjectScreen) {
+                        AddProjectScreen(
+                            viewModel = projectListViewModel,
+                            onProjectAdded = { showAddProjectScreen = false },
+                            onBackClick = { showAddProjectScreen = false },
+                            modifier = Modifier.padding(paddingValues),
+                        )
+                    } else {
+                        ProjectListScreen(
+                            viewModel = projectListViewModel,
+                            onProjectClick = { selectedProject = it },
+                            onAddProjectClick = { showAddProjectScreen = true },
+                            modifier = Modifier.padding(paddingValues),
+                        )
                     }
                 }
 
