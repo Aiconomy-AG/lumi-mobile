@@ -107,7 +107,6 @@ fun MainScreen(
                     showAddUserScreen = false
                     scope.launch { drawerState.close() }
                 },
-                onLogout = onLogout
             )
         }
     ) {

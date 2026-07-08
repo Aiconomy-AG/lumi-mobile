@@ -23,7 +23,6 @@ fun AppDrawer(
     sections: List<AppSection>,
     selectedSection: AppSection,
     onSectionSelected: (AppSection) -> Unit,
-    onLogout: () -> Unit
 ) {
     ModalDrawerSheet(
         drawerContainerColor = AppColorPalette.OverlaySurface,
@@ -100,15 +99,6 @@ fun AppDrawer(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "Logout",
-                color = AppColorPalette.Error,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .clickable { onLogout() }
-                    .padding(vertical = 12.dp)
-            )
         }
     }
 }
