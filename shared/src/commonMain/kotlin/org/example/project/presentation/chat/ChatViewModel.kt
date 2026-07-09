@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.example.project.data.accounts.User
 import org.example.project.data.accounts.UserApiService
-import org.example.project.data.chat.ChatMockApiService
+import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.domain.chat.Conversation
 import org.example.project.domain.chat.ConversationType
@@ -46,7 +46,7 @@ data class ChatUiState(
 class ChatViewModel(
     private val currentEmployeeId: Int,
     private val userApi: UserApiService,
-    private val chatApi: ChatMockApiService = ChatMockApiService(),
+    private val chatApi: ChatApi,
 ) {
     private val viewModelScope = CoroutineScope(Dispatchers.Default)
     private val _uiState = MutableStateFlow(ChatUiState())
