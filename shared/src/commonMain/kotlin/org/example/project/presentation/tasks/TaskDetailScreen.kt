@@ -104,7 +104,7 @@ fun TaskDetailScreen(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = uiState.project?.let { "${it.name} · ${strings.text("Due")} ${task.dueDate}" } ?: "${strings.text("Due")} ${task.dueDate}",
+            text = uiState.project?.let { "${it.name} · ${strings.text("Due")} ${task.dueDate.take(10)}" } ?: "${strings.text("Due")} ${task.dueDate}",
             color = colors.onSurfaceVariant,
         )
 

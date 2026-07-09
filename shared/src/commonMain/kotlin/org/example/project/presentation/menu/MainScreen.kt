@@ -11,9 +11,7 @@ import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
-import org.example.project.data.project.ProjectMockApiService
-import org.example.project.data.task.TaskMockApiService
-import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
+import org.example.project.data.tasktimeentry.TaskTimeEntryApiService
 import org.example.project.domain.task.Task
 import org.example.project.presentation.tasks.ActiveTimerViewModel
 import org.example.project.presentation.tasks.AddTaskScreen
@@ -81,7 +79,9 @@ fun MainScreen(
     var showUserDetail by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
     var showEditTaskScreen by remember { mutableStateOf(false) }
-    val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
+    val taskTimeEntryApi = remember(user.token) {
+        TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
     val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id, userApi = userApi) }
 

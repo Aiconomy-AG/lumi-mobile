@@ -13,9 +13,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.example.project.data.accounts.User
 import org.example.project.data.accounts.UserApiService
-import org.example.project.data.project.ProjectMockApiService
-import org.example.project.data.task.TaskMockApiService
-import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
 import org.example.project.domain.project.Project
 import org.example.project.domain.project.ProjectApi
 import org.example.project.domain.task.Task
@@ -54,9 +51,9 @@ class TaskDetailViewModel(
     private val employeeId: Int,
     private val activeTimerViewModel: ActiveTimerViewModel,
     private val userApi: UserApiService,
-    private val taskApi: TaskApi = TaskMockApiService(),
-    private val timeEntryApi: TaskTimeEntryApi = TaskTimeEntryMockApiService(),
-    private val projectApi: ProjectApi = ProjectMockApiService(),
+    private val taskApi: TaskApi,
+    private val timeEntryApi: TaskTimeEntryApi,
+    private val projectApi: ProjectApi,
 ) : ViewModel() {
 
     private val historicalState = MutableStateFlow(HistoricalTotals())

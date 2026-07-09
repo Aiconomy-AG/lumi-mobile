@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.example.project.data.accounts.User
 import org.example.project.data.accounts.UserApiService
-import org.example.project.data.project.ProjectMockApiService
-import org.example.project.data.task.TaskMockApiService
 import org.example.project.domain.project.Project
 import org.example.project.domain.project.ProjectApi
 import org.example.project.domain.task.Task
@@ -37,8 +35,8 @@ data class TaskListUiState(
 
 class TaskListViewModel(
     private val userApi: UserApiService,
-    private val api: TaskApi = TaskMockApiService(),
-    private val projectApi: ProjectApi = ProjectMockApiService(),
+    private val api: TaskApi,
+    private val projectApi: ProjectApi,
     private val currentUserId: Int = 0,
 ) : ViewModel() {
 
