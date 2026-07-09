@@ -43,7 +43,7 @@ import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 
 private const val TASK_LIST_REFRESH_INTERVAL_MS = 5_000L
-private const val TASK_LIST_PAGE_SIZE = 8
+private const val TASK_LIST_PAGE_SIZE = 5
 
 @Composable
 fun TaskListScreen(

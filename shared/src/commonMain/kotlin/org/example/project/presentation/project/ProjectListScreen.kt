@@ -38,7 +38,7 @@ import org.example.project.presentation.components.PaginationBar
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 
-private const val PROJECT_LIST_PAGE_SIZE = 8
+private const val PROJECT_LIST_PAGE_SIZE = 5
 
 @Composable
 fun ProjectListScreen(
