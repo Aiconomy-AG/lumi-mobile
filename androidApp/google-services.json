@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1044344586093",
+    "project_id": "lumi-c95bd",
+    "storage_bucket": "lumi-c95bd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1044344586093:android:a9dac908ebe41e8e76a464",
+        "android_client_info": {
+          "package_name": "org.example.project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBB4OAx-ZalVFQOmPxB0W75A6otbw09z9s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
