@@ -76,7 +76,7 @@ fun MainScreen(
     val stockViewModel = remember(user.token) {
         StockViewModel(
             StockApiService(
-                client = appHttpClient,
+                client = apiHttpClient,
                 baseUrl = ApiConfig.BASE_URL,
                 token = user.token
             )

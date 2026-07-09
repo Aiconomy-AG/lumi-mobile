@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import org.example.project.domain.stock.Category
-import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
@@ -32,7 +31,8 @@ fun AddProductScreen(
     var sku by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var stockQuantity by remember { mutableStateOf("") }
-    val strings = LocalAppStrings.current
+    val state by viewModel.state.collectAsState()
+    var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
 
     Column(
         modifier = Modifier
@@ -42,7 +42,7 @@ fun AddProductScreen(
             .padding(AppDimensions.ScreenPadding)
     ) {
         Text(
-            text = strings.text("Add product"),
+            text = "Add product",
             color = AppColorPalette.TextPrimary,
             style = AppTextStyles.PageTitle
         )
@@ -52,19 +52,19 @@ fun AddProductScreen(
         ProductInput(
             value = name,
             onValueChange = { name = it },
-            label = strings.text("Product name")
+            label = "Product name"
         )
 
         ProductInput(
             value = description,
             onValueChange = { description = it },
-            label = strings.text("Description")
+            label = "Description"
         )
 
         ProductInput(
             value = imageUrl,
             onValueChange = { imageUrl = it },
-            label = strings.text("Image URL")
+            label = "Image URL"
         )
 
         ProductInput(
@@ -76,25 +76,13 @@ fun AddProductScreen(
         ProductInput(
             value = price,
             onValueChange = { price = it },
-            label = strings.text("Price")
-        )
-
-        ProductInput(
-            value = weight,
-            onValueChange = { weight = it },
-            label = strings.text("Weight")
-        )
-
-        ProductInput(
-            value = weightUnit,
-            onValueChange = { weightUnit = it },
-            label = strings.text("Weight unit")
+            label = "Price"
         )
 
         ProductInput(
             value = stockQuantity,
             onValueChange = { stockQuantity = it },
-            label = strings.text("Stock quantity")
+            label = "Stock quantity"
         )
 
         CategoryDropdown(
@@ -136,7 +124,7 @@ fun AddProductScreen(
             modifier = Modifier.fillMaxWidth(),
             colors = AppComponentDefaults.primaryButtonColors()
         ) {
-            Text(strings.text("Save product"))
+            Text("Save product")
         }
 
         Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
@@ -146,7 +134,7 @@ fun AddProductScreen(
             modifier = Modifier.fillMaxWidth(),
             colors = AppComponentDefaults.primaryButtonColors()
         ) {
-            Text(strings.text("Cancel"))
+            Text("Cancel")
         }
     }
 }
