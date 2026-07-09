@@ -151,6 +151,15 @@ fun VariantEditCard(
         mutableStateOf(variant.stockQuantity.toString())
     }
 
+    var hasTriedSubmit by remember {
+        mutableStateOf(false)
+    }
+
+    var skuError by remember { mutableStateOf<String?>(null) }
+    var weightError by remember { mutableStateOf<String?>(null) }
+    var priceError by remember { mutableStateOf<String?>(null) }
+    var stockQuantityError by remember { mutableStateOf<String?>(null) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,7 +182,9 @@ fun VariantEditCard(
         ProductEditField(
             value = sku,
             onValueChange = { sku = it },
-            label = "Variant SKU"
+            label = "Variant SKU",
+            isError = skuError!=null,
+            errorMessage = skuError
         )
 
         ProductEditField(
@@ -191,7 +202,9 @@ fun VariantEditCard(
         ProductEditField(
             value = weight,
             onValueChange = { weight = it },
-            label = "Weight"
+            label = "Weight",
+            isError = weightError !=null,
+            errorMessage = weightError
         )
 
         ProductEditField(
@@ -203,13 +216,17 @@ fun VariantEditCard(
         ProductEditField(
             value = price,
             onValueChange = { price = it },
-            label = "Price"
+            label = "Price",
+            isError = priceError != null,
+            errorMessage = priceError
         )
 
         ProductEditField(
             value = stockQuantity,
             onValueChange = { stockQuantity = it },
-            label = "Stock quantity"
+            label = "Stock quantity",
+            isError = stockQuantityError!=null,
+            errorMessage = stockQuantityError
         )
 
         Row(
@@ -227,16 +244,59 @@ fun VariantEditCard(
 
             Button(
                 onClick = {
-                    val priceValue = price.trim().toDoubleOrNull()
-                    val stockValue = stockQuantity.trim().toIntOrNull()
-                    val weightValue = weight.trim().takeIf { it.isNotBlank() }?.toDoubleOrNull()
+                    skuError = null
+                    weightError = null
+                    priceError = null
+                    stockQuantityError = null
 
-                    if (
-                        sku.isNotBlank() &&
-                        priceValue != null &&
-                        stockValue != null &&
-                        stockValue >= 0
-                    ) {
+                    val priceValue = parseStockDouble(price)
+                    val stockValue = parseStockInt(stockQuantity)
+
+                    val weightText = weight.trim()
+                    val weightValue = if (weightText.isBlank()) {
+                        null
+                    } else {
+                        parseStockDouble(weightText)
+                    }
+
+                    var hasError = false
+
+                    if (sku.isBlank()) {
+                        skuError = "SKU is required"
+                        hasError = true
+                    }
+
+                    if (weightText.isNotBlank() && weightValue == null) {
+                        weightError = "Weight must be a number"
+                        hasError = true
+                    } else if (weightValue != null && weightValue < 0) {
+                        weightError = "Weight cannot be negative"
+                        hasError = true
+                    }
+
+                    if (price.isBlank()) {
+                        priceError = "Price is required"
+                        hasError = true
+                    } else if (priceValue == null) {
+                        priceError = "Price must be a number"
+                        hasError = true
+                    } else if (priceValue < 0) {
+                        priceError = "Price cannot be negative"
+                        hasError = true
+                    }
+
+                    if (stockQuantity.isBlank()) {
+                        stockQuantityError = "Stock quantity is required"
+                        hasError = true
+                    } else if (stockValue == null) {
+                        stockQuantityError = "Stock quantity must be a whole number"
+                        hasError = true
+                    } else if (stockValue < 0) {
+                        stockQuantityError = "Stock quantity cannot be negative"
+                        hasError = true
+                    }
+
+                    if (!hasError && priceValue != null && stockValue != null) {
                         onUpdateVariant(
                             productId,
                             variant.id,
@@ -303,6 +363,17 @@ fun AddVariantCard(
         mutableStateOf("0")
     }
 
+    var hasTriedSubmit by remember {
+        mutableStateOf(false)
+    }
+
+    val priceError = if (hasTriedSubmit) {
+        validateRequiredDouble(price, "Price")
+    } else {
+        null
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -355,7 +426,9 @@ fun AddVariantCard(
         ProductEditField(
             value = price,
             onValueChange = { price = it },
-            label = "Price"
+            label = "Price",
+            isError = priceError != null,
+            errorMessage = priceError
         )
 
         ProductEditField(

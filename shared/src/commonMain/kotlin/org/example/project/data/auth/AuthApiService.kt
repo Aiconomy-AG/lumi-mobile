@@ -19,7 +19,7 @@ class AuthApiService(
 
     override suspend fun login(email: String, password: String): Result<UserSession> {
         return try {
-            val response = client.post("$baseUrl/v1/auth/login") {
+            val response = client.post("$baseUrl/auth/login") {
                 contentType(ContentType.Application.Json)
                 setBody(LoginRequest(email = email, password = password))
             }
