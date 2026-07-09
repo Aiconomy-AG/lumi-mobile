@@ -136,6 +136,16 @@ fun ProductEditSection(
         mutableStateOf(product.categoryId)
     }
 
+    var hasTriedSubmit by remember {
+        mutableStateOf(false)
+    }
+
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var skuError by remember { mutableStateOf<String?>(null) }
+    var priceError by remember { mutableStateOf<String?>(null) }
+    var stockQuantityError by remember { mutableStateOf<String?>(null) }
+
+
     Column {
         Text(
             text = "Edit product",
@@ -148,7 +158,9 @@ fun ProductEditSection(
         ProductEditField(
             value = name,
             onValueChange = { name = it },
-            label = "Name"
+            label = "Name",
+            isError = nameError !=null,
+            errorMessage = nameError
         )
 
         ProductEditField(
@@ -167,7 +179,9 @@ fun ProductEditSection(
         ProductEditField(
             value = sku,
             onValueChange = { sku = it },
-            label = "SKU"
+            label = "SKU",
+            isError = skuError != null,
+            errorMessage = skuError
         )
 
         CategoryDropdownField(
@@ -181,13 +195,17 @@ fun ProductEditSection(
         ProductEditField(
             value = price,
             onValueChange = { price = it },
-            label = "Price"
+            label = "Price",
+            isError = priceError != null,
+            errorMessage = priceError
         )
 
         ProductEditField(
             value = stockQuantity,
             onValueChange = { stockQuantity = it },
-            label = "Stock quantity"
+            label = "Stock quantity",
+            isError = stockQuantityError != null,
+            errorMessage = stockQuantityError
         )
 
         Row(
@@ -205,15 +223,49 @@ fun ProductEditSection(
 
             Button(
                 onClick = {
-                    val priceValue = price.trim().toDoubleOrNull()
-                    val stockValue = stockQuantity.trim().toIntOrNull()
+                    nameError = null
+                    skuError = null
+                    priceError = null
+                    stockQuantityError = null
 
-                    if (
-                        name.isNotBlank() &&
-                        priceValue != null &&
-                        stockValue != null &&
-                        stockValue >= 0
-                    ) {
+                    val priceValue = parseStockDouble(price)
+                    val stockValue = parseStockInt(stockQuantity)
+
+                    var hasError = false
+
+                    if (name.isBlank()) {
+                        nameError = "Name is required"
+                        hasError = true
+                    }
+
+                    if (sku.isBlank()) {
+                        skuError = "SKU is required"
+                        hasError = true
+                    }
+
+                    if (price.isBlank()) {
+                        priceError = "Price is required"
+                        hasError = true
+                    } else if (priceValue == null) {
+                        priceError = "Price must be a number"
+                        hasError = true
+                    } else if (priceValue < 0) {
+                        priceError = "Price cannot be negative"
+                        hasError = true
+                    }
+
+                    if (stockQuantity.isBlank()) {
+                        stockQuantityError = "Stock quantity is required"
+                        hasError = true
+                    } else if (stockValue == null) {
+                        stockQuantityError = "Stock quantity must be a whole number"
+                        hasError = true
+                    } else if (stockValue < 0) {
+                        stockQuantityError = "Stock quantity cannot be negative"
+                        hasError = true
+                    }
+
+                    if (!hasError && priceValue != null && stockValue != null) {
                         onSave(
                             name,
                             description,
@@ -240,7 +292,9 @@ fun ProductEditField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    singleLine: Boolean = true
+    singleLine: Boolean = true,
+    isError: Boolean = false,
+    errorMessage: String? = null
 ) {
     OutlinedTextField(
         value = value,
@@ -252,6 +306,15 @@ fun ProductEditField(
             .fillMaxWidth()
             .padding(bottom = AppDimensions.SmallSpacing),
         singleLine = singleLine,
+        isError = isError,
+        supportingText = {
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    color = AppColorPalette.Error
+                )
+            }
+        },
         colors = AppComponentDefaults.appTextFieldColors()
     )
 }

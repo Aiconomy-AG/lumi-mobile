@@ -40,6 +40,7 @@ fun EditTaskScreen(
     viewModel: TaskDetailViewModel,
     onTaskUpdated: () -> Unit,
     onBackClick: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -65,6 +66,15 @@ fun EditTaskScreen(
             color = colors.onBackground,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = strings.text("Delete"),
+            color = colors.error,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.clickable{
+                viewModel.deleteTask(onSuccess = onDelete)
+            }
         )
 
         Spacer(modifier = Modifier.height(16.dp))

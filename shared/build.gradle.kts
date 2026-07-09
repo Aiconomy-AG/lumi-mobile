@@ -29,12 +29,32 @@ val configuredApiBaseUrl = localProperties.getProperty(
     "API_BASE_URL",
     "https://lumi-server.internship.aico.dev/api"
 )
+val configuredReverbAppKey = localProperties.getProperty("REVERB_APP_KEY", "")
+val configuredReverbHost = localProperties.getProperty("REVERB_HOST", "")
+val configuredReverbPort = localProperties.getProperty("REVERB_PORT", "0").toIntOrNull() ?: 0
+val configuredReverbScheme = localProperties.getProperty("REVERB_SCHEME", "")
 
+val configuredApiVersion = localProperties.getProperty("API_VERSION", "v1")
 val generatedApiConfigDir = layout.buildDirectory.dir("generated/apiConfig/commonMain/kotlin")
 
 abstract class GenerateApiConfigTask : DefaultTask() {
     @get:Input
     abstract val apiBaseUrl: Property<String>
+
+    @get:Input
+    abstract val apiVersion: Property<String>
+
+    @get:Input
+    abstract val reverbAppKey: Property<String>
+
+    @get:Input
+    abstract val reverbHost: Property<String>
+
+    @get:Input
+    abstract val reverbPort: Property<Int>
+
+    @get:Input
+    abstract val reverbScheme: Property<String>
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -44,6 +64,19 @@ abstract class GenerateApiConfigTask : DefaultTask() {
         val escapedApiBaseUrl = apiBaseUrl.get()
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
+        val escapedReverbAppKey = reverbAppKey.get()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        val escapedReverbHost = reverbHost.get()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        val escapedReverbScheme = reverbScheme.get()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+
+        val escapedVersion = apiVersion.get().replace("\"", "\\\"")
+
+        val finalUrl = "$escapedApiBaseUrl/$escapedVersion"
 
         val outputFile = outputDir
             .file("org/example/project/data/ApiConfig.kt")
@@ -56,7 +89,11 @@ abstract class GenerateApiConfigTask : DefaultTask() {
             package org.example.project.data
 
             object ApiConfig {
-                const val BASE_URL = "$escapedApiBaseUrl"
+                const val BASE_URL = "$finalUrl"
+                const val REVERB_APP_KEY = "$escapedReverbAppKey"
+                const val REVERB_HOST = "$escapedReverbHost"
+                const val REVERB_PORT = ${reverbPort.get()}
+                const val REVERB_SCHEME = "$escapedReverbScheme"
             }
             """.trimIndent()
         )
@@ -65,6 +102,11 @@ abstract class GenerateApiConfigTask : DefaultTask() {
 
 val generateApiConfig by tasks.registering(GenerateApiConfigTask::class) {
     apiBaseUrl.set(configuredApiBaseUrl)
+    apiVersion.set(configuredApiVersion)
+    reverbAppKey.set(configuredReverbAppKey)
+    reverbHost.set(configuredReverbHost)
+    reverbPort.set(configuredReverbPort)
+    reverbScheme.set(configuredReverbScheme)
     outputDir.set(generatedApiConfigDir)
 }
 
@@ -128,6 +170,7 @@ kotlin {
                 implementation(libs.ktor.client.contentNegotiation)
                 implementation(libs.ktor.serialization.kotlinxJson)
                 implementation(libs.ktor.client.logging)
+                implementation(libs.ktor.client.websockets)
                 implementation(libs.kotlinx.serialization.json)
             }
         }

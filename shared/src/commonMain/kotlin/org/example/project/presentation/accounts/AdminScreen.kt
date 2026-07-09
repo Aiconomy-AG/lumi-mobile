@@ -380,7 +380,7 @@ private fun UserAvatar(
     ) {
         Text(
             text = user.initials,
-            color = AppColorPalette.Primary,
+            color = AppColorPalette.TextPrimary,
             style = AppTextStyles.TableHeader
         )
     }
