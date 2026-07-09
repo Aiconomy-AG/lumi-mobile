@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.chat.ChatMessage
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 
 
@@ -78,6 +79,8 @@ private fun ConversationListScreen(
     onSearchQueryChanged: (String) -> Unit,
     onConversationClick: (ChatConversationItem) -> Unit,
 ) {
+    val strings = LocalAppStrings.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -86,7 +89,7 @@ private fun ConversationListScreen(
         OutlinedTextField(
             value = uiState.searchQuery,
             onValueChange = onSearchQueryChanged,
-            placeholder = { Text("Cauta chat sau persoana...") },
+            placeholder = { Text(strings.text("Search chat or person...")) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             colors = chatTextFieldColors(),
@@ -111,7 +114,7 @@ private fun ConversationListScreen(
 
             uiState.filteredConversations.isEmpty() -> {
                 Text(
-                    text = "Nu am gasit niciun chat.",
+                    text = strings.text("No chats found."),
                     color = AppColorPalette.TextSecondary,
                     modifier = Modifier.padding(16.dp),
                 )
@@ -203,6 +206,7 @@ private fun ConversationDetailScreen(
 ) {
     val selectedConversation = uiState.selectedConversation ?: return
     val listState = rememberLazyListState()
+    val strings = LocalAppStrings.current
 
     LaunchedEffect(uiState.messages.size, selectedConversation.conversation.id) {
         if (uiState.messages.isNotEmpty()) {
@@ -268,7 +272,7 @@ private fun ConversationDetailScreen(
                 MessageBubble(
                     message = message,
                     isMine = message.senderId == currentEmployeeId,
-                    senderName = uiState.employeesById[message.senderId]?.name ?: "Necunoscut",
+                    senderName = uiState.usersById[message.senderId]?.name ?: strings.text("Unknown sender"),
                 )
             }
         }
@@ -283,7 +287,7 @@ private fun ConversationDetailScreen(
             OutlinedTextField(
                 value = uiState.messageDraft,
                 onValueChange = onMessageDraftChanged,
-                placeholder = { Text("Scrie un mesaj...") },
+                placeholder = { Text(strings.text("Write a message...")) },
                 modifier = Modifier.weight(1f),
                 maxLines = 4,
                 colors = chatTextFieldColors(),
@@ -301,7 +305,7 @@ private fun ConversationDetailScreen(
                     disabledContentColor = AppColorPalette.TextSecondary,
                 ),
             ) {
-                Text("Trimite")
+                Text(strings.text("Send"))
             }
         }
     }

@@ -38,8 +38,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.domain.employee.Employee
+import org.example.project.data.accounts.User
 import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.localization.LocalAppStrings
 
 @Composable
 fun TaskDetailScreen(
@@ -51,6 +52,7 @@ fun TaskDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val task = uiState.task
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     var assigneePickerOpen by remember { mutableStateOf(false) }
     var assigneeQuery by remember { mutableStateOf("") }
@@ -72,7 +74,7 @@ fun TaskDetailScreen(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Tasks",
+                text = strings.text("Tasks"),
                 color = colors.onSurfaceVariant,
                 modifier = Modifier.clickable(onClick = onBack),
             )
@@ -83,7 +85,7 @@ fun TaskDetailScreen(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "Edit",
+                text = strings.text("Edit"),
                 color = colors.primary,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clickable(onClick = onEditClick),
@@ -102,7 +104,7 @@ fun TaskDetailScreen(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = uiState.project?.let { "${it.name} · Due ${task.dueDate}" } ?: "Due ${task.dueDate}",
+            text = uiState.project?.let { "${it.name} · ${strings.text("Due")} ${task.dueDate.take(10)}" } ?: "${strings.text("Due")} ${task.dueDate}",
             color = colors.onSurfaceVariant,
         )
 
@@ -126,7 +128,7 @@ fun TaskDetailScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(text = "Description", color = colors.onSurfaceVariant)
+        Text(text = strings.text("Description"), color = colors.onSurfaceVariant)
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = task.description, color = colors.onBackground)
 
@@ -134,7 +136,7 @@ fun TaskDetailScreen(
 
         AssigneesSection(
             assignees = uiState.assignees,
-            allEmployees = uiState.allEmployees,
+            allUsers = uiState.allUsers,
             onAssign = viewModel::assignUser,
             onUnassign = viewModel::unassignUser,
             pickerOpen = assigneePickerOpen,
@@ -147,8 +149,8 @@ fun TaskDetailScreen(
 
 @Composable
 private fun AssigneesSection(
-    assignees: List<Employee>,
-    allEmployees: List<Employee>,
+    assignees: List<User>,
+    allUsers: List<User>,
     onAssign: (Int) -> Unit,
     onUnassign: (Int) -> Unit,
     pickerOpen: Boolean,
@@ -157,9 +159,10 @@ private fun AssigneesSection(
     onQueryChange: (String) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     val assignedIds = assignees.map { it.id }.toSet()
 
-    Text(text = "Assigned to", color = colors.onSurfaceVariant)
+    Text(text = strings.text("Assigned to"), color = colors.onSurfaceVariant)
     Spacer(modifier = Modifier.height(12.dp))
 
     FlowRow(
@@ -182,12 +185,12 @@ private fun AssigneesSection(
                     if (!newOpen) onQueryChange("")
                 }
         ) {
-            Text(text = "+ Assign", color = colors.onSurfaceVariant, fontSize = 14.sp)
+            Text(text = strings.text("+ Assign"), color = colors.onSurfaceVariant, fontSize = 14.sp)
         }
     }
 
     if (pickerOpen) {
-        val filtered = allEmployees.filter { it.name.contains(query, ignoreCase = true) }
+        val filtered = allUsers.filter { it.name.contains(query, ignoreCase = true) }
 
         Spacer(modifier = Modifier.height(12.dp))
         Column(
@@ -200,7 +203,7 @@ private fun AssigneesSection(
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                placeholder = { Text("Search by name...", color = colors.onSurfaceVariant) },
+                placeholder = { Text(strings.text("Search by name..."), color = colors.onSurfaceVariant) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -216,7 +219,7 @@ private fun AssigneesSection(
 
             if (filtered.isEmpty()) {
                 Text(
-                    text = "No users found",
+                    text = strings.text("No users found"),
                     color = colors.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
                 )
@@ -232,7 +235,7 @@ private fun AssigneesSection(
                             .padding(vertical = 8.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        EmployeeAvatar(employee = employee, size = 28.dp)
+                        UserAvatar(user = employee, size =28.dp)
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = employee.name,
@@ -250,7 +253,7 @@ private fun AssigneesSection(
 }
 
 @Composable
-private fun AssigneeChip(employee: Employee, onRemove: () -> Unit) {
+private fun AssigneeChip(employee: User, onRemove: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
@@ -259,7 +262,7 @@ private fun AssigneeChip(employee: Employee, onRemove: () -> Unit) {
             .padding(start = 6.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        EmployeeAvatar(employee = employee, size = 24.dp)
+        UserAvatar(user = employee, size =24.dp)
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = employee.name, color = colors.onBackground, fontSize = 14.sp)
         Spacer(modifier = Modifier.width(8.dp))
@@ -275,6 +278,7 @@ private fun AssigneeChip(employee: Employee, onRemove: () -> Unit) {
 @Composable
 private fun StatusTabs(currentStatus: TaskStatus) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -292,19 +296,12 @@ private fun StatusTabs(currentStatus: TaskStatus) {
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
                 Text(
-                    text = status.label(),
+                    text = strings.taskStatus(status),
                     color = if (selected) colors.onSurface else colors.onSurfaceVariant,
                 )
             }
         }
     }
-}
-
-private fun TaskStatus.label(): String = when (this) {
-    TaskStatus.TO_DO -> "To do"
-    TaskStatus.IN_PROGRESS -> "In progress"
-    TaskStatus.COMPLETE -> "Complete"
-    TaskStatus.BLOCKED -> "Blocked"
 }
 
 @Composable
@@ -315,6 +312,7 @@ private fun TimeTrackingCard(
     onToggle: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -324,7 +322,7 @@ private fun TimeTrackingCard(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Column {
-            Text(text = "Time tracking", color = colors.onSurfaceVariant)
+            Text(text = strings.text("Time tracking"), color = colors.onSurfaceVariant)
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = formatElapsed(elapsedSeconds),
@@ -334,7 +332,7 @@ private fun TimeTrackingCard(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Total task: ${formatElapsed(taskTotalSeconds)}",
+                text = "${strings.text("Total task")}: ${formatElapsed(taskTotalSeconds)}",
                 color = colors.onSurfaceVariant,
                 fontSize = 13.sp,
             )

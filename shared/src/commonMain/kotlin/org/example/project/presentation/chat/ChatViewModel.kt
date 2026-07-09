@@ -6,13 +6,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.example.project.data.accounts.User
+import org.example.project.data.accounts.UserApiService
 import org.example.project.data.chat.ChatMockApiService
-import org.example.project.data.employee.EmployeeMockApiService
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.domain.chat.Conversation
 import org.example.project.domain.chat.ConversationType
-import org.example.project.domain.employee.Employee
-import org.example.project.domain.employee.EmployeeApi
 
 data class ChatConversationItem(
     val conversation: Conversation,
@@ -28,7 +27,7 @@ data class ChatUiState(
     val conversations: List<ChatConversationItem> = emptyList(),
     val selectedConversation: ChatConversationItem? = null,
     val messages: List<ChatMessage> = emptyList(),
-    val employeesById: Map<Int, Employee> = emptyMap(),
+    val usersById: Map<Int, User> = emptyMap(),
     val searchQuery: String = "",
     val messageDraft: String = "",
     val error: String? = null,
@@ -46,8 +45,8 @@ data class ChatUiState(
 
 class ChatViewModel(
     private val currentEmployeeId: Int,
+    private val userApi: UserApiService,
     private val chatApi: ChatMockApiService = ChatMockApiService(),
-    private val employeeApi: EmployeeApi = EmployeeMockApiService()
 ) {
     private val viewModelScope = CoroutineScope(Dispatchers.Default)
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -62,8 +61,8 @@ class ChatViewModel(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                val employees = employeeApi.getEmployees()
-                val employeesById = employees.associateBy { it.id }
+                val users = userApi.getUsers().getOrThrow()
+                val usersById = users.associateBy { it.id }
                 val conversations = chatApi.getConversations(currentEmployeeId)
 
                 val items = conversations.map { conversation ->
@@ -72,7 +71,7 @@ class ChatViewModel(
                     val lastMessage = conversationMessages.lastOrNull()
 
                     val otherParticipants = participants
-                        .mapNotNull { employeesById[it.employeeId] }
+                        .mapNotNull { usersById[it.employeeId] }
                         .filter { it.id != currentEmployeeId }
 
                     val title = when (conversation.type) {
@@ -93,7 +92,7 @@ class ChatViewModel(
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     conversations = items,
-                    employeesById = employeesById,
+                    usersById = usersById,
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

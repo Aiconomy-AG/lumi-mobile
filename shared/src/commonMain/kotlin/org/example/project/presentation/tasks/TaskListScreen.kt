@@ -24,8 +24,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import org.example.project.presentation.components.PaginationBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -33,7 +39,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
+
+private const val TASK_LIST_REFRESH_INTERVAL_MS = 5_000L
+private const val TASK_LIST_PAGE_SIZE = 5
 
 @Composable
 fun TaskListScreen(
@@ -43,7 +53,24 @@ fun TaskListScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
+
+    var currentPage by remember { mutableStateOf(0) }
+    val pageSize = TASK_LIST_PAGE_SIZE
+    val totalPages = maxOf(1, (uiState.filteredTasks.size + pageSize - 1) / pageSize)
+    val pagedTasks = uiState.filteredTasks.drop(currentPage * pageSize).take(pageSize)
+
+    LaunchedEffect(uiState.filteredTasks.size) {
+        if (currentPage > totalPages - 1) currentPage = totalPages - 1
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.loadTasks()
+            delay(TASK_LIST_REFRESH_INTERVAL_MS)
+        }
+    }
 
     Box(
         modifier = modifier
@@ -57,7 +84,7 @@ fun TaskListScreen(
             }
             uiState.error != null -> {
                 Text(
-                    text = "Eroare: ${uiState.error}",
+                    text = strings.format("Error: {message}", "message" to (uiState.error ?: "")),
                     modifier = Modifier.align(Alignment.Center),
                     color = colors.error,
                 )
@@ -76,7 +103,16 @@ fun TaskListScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    TaskList(tasks = uiState.filteredTasks, onTaskClick = onTaskClick)
+                    TaskList(tasks = pagedTasks, onTaskClick = onTaskClick)
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    PaginationBar(
+                        currentPage = currentPage,
+                        totalPages = totalPages,
+                        onPreviousClick = { if (currentPage > 0) currentPage-- },
+                        onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
+                    )
                 }
             }
         }
@@ -94,13 +130,14 @@ private fun TaskListToolbar(
     onAddTaskClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     Column {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
             placeholder = {
-                Text("Search tasks...", color = colors.onSurfaceVariant)
+                Text(strings.text("Search tasks..."), color = colors.onSurfaceVariant)
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
@@ -139,7 +176,7 @@ private fun TaskListToolbar(
                     contentColor = colors.onPrimary,
                 )
             ) {
-                Text("+ Add task")
+                Text(strings.text("+ Add task"))
             }
         }
     }
@@ -151,12 +188,13 @@ private fun StatusFilterBar(
     onSelect: (TaskStatus?) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     val options: List<Pair<String, TaskStatus?>> = listOf(
-        "All" to null,
-        "To do" to TaskStatus.TO_DO,
-        "In progress" to TaskStatus.IN_PROGRESS,
-        "Complete" to TaskStatus.COMPLETE,
-        "Blocked" to TaskStatus.BLOCKED,
+        strings.text("All") to null,
+        strings.taskStatus(TaskStatus.TO_DO) to TaskStatus.TO_DO,
+        strings.taskStatus(TaskStatus.IN_PROGRESS) to TaskStatus.IN_PROGRESS,
+        strings.taskStatus(TaskStatus.COMPLETE) to TaskStatus.COMPLETE,
+        strings.taskStatus(TaskStatus.BLOCKED) to TaskStatus.BLOCKED,
     )
 
     Row(
@@ -195,6 +233,7 @@ private fun MyTasksToggle(
     onToggle: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     Box(
         modifier = Modifier
             .border(
@@ -210,7 +249,7 @@ private fun MyTasksToggle(
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Text(
-            text = "My tasks",
+            text = strings.text("My tasks"),
             color = if (active) colors.onPrimary else colors.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold,
         )
@@ -244,14 +283,15 @@ fun TaskList(tasks: List<Task>, onTaskClick: (Task) -> Unit = {}) {
 @Composable
 private fun TaskListHeader() {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = "Task", modifier = Modifier.weight(1.7f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
-        Text(text = "Status", modifier = Modifier.weight(1.3f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
-        Text(text = "Due", modifier = Modifier.weight(1f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = strings.text("Task"), modifier = Modifier.weight(1.7f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = strings.text("Status"), modifier = Modifier.weight(1.3f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(text = strings.text("Due"), modifier = Modifier.weight(1f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -281,7 +321,7 @@ private fun TaskRow(task: Task, onClick: () -> Unit) {
             StatusBadge(status = task.status)
         }
         Text(
-            text = task.dueDate,
+            text = task.dueDate.take(10),
             modifier = Modifier.weight(1f),
             color = colors.onSurfaceVariant,
         )
@@ -290,11 +330,12 @@ private fun TaskRow(task: Task, onClick: () -> Unit) {
 
 @Composable
 private fun StatusBadge(status: TaskStatus, modifier: Modifier = Modifier) {
+    val strings = LocalAppStrings.current
     val (label, statusColor) = when (status) {
-        TaskStatus.TO_DO -> "To do" to AppColorPalette.StatusToDo
-        TaskStatus.IN_PROGRESS -> "In progress" to AppColorPalette.StatusInProgress
-        TaskStatus.COMPLETE -> "Complete" to AppColorPalette.StatusComplete
-        TaskStatus.BLOCKED -> "Blocked" to AppColorPalette.StatusBlocked
+        TaskStatus.TO_DO -> strings.taskStatus(status) to AppColorPalette.StatusToDo
+        TaskStatus.IN_PROGRESS -> strings.taskStatus(status) to AppColorPalette.StatusInProgress
+        TaskStatus.COMPLETE -> strings.taskStatus(status) to AppColorPalette.StatusComplete
+        TaskStatus.BLOCKED -> strings.taskStatus(status) to AppColorPalette.StatusBlocked
     }
     Box(
         modifier = modifier

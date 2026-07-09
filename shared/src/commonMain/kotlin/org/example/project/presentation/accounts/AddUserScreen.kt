@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import org.example.project.domain.accounts.AccountRole
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
@@ -32,6 +33,7 @@ fun AddUserScreen(
     var phoneNumber by remember { mutableStateOf("") }
     var languageFlag by remember { mutableStateOf("en") }
     var selectedRole by remember { mutableStateOf(AccountRole.EMPLOYEE) }
+    val strings = LocalAppStrings.current
 
     Column(
         modifier = Modifier
@@ -41,7 +43,7 @@ fun AddUserScreen(
             .padding(AppDimensions.ScreenPadding)
     ) {
         Text(
-            text = "Add user",
+            text = strings.text("Add user"),
             color = AppColorPalette.TextPrimary,
             style = AppTextStyles.PageTitle
         )
@@ -51,37 +53,37 @@ fun AddUserScreen(
         UserInput(
             value = fullName,
             onValueChange = { fullName = it },
-            label = "Full name"
+            label = strings.text("Full name")
         )
 
         UserInput(
             value = email,
             onValueChange = { email = it },
-            label = "Email"
+            label = strings.text("Email")
         )
 
         UserInput(
             value = password,
             onValueChange = { password = it },
-            label = "Password"
+            label = strings.text("Password")
         )
 
         UserInput(
             value = phoneNumber,
             onValueChange = { phoneNumber = it },
-            label = "Phone number"
+            label = strings.text("Phone number")
         )
 
         UserInput(
             value = languageFlag,
             onValueChange = { languageFlag = it },
-            label = "Language flag"
+            label = strings.text("Language flag")
         )
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
         Text(
-            text = "Role",
+            text = strings.text("Role"),
             color = AppColorPalette.TextPrimary,
             style = AppTextStyles.Emphasis
         )
@@ -89,7 +91,7 @@ fun AddUserScreen(
         Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
 
         RoleOption(
-            text = "Admin",
+            text = strings.text("Admin"),
             selected = selectedRole == AccountRole.ADMIN,
             onClick = {
                 selectedRole = AccountRole.ADMIN
@@ -97,7 +99,7 @@ fun AddUserScreen(
         )
 
         RoleOption(
-            text = "Employee",
+            text = strings.text("Employee"),
             selected = selectedRole == AccountRole.EMPLOYEE,
             onClick = {
                 selectedRole = AccountRole.EMPLOYEE
@@ -127,7 +129,7 @@ fun AddUserScreen(
             modifier = Modifier.fillMaxWidth(),
             colors = AppComponentDefaults.primaryButtonColors()
         ) {
-            Text("Save user")
+            Text(strings.text("Save user"))
         }
 
         Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
@@ -137,7 +139,7 @@ fun AddUserScreen(
             modifier = Modifier.fillMaxWidth(),
             colors = AppComponentDefaults.primaryButtonColors()
         ) {
-            Text("Cancel")
+            Text(strings.text("Cancel"))
         }
     }
 }

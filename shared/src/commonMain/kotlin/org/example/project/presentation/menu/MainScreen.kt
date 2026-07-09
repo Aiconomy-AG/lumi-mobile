@@ -11,10 +11,7 @@ import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
-import org.example.project.data.employee.EmployeeMockApiService
-import org.example.project.data.project.ProjectMockApiService
-import org.example.project.data.task.TaskMockApiService
-import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
+import org.example.project.data.tasktimeentry.TaskTimeEntryApiService
 import org.example.project.domain.task.Task
 import org.example.project.presentation.tasks.ActiveTimerViewModel
 import org.example.project.presentation.tasks.AddTaskScreen
@@ -40,40 +37,40 @@ import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
 import org.example.project.data.accounts.UserApiService
+import org.example.project.data.task.TaskApiService
+import org.example.project.data.project.ProjectApiService
 import org.example.project.data.createHttpClient
 import org.example.project.data.stock.StockApiService
+import org.example.project.presentation.dashboard.DashboardScreen
+import org.example.project.presentation.localization.AppLanguage
+import org.example.project.presentation.localization.LocalAppStrings
 
 @Composable
 fun MainScreen(
     user: UserSession,
+    selectedLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
-    val taskApi = remember { TaskMockApiService() }
-    val employeeApi = remember { EmployeeMockApiService() }
-    val projectApi = remember { ProjectMockApiService() }
-    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, projectApi = projectApi, currentUserId = user.id) }
+    val apiHttpClient = remember { createHttpClient() }
+    val taskApi = remember(user.token) {
+        TaskApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
+    val userApi = remember(user.token) {
+        UserApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
+    val projectApi = remember(user.token) {
+        ProjectApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
+    val taskListViewModel = remember { TaskListViewModel(userApi = userApi, api = taskApi, projectApi = projectApi, currentUserId = user.id) }
     val projectListViewModel = remember { ProjectListViewModel(api = projectApi) }
     var showAddProjectScreen by remember { mutableStateOf(false) }
     var selectedProject by remember { mutableStateOf<Project?>(null) }
 
-    val appHttpClient = remember { createHttpClient() }
-
-    DisposableEffect(appHttpClient) {
-        onDispose {
-            appHttpClient.close()
-        }
-    }
-
     val adminViewModel = remember(user.token) {
-        AdminViewModel(
-            UserApiService(
-                client = appHttpClient,
-                baseUrl = ApiConfig.BASE_URL,
-                token = user.token
-            )
-        )
+        AdminViewModel(userApi)
     }
 
     val stockViewModel = remember(user.token) {
@@ -88,13 +85,16 @@ fun MainScreen(
 
     var showAddProductScreen by remember { mutableStateOf(false) }
     var showAddUserScreen by remember { mutableStateOf(false) }
+    var showUserDetail by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
     var showEditTaskScreen by remember { mutableStateOf(false) }
-    val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
+    val taskTimeEntryApi = remember(user.token) {
+        TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
-    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id) }
+    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id, userApi = userApi) }
 
-    val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -121,7 +121,6 @@ fun MainScreen(
                     showAddUserScreen = false
                     scope.launch { drawerState.close() }
                 },
-                onLogout = onLogout
             )
         }
     ) {
@@ -130,12 +129,13 @@ fun MainScreen(
             contentWindowInsets = WindowInsets.safeDrawing,
             topBar = {
                 AppTopBar(
-                    title = selectedSection.title,
+                    title = strings.text(selectedSection.title),
                     user = user,
                     activeTimerViewModel = activeTimerViewModel,
                     onMenuClick = {
                         scope.launch { drawerState.open() }
                     },
+                    onProfileClick = { showUserDetail = true },
                     onOpenActiveTask = { task ->
                         selectedSection = AppSection.TASKS
                         selectedTask = task
@@ -166,6 +166,24 @@ fun MainScreen(
             }
         ) { paddingValues ->
             when (selectedSection) {
+                AppSection.DASHBOARD -> {
+                    DashboardScreen(
+                        viewModel = taskListViewModel,
+                        user = user,
+                        onTaskClick = { task ->
+                            selectedSection = AppSection.TASKS
+                            selectedTask = task
+                            selectedProject = null
+                            showEditTaskScreen = false
+                            showAddTaskScreen = false
+                            showAddProjectScreen = false
+                            showAddProductScreen = false
+                            showAddUserScreen = false
+                        },
+                        modifier = Modifier.padding(paddingValues),
+                    )
+                }
+
                 AppSection.TASKS -> {
                     val task = selectedTask
 
@@ -201,7 +219,7 @@ fun MainScreen(
                                 activeTimerViewModel = activeTimerViewModel,
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
-                                employeeApi = employeeApi,
+                                userApi = userApi,
                                 projectApi = projectApi,
                             )
                         }
@@ -239,7 +257,7 @@ fun MainScreen(
                                 activeTimerViewModel = activeTimerViewModel,
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
-                                employeeApi = employeeApi,
+                                userApi = userApi,
                                 projectApi = projectApi,
                             )
                         }
@@ -357,12 +375,22 @@ fun MainScreen(
 
                 else -> {
                     EmptySectionScreen(
-                        title = selectedSection.title,
+                        title = strings.text(selectedSection.title),
                         modifier = Modifier
                             .padding(paddingValues)
                             .background(AppColorPalette.Background)
                     )
                 }
+            }
+
+            if (showUserDetail) {
+                UserDetailDialog(
+                    user = user,
+                    selectedLanguage = selectedLanguage,
+                    onLanguageSelected = onLanguageSelected,
+                    onDismiss = { showUserDetail = false },
+                    onLogout = onLogout,
+                )
             }
         }
     }
