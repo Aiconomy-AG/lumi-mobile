@@ -59,7 +59,7 @@ fun ChatScreen(
             ConversationListScreen(
                 uiState = uiState,
                 onSearchQueryChanged = viewModel::onSearchQueryChanged,
-                onConversationClick = viewModel::selectConversation,
+                onContactClick = viewModel::selectContact,
             )
         } else {
             ConversationDetailScreen(
@@ -77,7 +77,7 @@ fun ChatScreen(
 private fun ConversationListScreen(
     uiState: ChatUiState,
     onSearchQueryChanged: (String) -> Unit,
-    onConversationClick: (ChatConversationItem) -> Unit,
+    onContactClick: (ChatContactItem) -> Unit,
 ) {
     val strings = LocalAppStrings.current
 
@@ -98,7 +98,7 @@ private fun ConversationListScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         when {
-            uiState.isLoading && uiState.conversations.isEmpty() -> {
+            uiState.isLoading && uiState.contacts.isEmpty() -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = AppColorPalette.Primary)
                 }
@@ -112,9 +112,9 @@ private fun ConversationListScreen(
                 )
             }
 
-            uiState.filteredConversations.isEmpty() -> {
+            uiState.filteredContacts.isEmpty() -> {
                 Text(
-                    text = strings.text("No chats found."),
+                    text = strings.text("No users found"),
                     color = AppColorPalette.TextSecondary,
                     modifier = Modifier.padding(16.dp),
                 )
@@ -125,10 +125,10 @@ private fun ConversationListScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    items(uiState.filteredConversations, key = { it.conversation.id }) { conversation ->
-                        ConversationRow(
-                            conversation = conversation,
-                            onClick = { onConversationClick(conversation) },
+                    items(uiState.filteredContacts, key = { it.user.id }) { contact ->
+                        ContactRow(
+                            contact = contact,
+                            onClick = { onContactClick(contact) },
                         )
                     }
                 }
@@ -138,8 +138,8 @@ private fun ConversationListScreen(
 }
 
 @Composable
-private fun ConversationRow(
-    conversation: ChatConversationItem,
+private fun ContactRow(
+    contact: ChatContactItem,
     onClick: () -> Unit,
 ) {
     Row(
@@ -158,7 +158,7 @@ private fun ConversationRow(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = conversation.initials,
+                text = contact.initials,
                 color = AppColorPalette.TextPrimary,
                 fontWeight = FontWeight.Bold,
             )
@@ -169,7 +169,7 @@ private fun ConversationRow(
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = conversation.title,
+                    text = contact.title,
                     color = AppColorPalette.TextPrimary,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
@@ -178,7 +178,7 @@ private fun ConversationRow(
                 )
 
                 Text(
-                    text = conversation.lastSentAt,
+                    text = contact.lastSentAt,
                     color = AppColorPalette.TextSecondary,
                     style = MaterialTheme.typography.labelSmall,
                 )
@@ -187,7 +187,7 @@ private fun ConversationRow(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = conversation.lastMessage,
+                text = contact.lastMessage,
                 color = AppColorPalette.TextSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

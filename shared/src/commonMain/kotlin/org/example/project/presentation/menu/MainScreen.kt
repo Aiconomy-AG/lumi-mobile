@@ -39,6 +39,7 @@ import org.example.project.presentation.chat.ChatViewModel
 import org.example.project.data.accounts.UserApiService
 import org.example.project.data.task.TaskApiService
 import org.example.project.data.chat.ChatApiService
+import org.example.project.data.chat.ReverbChatRealtimeService
 import org.example.project.data.project.ProjectApiService
 import org.example.project.data.createHttpClient
 import org.example.project.data.stock.StockApiService
@@ -96,7 +97,25 @@ fun MainScreen(
     val chatApi = remember(user.token) {
         ChatApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
     }
-    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id, userApi = userApi, chatApi = chatApi) }
+    val chatRealtimeApi = remember(user.token) {
+        ReverbChatRealtimeService(
+            client = apiHttpClient,
+            baseUrl = ApiConfig.BASE_URL,
+            appKey = ApiConfig.REVERB_APP_KEY,
+            host = ApiConfig.REVERB_HOST,
+            port = ApiConfig.REVERB_PORT,
+            scheme = ApiConfig.REVERB_SCHEME,
+            token = user.token,
+        )
+    }
+    val chatViewModel = remember(user.id, user.token) {
+        ChatViewModel(
+            currentEmployeeId = user.id,
+            userApi = userApi,
+            chatApi = chatApi,
+            chatRealtimeApi = chatRealtimeApi,
+        )
+    }
 
     val strings = LocalAppStrings.current
 
