@@ -12,6 +12,7 @@ local.properties
 
 # Xcode / iOS
 iosApp/build/
+iosApp/iosApp.xcodeproj/project.pbxproj
 iosApp/Pods/
 iosApp/*.xcworkspace/xcuserdata/
 iosApp/*.xcodeproj/xcuserdata/
