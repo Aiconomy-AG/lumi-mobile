@@ -38,6 +38,7 @@ import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
 import org.example.project.data.accounts.UserApiService
 import org.example.project.data.task.TaskApiService
+import org.example.project.data.chat.ChatApiService
 import org.example.project.data.project.ProjectApiService
 import org.example.project.data.createHttpClient
 import org.example.project.data.stock.StockApiService
@@ -92,7 +93,10 @@ fun MainScreen(
         TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
     }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
-    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id, userApi = userApi) }
+    val chatApi = remember(user.token) {
+        ChatApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
+    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id, userApi = userApi, chatApi = chatApi) }
 
     val strings = LocalAppStrings.current
 
