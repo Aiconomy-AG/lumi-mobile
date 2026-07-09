@@ -29,6 +29,10 @@ val configuredApiBaseUrl = localProperties.getProperty(
     "API_BASE_URL",
     "https://lumi-server.internship.aico.dev/api"
 )
+val configuredReverbAppKey = localProperties.getProperty("REVERB_APP_KEY", "")
+val configuredReverbHost = localProperties.getProperty("REVERB_HOST", "")
+val configuredReverbPort = localProperties.getProperty("REVERB_PORT", "0").toIntOrNull() ?: 0
+val configuredReverbScheme = localProperties.getProperty("REVERB_SCHEME", "")
 
 val generatedApiConfigDir = layout.buildDirectory.dir("generated/apiConfig/commonMain/kotlin")
 
@@ -36,12 +40,33 @@ abstract class GenerateApiConfigTask : DefaultTask() {
     @get:Input
     abstract val apiBaseUrl: Property<String>
 
+    @get:Input
+    abstract val reverbAppKey: Property<String>
+
+    @get:Input
+    abstract val reverbHost: Property<String>
+
+    @get:Input
+    abstract val reverbPort: Property<Int>
+
+    @get:Input
+    abstract val reverbScheme: Property<String>
+
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
 
     @TaskAction
     fun generate() {
         val escapedApiBaseUrl = apiBaseUrl.get()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        val escapedReverbAppKey = reverbAppKey.get()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        val escapedReverbHost = reverbHost.get()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        val escapedReverbScheme = reverbScheme.get()
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
 
@@ -57,6 +82,10 @@ abstract class GenerateApiConfigTask : DefaultTask() {
 
             object ApiConfig {
                 const val BASE_URL = "$escapedApiBaseUrl"
+                const val REVERB_APP_KEY = "$escapedReverbAppKey"
+                const val REVERB_HOST = "$escapedReverbHost"
+                const val REVERB_PORT = ${reverbPort.get()}
+                const val REVERB_SCHEME = "$escapedReverbScheme"
             }
             """.trimIndent()
         )
@@ -65,6 +94,10 @@ abstract class GenerateApiConfigTask : DefaultTask() {
 
 val generateApiConfig by tasks.registering(GenerateApiConfigTask::class) {
     apiBaseUrl.set(configuredApiBaseUrl)
+    reverbAppKey.set(configuredReverbAppKey)
+    reverbHost.set(configuredReverbHost)
+    reverbPort.set(configuredReverbPort)
+    reverbScheme.set(configuredReverbScheme)
     outputDir.set(generatedApiConfigDir)
 }
 
@@ -125,6 +158,7 @@ kotlin {
                 implementation(libs.ktor.client.contentNegotiation)
                 implementation(libs.ktor.serialization.kotlinxJson)
                 implementation(libs.ktor.client.logging)
+                implementation(libs.ktor.client.websockets)
                 implementation(libs.kotlinx.serialization.json)
             }
         }
