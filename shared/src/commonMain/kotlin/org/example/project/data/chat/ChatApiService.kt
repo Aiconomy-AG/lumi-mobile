@@ -54,6 +54,22 @@ class ChatApiService(
         return chatJson.decodeFromString<MessageListResponse>(text).data.map { it.toChatMessage() }
     }
 
+    override suspend fun createDirectConversation(participantEmployeeId: Int): Conversation {
+        val response = client.post("$baseUrl/workspace/conversations") {
+            bearerAuth()
+            contentType(ContentType.Application.Json)
+            setBody(
+                StoreConversationRequestBody(
+                    type = ConversationType.DIRECT,
+                    participantEmployeeIds = listOf(participantEmployeeId),
+                )
+            )
+        }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
+        return chatJson.decodeFromString<ConversationResponse>(text).data.toConversation()
+    }
+
     override suspend fun sendMessage(conversationId: Int, senderId: Int, messageText: String): ChatMessage {
         val response = client.post("$baseUrl/workspace/conversations/$conversationId/messages") {
             bearerAuth()
@@ -146,6 +162,13 @@ private data class MessageDto(
 @Serializable
 private data class SendMessageRequestBody(
     val message: String,
+)
+
+@Serializable
+private data class StoreConversationRequestBody(
+    val type: ConversationType,
+    @SerialName("participants_employee_ids")
+    val participantEmployeeIds: List<Int>,
 )
 
 @Serializable
