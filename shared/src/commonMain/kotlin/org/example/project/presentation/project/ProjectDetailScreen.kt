@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.domain.project.Project
 import org.example.project.domain.task.Task
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.tasks.TaskList
 
 @Composable
@@ -38,6 +39,7 @@ fun ProjectDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     Column(
         modifier = modifier
@@ -48,7 +50,7 @@ fun ProjectDetailScreen(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Projects",
+                text = strings.text("Projects"),
                 color = colors.onSurfaceVariant,
                 modifier = Modifier.clickable(onClick = onBack),
             )
@@ -72,7 +74,7 @@ fun ProjectDetailScreen(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Deadline ${project.deadline}",
+            text = "${strings.text("Deadline")} ${project.deadline}",
             color = colors.onSurfaceVariant,
         )
 
@@ -82,16 +84,16 @@ fun ProjectDetailScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(text = "Description", color = colors.onSurfaceVariant)
+        Text(text = strings.text("Description"), color = colors.onSurfaceVariant)
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = project.description, color = colors.onBackground)
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Tasks", color = colors.onSurfaceVariant, modifier = Modifier.weight(1f))
+            Text(text = strings.text("Tasks"), color = colors.onSurfaceVariant, modifier = Modifier.weight(1f))
             Text(
-                text = "+ Add task",
+                text = strings.text("+ Add task"),
                 color = colors.primary,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clickable(onClick = onAddTaskClick),
@@ -106,10 +108,10 @@ fun ProjectDetailScreen(
                 }
             }
             uiState.error != null -> {
-                Text(text = "Eroare: ${uiState.error}", color = colors.error)
+                Text(text = strings.format("Error: {message}", "message" to (uiState.error ?: "")), color = colors.error)
             }
             uiState.tasks.isEmpty() -> {
-                Text(text = "No tasks in this project yet.", color = colors.onSurfaceVariant)
+                Text(text = strings.text("No tasks in this project yet."), color = colors.onSurfaceVariant)
             }
             else -> {
                 TaskList(tasks = uiState.tasks, onTaskClick = onTaskClick)

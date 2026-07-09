@@ -30,6 +30,7 @@ object AppColorPalette {
     val TextSecondary = Color(0xFF808080)
 
     val Error = Color(0xFFFF5C5C)
+    val LogoutDanger = Color(0xFFFF1F3D)
     val Success = Color(0xFF00D084)
 
     val AdminAvatarBackground = Color(0xFF4A2408)

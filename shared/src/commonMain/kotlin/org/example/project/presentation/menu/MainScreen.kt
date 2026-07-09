@@ -44,10 +44,15 @@ import org.example.project.data.accounts.UserApiService
 import org.example.project.data.task.TaskApiService
 import org.example.project.data.project.ProjectApiService
 import org.example.project.data.createHttpClient
+import org.example.project.presentation.dashboard.DashboardScreen
+import org.example.project.presentation.localization.AppLanguage
+import org.example.project.presentation.localization.LocalAppStrings
 
 @Composable
 fun MainScreen(
     user: UserSession,
+    selectedLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
@@ -79,13 +84,14 @@ fun MainScreen(
     }
 
     var showAddUserScreen by remember { mutableStateOf(false) }
+    var showUserDetail by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
     var showEditTaskScreen by remember { mutableStateOf(false) }
     val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
     val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id) }
 
-    val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -112,7 +118,6 @@ fun MainScreen(
                     showAddUserScreen = false
                     scope.launch { drawerState.close() }
                 },
-                onLogout = onLogout
             )
         }
     ) {
@@ -121,12 +126,13 @@ fun MainScreen(
             contentWindowInsets = WindowInsets.safeDrawing,
             topBar = {
                 AppTopBar(
-                    title = selectedSection.title,
+                    title = strings.text(selectedSection.title),
                     user = user,
                     activeTimerViewModel = activeTimerViewModel,
                     onMenuClick = {
                         scope.launch { drawerState.open() }
                     },
+                    onProfileClick = { showUserDetail = true },
                     onOpenActiveTask = { task ->
                         selectedSection = AppSection.TASKS
                         selectedTask = task
@@ -157,6 +163,24 @@ fun MainScreen(
             }
         ) { paddingValues ->
             when (selectedSection) {
+                AppSection.DASHBOARD -> {
+                    DashboardScreen(
+                        viewModel = taskListViewModel,
+                        user = user,
+                        onTaskClick = { task ->
+                            selectedSection = AppSection.TASKS
+                            selectedTask = task
+                            selectedProject = null
+                            showEditTaskScreen = false
+                            showAddTaskScreen = false
+                            showAddProjectScreen = false
+                            showAddProductScreen = false
+                            showAddUserScreen = false
+                        },
+                        modifier = Modifier.padding(paddingValues),
+                    )
+                }
+
                 AppSection.TASKS -> {
                     val task = selectedTask
 
@@ -348,12 +372,22 @@ fun MainScreen(
 
                 else -> {
                     EmptySectionScreen(
-                        title = selectedSection.title,
+                        title = strings.text(selectedSection.title),
                         modifier = Modifier
                             .padding(paddingValues)
                             .background(AppColorPalette.Background)
                     )
                 }
+            }
+
+            if (showUserDetail) {
+                UserDetailDialog(
+                    user = user,
+                    selectedLanguage = selectedLanguage,
+                    onLanguageSelected = onLanguageSelected,
+                    onDismiss = { showUserDetail = false },
+                    onLogout = onLogout,
+                )
             }
         }
     }

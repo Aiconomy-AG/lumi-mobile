@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.domain.project.ProjectStatus
+import org.example.project.presentation.localization.LocalAppStrings
 
 @Composable
 fun AddProjectScreen(
@@ -41,6 +42,7 @@ fun AddProjectScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var deadline by remember { mutableStateOf("") }
@@ -54,7 +56,7 @@ fun AddProjectScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Add project",
+            text = strings.text("Add project"),
             color = colors.onBackground,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
@@ -62,11 +64,11 @@ fun AddProjectScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        ProjectInput(value = name, onValueChange = { name = it }, label = "Name")
-        ProjectInput(value = description, onValueChange = { description = it }, label = "Description")
+        ProjectInput(value = name, onValueChange = { name = it }, label = strings.text("Project"))
+        ProjectInput(value = description, onValueChange = { description = it }, label = strings.text("Description"))
         ProjectInput(value = deadline, onValueChange = { deadline = it }, label = "Deadline (YYYY-MM-DD)")
 
-        Text(text = "Status", color = colors.onSurfaceVariant)
+        Text(text = strings.text("Status"), color = colors.onSurfaceVariant)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -92,7 +94,7 @@ fun AddProjectScreen(
                 contentColor = colors.onPrimary
             )
         ) {
-            Text("Save project")
+            Text(strings.text("Save project"))
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -105,7 +107,7 @@ fun AddProjectScreen(
                 contentColor = colors.onPrimary
             )
         ) {
-            Text("Cancel")
+            Text(strings.text("Cancel"))
         }
     }
 }
@@ -143,6 +145,7 @@ private fun ProjectInput(
 @Composable
 private fun ProjectStatusPicker(selected: ProjectStatus, onSelected: (ProjectStatus) -> Unit) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -162,17 +165,10 @@ private fun ProjectStatusPicker(selected: ProjectStatus, onSelected: (ProjectSta
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = status.label(),
+                    text = strings.projectStatus(status),
                     color = if (isSelected) colors.onSurface else colors.onSurfaceVariant
                 )
             }
         }
     }
-}
-
-private fun ProjectStatus.label(): String = when (this) {
-    ProjectStatus.TO_DO -> "To do"
-    ProjectStatus.IN_PROGRESS -> "In progress"
-    ProjectStatus.COMPLETE -> "Complete"
-    ProjectStatus.BLOCKED -> "Blocked"
 }

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.Product
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
@@ -96,9 +97,11 @@ private fun StockHeader(
     onSearchQueryChanged: (String) -> Unit,
     onAddProductClick: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Column {
         Text(
-            text = "Stock",
+            text = strings.text("Stock"),
             color = AppColorPalette.TextPrimary,
             style = AppTextStyles.PageTitle
         )
@@ -109,21 +112,21 @@ private fun StockHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "$productCount products",
+                text = strings.format("{count} products", "count" to productCount.toString()),
                 color = AppColorPalette.TextSecondary
             )
 
             Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
 
             Text(
-                text = "$lowStockCount low stock",
+                text = strings.format("{count} low stock", "count" to lowStockCount.toString()),
                 color = AppColorPalette.Primary
             )
 
             Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
 
             Text(
-                text = "$outOfStockCount out of stock",
+                text = strings.format("{count} out of stock", "count" to outOfStockCount.toString()),
                 color = AppColorPalette.Error
             )
         }
@@ -134,7 +137,7 @@ private fun StockHeader(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
             placeholder = {
-                Text("Search products...", color = AppColorPalette.TextSecondary)
+                Text(strings.text("Search products..."), color = AppColorPalette.TextSecondary)
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
@@ -148,7 +151,7 @@ private fun StockHeader(
             modifier = Modifier.fillMaxWidth(),
             colors = AppComponentDefaults.primaryButtonColors()
         ) {
-            Text("+ Add product")
+            Text(strings.text("+ Add product"))
         }
     }
 }
@@ -260,14 +263,16 @@ private fun HorizontalScrollBar(
 
 @Composable
 private fun StockTableHeader() {
+    val strings = LocalAppStrings.current
+
     Row(
         modifier = Modifier.fillMaxWidth()
     ) {
-        TableHeaderCell("Product", 220)
+        TableHeaderCell(strings.text("Product"), 220)
         TableHeaderCell("SKU", 150)
-        TableHeaderCell("Stock", 120)
-        TableHeaderCell("Price", 120)
-        TableHeaderCell("Actions", 76)
+        TableHeaderCell(strings.text("Stock"), 120)
+        TableHeaderCell(strings.text("Price"), 120)
+        TableHeaderCell(strings.text("Actions"), 76)
     }
 }
 
@@ -281,6 +286,7 @@ private fun StockTableRow(
     onUpdateQuantity: (Int) -> Unit
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
+    val strings = LocalAppStrings.current
 
     Row(
         modifier = Modifier
@@ -292,7 +298,7 @@ private fun StockTableRow(
         TableCell(sku, 150, AppColorPalette.TextSecondary)
 
         TableCell(
-            text = if (stockQuantity == 0) "Out of stock" else stockQuantity.toString(),
+            text = if (stockQuantity == 0) strings.text("Out of stock") else stockQuantity.toString(),
             width = 120,
             color = when {
                 stockQuantity == 0 -> AppColorPalette.Error
@@ -450,6 +456,8 @@ private fun StockPagination(
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -460,13 +468,13 @@ private fun StockPagination(
             enabled = currentPage > 0,
             colors = AppComponentDefaults.paginationButtonColors()
         ) {
-            Text("Previous")
+            Text(strings.text("Previous"))
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
         Text(
-            text = "Page ${currentPage + 1} of $totalPages",
+            text = strings.format("Page {page} of {total}", "page" to (currentPage + 1).toString(), "total" to totalPages.toString()),
             color = AppColorPalette.TextSecondary
         )
 
@@ -477,7 +485,7 @@ private fun StockPagination(
             enabled = currentPage < totalPages - 1,
             colors = AppComponentDefaults.paginationButtonColors()
         ) {
-            Text("Next")
+            Text(strings.text("Next"))
         }
     }
 }
@@ -491,6 +499,7 @@ private fun EditQuantityDialog(
     var quantityText by remember {
         mutableStateOf(currentQuantity.toString())
     }
+    val strings = LocalAppStrings.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -498,7 +507,7 @@ private fun EditQuantityDialog(
         titleContentColor = AppColorPalette.TextPrimary,
         textContentColor = AppColorPalette.TextPrimary,
         title = {
-            Text("Edit")
+            Text(strings.text("Edit"))
         },
         text = {
             OutlinedTextField(
@@ -507,7 +516,7 @@ private fun EditQuantityDialog(
                     quantityText = it
                 },
                 label = {
-                    Text("Quantity")
+                    Text(strings.text("Quantity"))
                 },
                 singleLine = true,
                 colors = AppComponentDefaults.appTextFieldColors()
@@ -523,14 +532,14 @@ private fun EditQuantityDialog(
                     }
                 }
             ) {
-                Text("Save", color = AppColorPalette.Primary)
+                Text(strings.text("Save"), color = AppColorPalette.Primary)
             }
         },
         dismissButton = {
             TextButton(
                 onClick = onDismiss
             ) {
-                Text("Cancel", color = AppColorPalette.TextSecondary)
+                Text(strings.text("Cancel"), color = AppColorPalette.TextSecondary)
             }
         }
     )

@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import org.example.project.data.accounts.User
 import org.example.project.domain.accounts.AccountRole
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
@@ -108,9 +109,11 @@ private fun AdminHeader(
     onSearchQueryChanged: (String) -> Unit,
     onAddUserClick: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Column {
         Text(
-            text = "Admin",
+            text = strings.text("Admin"),
             color = AppColorPalette.TextPrimary,
             style = AppTextStyles.PageTitle
         )
@@ -118,7 +121,7 @@ private fun AdminHeader(
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
         Text(
-            text = "$userCount users",
+            text = strings.format("{count} users", "count" to userCount.toString()),
             color = AppColorPalette.TextSecondary,
             style = AppTextStyles.Emphasis
         )
@@ -129,7 +132,7 @@ private fun AdminHeader(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
             placeholder = {
-                Text("Search users...", color = AppColorPalette.TextSecondary)
+                Text(strings.text("Search users..."), color = AppColorPalette.TextSecondary)
             },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -143,7 +146,7 @@ private fun AdminHeader(
             modifier = Modifier.fillMaxWidth(),
             colors = AppComponentDefaults.primaryButtonColors()
         ) {
-            Text("+ Add user")
+            Text(strings.text("+ Add user"))
         }
     }
 }
@@ -201,18 +204,20 @@ private fun UsersTable(
 
 @Composable
 private fun UsersTableHeader() {
+    val strings = LocalAppStrings.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = AppDimensions.TinySpacing)
     ) {
-        TableHeaderCell("User", 260)
-        TableHeaderCell("Email", 260)
-        TableHeaderCell("Phone", 160)
-        TableHeaderCell("Role", 140)
-        TableHeaderCell("Status", 120)
-        TableHeaderCell("Active", 120)
-        TableHeaderCell("Actions", 120)
+        TableHeaderCell(strings.text("User"), 260)
+        TableHeaderCell(strings.text("Email"), 260)
+        TableHeaderCell(strings.text("Phone"), 160)
+        TableHeaderCell(strings.text("Role"), 140)
+        TableHeaderCell(strings.text("Status"), 120)
+        TableHeaderCell(strings.text("Active"), 120)
+        TableHeaderCell(strings.text("Actions"), 120)
     }
 }
 
@@ -222,6 +227,7 @@ private fun UserTableRow(
     onSetUserActive: () -> Unit
 ) {
     var showActiveDialog by remember { mutableStateOf(false) }
+    val strings = LocalAppStrings.current
 
     Row(
         modifier = Modifier
@@ -270,7 +276,7 @@ private fun UserTableRow(
             colors = AppComponentDefaults.primaryButtonColors(),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
         ) {
-            Text(if (user.isActive) "Deactivate" else "Reactivate")
+            Text(if (user.isActive) strings.text("Deactivate") else strings.text("Reactivate"))
         }
     }
 
@@ -283,14 +289,14 @@ private fun UserTableRow(
             titleContentColor = AppColorPalette.TextPrimary,
             textContentColor = AppColorPalette.TextPrimary,
             title = {
-                Text(if (user.isActive) "Deactivate account?" else "Reactivate account?")
+                Text(if (user.isActive) strings.text("Deactivate account?") else strings.text("Reactivate account?"))
             },
             text = {
                 Text(
                     if (user.isActive) {
-                        "Are you sure you want to deactivate ${user.name}?"
+                        strings.format("Are you sure you want to deactivate {name}?", "name" to user.name)
                     } else {
-                        "Are you sure you want to reactivate ${user.name}?"
+                        strings.format("Are you sure you want to reactivate {name}?", "name" to user.name)
                     }
                 )
             },
@@ -302,7 +308,7 @@ private fun UserTableRow(
                     }
                 ) {
                     Text(
-                        text = if (user.isActive) "Deactivate" else "Reactivate",
+                        text = if (user.isActive) strings.text("Deactivate") else strings.text("Reactivate"),
                         color = AppColorPalette.Primary
                     )
                 }
@@ -314,7 +320,7 @@ private fun UserTableRow(
                     }
                 ) {
                     Text(
-                        text = "Cancel",
+                        text = strings.text("Cancel"),
                         color = AppColorPalette.TextSecondary
                     )
                 }
@@ -330,6 +336,8 @@ private fun AdminPagination(
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -340,13 +348,13 @@ private fun AdminPagination(
             enabled = currentPage > 0,
             colors = AppComponentDefaults.paginationButtonColors()
         ) {
-            Text("Previous")
+            Text(strings.text("Previous"))
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
         Text(
-            text = "Page ${currentPage + 1} of $totalPages",
+            text = strings.format("Page {page} of {total}", "page" to (currentPage + 1).toString(), "total" to totalPages.toString()),
             color = AppColorPalette.TextSecondary
         )
 
@@ -357,7 +365,7 @@ private fun AdminPagination(
             enabled = currentPage < totalPages - 1,
             colors = AppComponentDefaults.paginationButtonColors()
         ) {
-            Text("Next")
+            Text(strings.text("Next"))
         }
     }
 }
@@ -452,7 +460,7 @@ private fun RoleBadge(
                 .padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
             Text(
-                text = role.displayName,
+                text = LocalAppStrings.current.accountRole(role),
                 color = textColor,
                 style = AppTextStyles.TableHeader
             )
@@ -474,7 +482,7 @@ private fun StatusCell(
     }
 
     Text(
-        text = status.replaceFirstChar { it.uppercase() },
+        text = LocalAppStrings.current.accountStatus(status),
         color = color,
         style = AppTextStyles.Emphasis,
         modifier = modifier
@@ -487,7 +495,7 @@ private fun ActiveCell(
     modifier: Modifier = Modifier
 ) {
     Text(
-        text = if (isActive) "Active" else "Inactive",
+        text = if (isActive) LocalAppStrings.current.text("Active") else LocalAppStrings.current.text("Inactive"),
         color = if (isActive) AppColorPalette.Success else AppColorPalette.TextSecondary,
         style = AppTextStyles.Emphasis,
         modifier = modifier
