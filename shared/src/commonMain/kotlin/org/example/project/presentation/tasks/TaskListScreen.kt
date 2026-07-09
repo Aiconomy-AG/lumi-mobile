@@ -24,8 +24,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +37,8 @@ import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
+
+private const val TASK_LIST_REFRESH_INTERVAL_MS = 5_000L
 
 @Composable
 fun TaskListScreen(
@@ -46,6 +50,13 @@ fun TaskListScreen(
     val colors = MaterialTheme.colorScheme
     val strings = LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            viewModel.loadTasks()
+            delay(TASK_LIST_REFRESH_INTERVAL_MS)
+        }
+    }
 
     Box(
         modifier = modifier
@@ -287,7 +298,7 @@ private fun TaskRow(task: Task, onClick: () -> Unit) {
             StatusBadge(status = task.status)
         }
         Text(
-            text = task.dueDate,
+            text = task.dueDate.take(10),
             modifier = Modifier.weight(1f),
             color = colors.onSurfaceVariant,
         )

@@ -168,7 +168,7 @@ private fun ProjectRow(project: Project, onClick: () -> Unit) {
             ProjectStatusBadge(status = project.status)
         }
         Text(
-            text = project.deadline,
+            text = project.deadline.take(10),
             modifier = Modifier.weight(1f),
             color = colors.onSurfaceVariant,
         )

@@ -272,7 +272,7 @@ private fun ConversationDetailScreen(
                 MessageBubble(
                     message = message,
                     isMine = message.senderId == currentEmployeeId,
-                    senderName = uiState.employeesById[message.senderId]?.name ?: strings.text("Unknown sender"),
+                    senderName = uiState.usersById[message.senderId]?.name ?: strings.text("Unknown sender"),
                 )
             }
         }

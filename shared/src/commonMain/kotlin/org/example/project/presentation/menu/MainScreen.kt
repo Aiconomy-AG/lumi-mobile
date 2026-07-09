@@ -11,10 +11,7 @@ import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
-import org.example.project.data.employee.EmployeeMockApiService
-import org.example.project.data.project.ProjectMockApiService
-import org.example.project.data.task.TaskMockApiService
-import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
+import org.example.project.data.tasktimeentry.TaskTimeEntryApiService
 import org.example.project.domain.task.Task
 import org.example.project.presentation.tasks.ActiveTimerViewModel
 import org.example.project.presentation.tasks.AddTaskScreen
@@ -41,6 +38,8 @@ import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
 import org.example.project.data.ApiConfig
 import org.example.project.data.accounts.UserApiService
+import org.example.project.data.task.TaskApiService
+import org.example.project.data.project.ProjectApiService
 import org.example.project.data.createHttpClient
 import org.example.project.presentation.dashboard.DashboardScreen
 import org.example.project.presentation.localization.AppLanguage
@@ -55,34 +54,36 @@ fun MainScreen(
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
-    val taskApi = remember { TaskMockApiService() }
-    val employeeApi = remember { EmployeeMockApiService() }
-    val projectApi = remember { ProjectMockApiService() }
-    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, projectApi = projectApi, currentUserId = user.id) }
+    val apiHttpClient = remember { createHttpClient() }
+    val taskApi = remember(user.token) {
+        TaskApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
+    val userApi = remember(user.token) {
+        UserApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
+    val projectApi = remember(user.token) {
+        ProjectApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
+    val taskListViewModel = remember { TaskListViewModel(userApi = userApi, api = taskApi, projectApi = projectApi, currentUserId = user.id) }
     val projectListViewModel = remember { ProjectListViewModel(api = projectApi) }
     var showAddProjectScreen by remember { mutableStateOf(false) }
     var selectedProject by remember { mutableStateOf<Project?>(null) }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
-    val adminHttpClient = remember { createHttpClient() }
     val adminViewModel = remember(user.token) {
-        AdminViewModel(
-            UserApiService(
-                client = adminHttpClient,
-                baseUrl = ApiConfig.BASE_URL,
-                token = user.token
-            )
-        )
+        AdminViewModel(userApi)
     }
 
     var showAddUserScreen by remember { mutableStateOf(false) }
     var showUserDetail by remember { mutableStateOf(false) }
     var showAddTaskScreen by remember { mutableStateOf(false) }
     var showEditTaskScreen by remember { mutableStateOf(false) }
-    val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
+    val taskTimeEntryApi = remember(user.token) {
+        TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
-    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id) }
+    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id, userApi = userApi) }
 
     val strings = LocalAppStrings.current
 
@@ -209,7 +210,7 @@ fun MainScreen(
                                 activeTimerViewModel = activeTimerViewModel,
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
-                                employeeApi = employeeApi,
+                                userApi = userApi,
                                 projectApi = projectApi,
                             )
                         }
@@ -247,7 +248,7 @@ fun MainScreen(
                                 activeTimerViewModel = activeTimerViewModel,
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
-                                employeeApi = employeeApi,
+                                userApi = userApi,
                                 projectApi = projectApi,
                             )
                         }
