@@ -24,7 +24,7 @@ class UserApiService(
 
     override suspend fun getUsers(): Result<List<User>> {
         return try {
-            val response = client.get("$baseUrl/v1/admin/users") {
+            val response = client.get("$baseUrl/v1/users") {
                 bearerAuth()
             }
 
