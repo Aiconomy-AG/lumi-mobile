@@ -1,6 +1,7 @@
 package org.example.project
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -12,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import org.example.project.notifications.AndroidNotificationIntents
 import org.example.project.notifications.PushNotifications
 
 class MainActivity : ComponentActivity() {
@@ -28,6 +30,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         PushNotifications.initialize(this)
+        AndroidNotificationIntents.handle(intent)
 
         lifecycleScope.launch {
             when {
@@ -42,6 +45,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             App()
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        AndroidNotificationIntents.handle(intent)
     }
 
     private suspend fun logFcmToken() {

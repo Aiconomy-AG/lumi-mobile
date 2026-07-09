@@ -43,6 +43,7 @@ import org.example.project.data.chat.ReverbChatRealtimeService
 import org.example.project.data.project.ProjectApiService
 import org.example.project.data.createHttpClient
 import org.example.project.data.stock.StockApiService
+import org.example.project.notifications.NotificationRouter
 import org.example.project.presentation.dashboard.DashboardScreen
 import org.example.project.presentation.localization.AppLanguage
 import org.example.project.presentation.localization.LocalAppStrings
@@ -118,9 +119,61 @@ fun MainScreen(
     }
 
     val strings = LocalAppStrings.current
+    val pendingDeepLink by NotificationRouter.pending.collectAsState()
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    suspend fun openTaskById(taskId: Int) {
+        selectedSection = AppSection.TASKS
+        selectedProject = null
+        showAddTaskScreen = false
+        showEditTaskScreen = false
+        showAddProjectScreen = false
+        showAddProductScreen = false
+        showAddUserScreen = false
+
+        var task = taskListViewModel.uiState.value.tasks.find { it.id == taskId }
+        if (task == null) {
+            try {
+                task = taskApi.getTasks().find { it.id == taskId }
+                if (task != null) {
+                    taskListViewModel.loadTasks()
+                }
+            } catch (_: Exception) {
+            }
+        }
+        selectedTask = task
+    }
+
+    LaunchedEffect(pendingDeepLink) {
+        val link = pendingDeepLink ?: return@LaunchedEffect
+
+        when (link.type) {
+            "task_assigned",
+            "task_status_changed" -> {
+                link.taskId?.let { openTaskById(it) }
+            }
+
+            "task_unassigned" -> {
+                link.taskId?.let { openTaskById(it) }
+            }
+
+            "chat_message_received" -> {
+                selectedSection = AppSection.CHAT
+                selectedTask = null
+                selectedProject = null
+                showAddTaskScreen = false
+                showEditTaskScreen = false
+                showAddProjectScreen = false
+                showAddProductScreen = false
+                showAddUserScreen = false
+                link.conversationId?.let { chatViewModel.openConversationById(it) }
+            }
+        }
+
+        NotificationRouter.consume()
+    }
 
     val availableSections = AppSection.entries.filter {
         !it.adminOnly || user.role == UserRole.ADMIN

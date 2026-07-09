@@ -7,37 +7,54 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class LumiFirebaseMessagingService : FirebaseMessagingService() {
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onMessageReceived(message: RemoteMessage) {
         Log.d(TAG, "FCM message received from=${message.from} data=${message.data}")
 
-        val notification = message.notification ?: return
-        val title = notification.title ?: return
-        val body = notification.body ?: return
+        val data = message.data
+        val notification = message.notification
+        val title = notification?.title ?: data["title"]
+        val body = notification?.body ?: data["body"]
+
+        if (title.isNullOrBlank() || body.isNullOrBlank()) {
+            return
+        }
 
         showNotification(
             title = title,
             body = body,
+            data = data,
         )
     }
 
     override fun onNewToken(token: String) {
         Log.d(TAG, "FCM token refreshed: $token")
-        // Token registration with Laravel will be wired after login.
+        serviceScope.launch {
+            TokenRefreshHandlerHolder.handler?.invoke(token)
+        }
     }
 
-    private fun showNotification(title: String, body: String) {
+    private fun showNotification(title: String, body: String, data: Map<String, String>) {
         NotificationChannels.create(applicationContext)
 
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            data.forEach { (key, value) ->
+                putExtra(key, value)
+            }
         }
 
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0,
+            notificationIdFor(data),
             launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -52,11 +69,16 @@ class LumiFirebaseMessagingService : FirebaseMessagingService() {
             .build()
 
         val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager?.notify(NOTIFICATION_ID, notification)
+        notificationManager?.notify(notificationIdFor(data), notification)
+    }
+
+    private fun notificationIdFor(data: Map<String, String>): Int {
+        val type = data["type"] ?: "unknown"
+        val id = data["task_id"] ?: data["conversation_id"] ?: data["message_id"] ?: ""
+        return (type + id).hashCode()
     }
 
     companion object {
         private const val TAG = "LumiFirebaseMessaging"
-        private const val NOTIFICATION_ID = 1
     }
 }

@@ -33,7 +33,7 @@ class DeviceTokenApiService(
         platform: DevicePlatform,
     ): Result<Unit> {
         return try {
-            val response = client.post("$baseUrl/v1/device-tokens") {
+            val response = client.post("$baseUrl/device-tokens") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -57,7 +57,7 @@ class DeviceTokenApiService(
 
     suspend fun unregisterDeviceToken(fcmToken: String): Result<Unit> {
         return try {
-            val response = client.delete("$baseUrl/v1/device-tokens") {
+            val response = client.delete("$baseUrl/device-tokens") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(UnregisterDeviceTokenRequest(token = fcmToken))
