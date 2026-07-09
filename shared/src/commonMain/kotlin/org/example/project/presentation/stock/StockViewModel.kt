@@ -1,19 +1,23 @@
 package org.example.project.presentation.stock
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.example.project.data.stock.StockApiService
-import org.example.project.domain.stock.Product
-import org.example.project.domain.stock.ProductVariant
+import org.example.project.domain.stock.CreateProductInput
+import org.example.project.domain.stock.CreateProductVariantInput
+import org.example.project.domain.stock.StockApi
+import org.example.project.domain.stock.UpdateProductInput
+import org.example.project.domain.stock.UpdateProductVariantInput
 
-class StockViewModel (private val repository: StockApiService) {
-    private val viewModelScope = CoroutineScope(Dispatchers.Default)
+class StockViewModel(
+    private val repository: StockApi
+) : ViewModel() {
 
     private val _state = MutableStateFlow(StockState())
-    val state: StateFlow<StockState> = _state
+    val state: StateFlow<StockState> = _state.asStateFlow()
 
     init {
         loadProducts()
@@ -22,7 +26,10 @@ class StockViewModel (private val repository: StockApiService) {
 
     fun loadProducts() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
+            _state.value = _state.value.copy(
+                isLoading = true,
+                errorMessage = null
+            )
 
             val result = repository.getProducts()
 
@@ -30,13 +37,13 @@ class StockViewModel (private val repository: StockApiService) {
                 .onSuccess { products ->
                     _state.value = _state.value.copy(
                         products = products,
-                        isLoading = false,
-
+                        isLoading = false
                     )
                 }
                 .onFailure { exception ->
                     _state.value = _state.value.copy(
                         isLoading = false,
+                        errorMessage = exception.message ?: "Could not load products."
                     )
                 }
         }
@@ -61,29 +68,9 @@ class StockViewModel (private val repository: StockApiService) {
     }
 
     fun onSearchQueryChanged(query: String) {
-        _state.value = _state.value.copy(searchQuery = query)
-    }
-
-    fun deleteProduct(productId: Int) {
-        viewModelScope.launch {
-            repository.deleteProduct(productId)
-            loadProducts()
-        }
-    }
-
-    fun updateStockQuantity(
-        productId: Int,
-        variantId: Int,
-        newQuantity: Int
-    ) {
-        viewModelScope.launch {
-            repository.updateStockQuantity(
-                productId = productId,
-                variantId = variantId,
-                newQuantity = newQuantity
-            )
-            loadProducts()
-        }
+        _state.value = _state.value.copy(
+            searchQuery = query
+        )
     }
 
     fun addProduct(
@@ -93,29 +80,109 @@ class StockViewModel (private val repository: StockApiService) {
         sku: String,
         price: Double,
         stockQuantity: Int,
-        categoryId: Int
+        categoryId: Int?
     ) {
         viewModelScope.launch {
-            val product = Product(
+            _state.value = _state.value.copy(
+                isSaving = true,
+                errorMessage = null
+            )
+
+            val input = CreateProductInput(
                 name = name,
                 price = price,
                 description = description.ifBlank { null },
-                image_url = imageUrl.ifBlank { null },
-                sku = sku,
-                stock_quantity = stockQuantity,
-                category_id = categoryId,
-                variants = null
+                imageUrl = imageUrl.ifBlank { null },
+                sku = sku.ifBlank { null },
+                stockQuantity = stockQuantity,
+                categoryId = categoryId
             )
 
-            val result = repository.addProduct(product)
+            val result = repository.addProduct(input)
 
             result
                 .onSuccess {
+                    _state.value = _state.value.copy(
+                        isSaving = false
+                    )
                     loadProducts()
                 }
                 .onFailure { exception ->
                     _state.value = _state.value.copy(
+                        isSaving = false,
                         errorMessage = exception.message ?: "Could not create product."
+                    )
+                }
+        }
+    }
+
+    fun updateProduct(
+        productId: Int,
+        name: String,
+        description: String,
+        imageUrl: String,
+        sku: String,
+        price: Double,
+        stockQuantity: Int,
+        categoryId: Int?
+    ) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isSaving = true,
+                errorMessage = null
+            )
+
+            val input = UpdateProductInput(
+                name = name,
+                price = price,
+                description = description.ifBlank { null },
+                imageUrl = imageUrl.ifBlank { null },
+                sku = sku.ifBlank { null },
+                stockQuantity = stockQuantity,
+                categoryId = categoryId
+            )
+
+            val result = repository.updateProduct(
+                productId = productId,
+                input = input
+            )
+
+            result
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        isSaving = false
+                    )
+                    loadProducts()
+                }
+                .onFailure { exception ->
+                    _state.value = _state.value.copy(
+                        isSaving = false,
+                        errorMessage = exception.message ?: "Could not update product."
+                    )
+                }
+        }
+    }
+
+    fun deleteProduct(productId: Int) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isSaving = true,
+                errorMessage = null
+            )
+
+            val result = repository.deleteProduct(productId)
+
+            result
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        isSaving = false
+                    )
+                    loadProducts()
+                }
+                .onFailure { exception ->
+                    _state.value = _state.value.copy(
+                        isSaving = false,
+                        errorMessage = exception.message ?: "Could not delete product."
                     )
                 }
         }
@@ -132,26 +199,117 @@ class StockViewModel (private val repository: StockApiService) {
         stockQuantity: Int
     ) {
         viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isSaving = true,
+                errorMessage = null
+            )
+
+            val input = CreateProductVariantInput(
+                sku = sku,
+                name = name.ifBlank { null },
+                price = price,
+                weight = weight,
+                weightUnit = weightUnit.ifBlank { null },
+                colour = colour.ifBlank { null },
+                stockQuantity = stockQuantity
+            )
+
             val result = repository.addProductVariant(
-                ProductVariant(
-                    product_id = productId,
-                    sku = sku,
-                    name = name.ifBlank { null },
-                    colour = colour.ifBlank { null },
-                    weight = weight,
-                    weight_unit = weightUnit.ifBlank { null },
-                    price = price,
-                    stock_quantity = stockQuantity
-                )
+                productId = productId,
+                input = input
             )
 
             result
                 .onSuccess {
+                    _state.value = _state.value.copy(
+                        isSaving = false
+                    )
                     loadProducts()
                 }
                 .onFailure { exception ->
                     _state.value = _state.value.copy(
+                        isSaving = false,
                         errorMessage = exception.message ?: "Could not create variant."
+                    )
+                }
+        }
+    }
+
+    fun updateProductVariant(
+        productId: Int,
+        variantId: Int,
+        sku: String,
+        name: String,
+        colour: String,
+        weight: Double?,
+        weightUnit: String,
+        price: Double,
+        stockQuantity: Int
+    ) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isSaving = true,
+                errorMessage = null
+            )
+
+            val input = UpdateProductVariantInput(
+                sku = sku,
+                name = name.ifBlank { null },
+                price = price,
+                weight = weight,
+                weightUnit = weightUnit.ifBlank { null },
+                colour = colour.ifBlank { null },
+                stockQuantity = stockQuantity
+            )
+
+            val result = repository.updateProductVariant(
+                productId = productId,
+                variantId = variantId,
+                input = input
+            )
+
+            result
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        isSaving = false
+                    )
+                    loadProducts()
+                }
+                .onFailure { exception ->
+                    _state.value = _state.value.copy(
+                        isSaving = false,
+                        errorMessage = exception.message ?: "Could not update variant."
+                    )
+                }
+        }
+    }
+
+    fun deleteProductVariant(
+        productId: Int,
+        variantId: Int
+    ) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                isSaving = true,
+                errorMessage = null
+            )
+
+            val result = repository.deleteProductVariant(
+                productId = productId,
+                variantId = variantId
+            )
+
+            result
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        isSaving = false
+                    )
+                    loadProducts()
+                }
+                .onFailure { exception ->
+                    _state.value = _state.value.copy(
+                        isSaving = false,
+                        errorMessage = exception.message ?: "Could not delete variant."
                     )
                 }
         }

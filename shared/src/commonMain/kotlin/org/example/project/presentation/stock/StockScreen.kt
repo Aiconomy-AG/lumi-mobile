@@ -1,32 +1,30 @@
 package org.example.project.presentation.stock
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import org.example.project.domain.stock.Category
 import org.example.project.domain.stock.Product
 import org.example.project.domain.stock.ProductVariant
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 
 @Composable
 fun StockScreen(
@@ -34,10 +32,23 @@ fun StockScreen(
     onAddProductClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    var currentPage by remember { mutableStateOf(0) }
-    val pageSize = 5
+
+    var selectedProductId by remember {
+        mutableStateOf<Int?>(null)
+    }
+
+    var currentPage by remember {
+        mutableStateOf(0)
+    }
+    val pageSize = 7
+
     val filteredProducts = state.filteredProducts
-    val totalPages = maxOf(1, (filteredProducts.size + pageSize - 1) / pageSize)
+
+    val totalPages = maxOf(
+        1,
+        (filteredProducts.size + pageSize - 1) / pageSize
+    )
+
     val pagedProducts = filteredProducts
         .drop(currentPage * pageSize)
         .take(pageSize)
@@ -48,6 +59,14 @@ fun StockScreen(
         }
     }
 
+
+    val selectedProduct = selectedProductId?.let { id ->
+        state.products.firstOrNull { product ->
+            product.id == id
+        }
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -55,37 +74,118 @@ fun StockScreen(
             .padding(AppDimensions.ScreenPadding)
     ) {
         StockHeader(
-            productCount = state.products.size,
+            productCount = state.productCount,
+            variantCount = state.variantCount,
             lowStockCount = state.lowStockCount,
             outOfStockCount = state.outOfStockCount,
             searchQuery = state.searchQuery,
+            isLoading = state.isLoading,
+            errorMessage = state.errorMessage,
             onSearchQueryChanged = viewModel::onSearchQueryChanged,
             onAddProductClick = onAddProductClick
         )
 
         Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
-        StockTable(
-            products = pagedProducts,
-            onDeleteProduct = viewModel::deleteProduct,
-            onUpdateQuantity = viewModel::updateStockQuantity,
-            onAddVariant = viewModel::addProductVariant
-        )
+        if (state.isLoading) {
+            LoadingStockContent()
+        } else {
+            BoxWithConstraints(
+                modifier = Modifier.weight(1f)
+            ) {
+                val tableHeaderHeight = 36.dp
+                val rowHeight = 54.dp
+                val paginationHeight = 56.dp
+                val spacing = AppDimensions.SmallSpacing
 
-        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+                val availableForRows = maxHeight -
+                        tableHeaderHeight -
+                        paginationHeight -
+                        spacing
 
-        StockPagination(
-            currentPage = currentPage,
-            totalPages = totalPages,
-            onPreviousClick = {
-                if (currentPage > 0) {
-                    currentPage--
+                val pageSize = maxOf(
+                    1,
+                    (availableForRows.value / rowHeight.value).toInt()
+                )
+
+                val totalPages = maxOf(
+                    1,
+                    (filteredProducts.size + pageSize - 1) / pageSize
+                )
+
+                val pagedProducts = filteredProducts
+                    .drop(currentPage * pageSize)
+                    .take(pageSize)
+
+                LaunchedEffect(filteredProducts.size, pageSize) {
+                    if (currentPage > totalPages - 1) {
+                        currentPage = totalPages - 1
+                    }
                 }
+
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    ProductTable(
+                        products = pagedProducts,
+                        onProductClick = { product ->
+                            selectedProductId = product.id
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+                    StockPagination(
+                        currentPage = currentPage,
+                        totalPages = totalPages,
+                        onPreviousClick = {
+                            if (currentPage > 0) {
+                                currentPage--
+                            }
+                        },
+                        onNextClick = {
+                            if (currentPage < totalPages - 1) {
+                                currentPage++
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    if (selectedProduct != null) {
+        ProductDetailsDialog(
+            product = selectedProduct,
+            categories = state.categories,
+            isSaving = state.isSaving,
+            onDismiss = {
+                selectedProductId = null
             },
-            onNextClick = {
-                if (currentPage < totalPages - 1) {
-                    currentPage++
-                }
+            onUpdateProduct = { productId, name, description, imageUrl, sku, price, stockQuantity, categoryId ->
+                viewModel.updateProduct(
+                    productId = productId,
+                    name = name,
+                    description = description,
+                    imageUrl = imageUrl,
+                    sku = sku,
+                    price = price,
+                    stockQuantity = stockQuantity,
+                    categoryId = categoryId
+                )
+            },
+            onUpdateVariant = { productId, variantId, variantSku, variantName, colour, weight, weightUnit, variantPrice, variantStock ->
+                viewModel.updateProductVariant(
+                    productId = productId,
+                    variantId = variantId,
+                    sku = variantSku,
+                    name = variantName,
+                    colour = colour,
+                    weight = weight,
+                    weightUnit = weightUnit,
+                    price = variantPrice,
+                    stockQuantity = variantStock
+                )
             }
         )
     }
@@ -94,9 +194,12 @@ fun StockScreen(
 @Composable
 private fun StockHeader(
     productCount: Int,
+    variantCount: Int,
     lowStockCount: Int,
     outOfStockCount: Int,
     searchQuery: String,
+    isLoading: Boolean,
+    errorMessage: String?,
     onSearchQueryChanged: (String) -> Unit,
     onAddProductClick: () -> Unit
 ) {
@@ -120,6 +223,17 @@ private fun StockHeader(
             Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
 
             Text(
+                text = "$variantCount variants",
+                color = AppColorPalette.TextSecondary
+            )
+        }
+
+        Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
                 text = "$lowStockCount low stock",
                 color = AppColorPalette.Primary
             )
@@ -132,13 +246,25 @@ private fun StockHeader(
             )
         }
 
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+            Text(
+                text = errorMessage,
+                color = AppColorPalette.Error
+            )
+        }
+
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
         OutlinedTextField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
             placeholder = {
-                Text("Search products...", color = AppColorPalette.TextSecondary)
+                Text(
+                    text = "Search products...",
+                    color = AppColorPalette.TextSecondary
+                )
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
@@ -149,6 +275,7 @@ private fun StockHeader(
 
         Button(
             onClick = onAddProductClick,
+            enabled = !isLoading,
             modifier = Modifier.fillMaxWidth(),
             colors = AppComponentDefaults.primaryButtonColors()
         ) {
@@ -158,28 +285,31 @@ private fun StockHeader(
 }
 
 @Composable
-private fun StockTable(
-    products: List<Product>,
-    onDeleteProduct: (Int) -> Unit,
-    onUpdateQuantity: (Int, Int, Int) -> Unit,
-    onAddVariant: (
-        productId: Int,
-        sku: String,
-        name: String,
-        colour: String,
-        weight: Double?,
-        weightUnit: String,
-        price: Double,
-        stockQuantity: Int
-    ) -> Unit
-){
-    val verticalScrollState = rememberScrollState()
-    val horizontalScrollState = rememberScrollState()
+private fun LoadingStockContent() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            color = AppColorPalette.Primary
+        )
+    }
+}
 
+@Composable
+private fun ProductTable(
+    products: List<Product>,
+    onProductClick: (Product) -> Unit
+) {
+    val horizontalScrollState = rememberScrollState()
+    val rowHeight = 54.dp
+    val headerHeight = 36.dp
+    val verticalPadding = 24.dp
+    val tableHeight = headerHeight + rowHeight * 7 + verticalPadding
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = AppDimensions.TableMaxHeight)
+            .height(tableHeight)
             .border(
                 width = 1.dp,
                 color = AppColorPalette.Border,
@@ -192,173 +322,151 @@ private fun StockTable(
     ) {
         Column(
             modifier = Modifier
-                .verticalScroll(verticalScrollState)
                 .horizontalScroll(horizontalScrollState)
-                .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 26.dp)
-                .width(886.dp)
+                .padding(
+                    start = 12.dp,
+                    top = 12.dp,
+                    end = 12.dp,
+                    bottom = 12.dp
+                )
+                .width(790.dp)
         ) {
-            StockTableHeader()
+            ProductTableHeader()
 
             products.forEach { product ->
-                ProductStockRow(
+                ProductTableRow(
                     product = product,
-                    onDeleteProduct = onDeleteProduct,
-                    onUpdateQuantity = onUpdateQuantity,
-                    onAddVariant = onAddVariant
+                    onClick = {
+                        onProductClick(product)
+                    }
                 )
             }
-        }
 
-        HorizontalScrollBar(
-            scrollValue = horizontalScrollState.value,
-            maxScrollValue = horizontalScrollState.maxValue,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 14.dp, vertical = 8.dp)
-        )
+            val emptyRows = 7 - products.size
+
+            repeat(emptyRows.coerceAtLeast(0)) {
+                EmptyFixedTableRow()
+            }
+
+            if (products.isEmpty()) {
+                EmptyProductTableRow()
+            }
+        }
     }
 }
 
-
 @Composable
-private fun ProductStockRow(
-    product: Product,
-    onDeleteProduct: (Int) -> Unit,
-    onUpdateQuantity: (Int, Int, Int) -> Unit,
-    onAddVariant: (
-        productId: Int,
-        sku: String,
-        name: String,
-        colour: String,
-        weight: Double?,
-        weightUnit: String,
-        price: Double,
-        stockQuantity: Int
-    ) -> Unit
-){
-    val productId = product.id ?: return
-    val variants = product.variants.orEmpty()
-
-    var selectedVariantId by remember(product.id) {
-        mutableStateOf(variants.firstOrNull()?.id)
-    }
-
-    val selectedVariant = variants.firstOrNull { variant ->
-        variant.id == selectedVariantId
-    } ?: variants.firstOrNull()
-
-    val displayedVariantLabel = selectedVariant?.let { variantLabel(it) } ?: "-"
-    val displayedSku = selectedVariant?.sku ?: product.sku ?: "-"
-    val displayedStockQuantity = selectedVariant?.stock_quantity ?: product.stock_quantity
-    val displayedPrice = selectedVariant?.price ?: product.price
-
-    StockTableRow(
-        product = product,
-        variants = variants,
-        selectedVariant = selectedVariant,
-        onVariantSelected = { variant ->
-            selectedVariantId = variant.id
-        },
-        variantLabel = displayedVariantLabel,
-        sku = displayedSku,
-        stockQuantity = displayedStockQuantity,
-        price = displayedPrice,
-        canEditQuantity = selectedVariant?.id != null,
-        onDeleteProduct = {
-            onDeleteProduct(productId)
-        },
-        onUpdateQuantity = { newQuantity ->
-            val variantId = selectedVariant?.id
-
-            if (variantId != null) {
-                onUpdateQuantity(
-                    productId,
-                    variantId,
-                    newQuantity
-                )
-            }
-        },
-        onAddVariant = { sku, name, colour, weight, weightUnit, price, stockQuantity ->
-            onAddVariant(
-                productId,
-                sku,
-                name,
-                colour,
-                weight,
-                weightUnit,
-                price,
-                stockQuantity
-            )
-        }
-    )
-}
-@Composable
-private fun HorizontalScrollBar(
-    scrollValue: Int,
-    maxScrollValue: Int,
-    modifier: Modifier = Modifier
-) {
-    if (maxScrollValue <= 0) return
-
-    BoxWithConstraints(
-        modifier = modifier
+private fun EmptyFixedTableRow() {
+    Row(
+        modifier = Modifier
             .fillMaxWidth()
-            .height(AppDimensions.ScrollBarHeight)
-            .background(
-                color = AppColorPalette.Border,
-                shape = RoundedCornerShape(AppDimensions.ScrollBarHeight)
-            )
+            .height(54.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        val density = LocalDensity.current
-        val trackWidth = maxWidth
-        val trackWidthPx = with(density) { trackWidth.toPx() }
-        val contentWidthPx = trackWidthPx + maxScrollValue
-        val thumbWidth = (trackWidth * (trackWidthPx / contentWidthPx)).coerceAtLeast(40.dp)
-        val maxThumbOffset = trackWidth - thumbWidth
-        val scrollProgress = scrollValue.toFloat() / maxScrollValue.toFloat()
-        val thumbOffset = maxThumbOffset * scrollProgress
-
-        Box(
-            modifier = Modifier
-                .offset(x = thumbOffset)
-                .width(thumbWidth)
-                .fillMaxHeight()
-                .background(
-                    color = AppColorPalette.Primary,
-                    shape = RoundedCornerShape(AppDimensions.ScrollBarHeight)
-                )
-        )
+        // rând gol, doar păstrează înălțimea tabelului
     }
 }
 
 @Composable
-private fun StockTableHeader() {
+private fun ProductTableHeader() {
     Row(
         modifier = Modifier.fillMaxWidth()
     ) {
         TableHeaderCell("Product", 220)
-        TableHeaderCell("Variant", 160)
         TableHeaderCell("SKU", 150)
+        TableHeaderCell("Category", 150)
         TableHeaderCell("Stock", 120)
-        TableHeaderCell("Price", 120)
-        TableHeaderCell("Actions", 116)
+        TableHeaderCell("Price", 150)
     }
 }
 
 @Composable
-private fun StockTableRow(
+private fun ProductTableRow(
     product: Product,
-    variants: List<ProductVariant>,
-    selectedVariant: ProductVariant?,
-    onVariantSelected: (ProductVariant) -> Unit,
-    variantLabel: String,
-    sku: String,
-    stockQuantity: Int,
-    price: Double,
-    canEditQuantity: Boolean,
-    onDeleteProduct: () -> Unit,
-    onUpdateQuantity: (Int) -> Unit,
-    onAddVariant: (
+    onClick: () -> Unit
+) {
+    val totalStock = productTotalStock(product)
+    val displayPrice = productDisplayPrice(product)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .clickable {
+                onClick()
+            },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TableCell(
+            text = product.name,
+            width = 220,
+            color = AppColorPalette.TextPrimary
+        )
+
+        TableCell(
+            text = product.sku ?: "-",
+            width = 150,
+            color = AppColorPalette.TextSecondary
+        )
+
+        TableCell(
+            text = product.categoryName ?: "-",
+            width = 150,
+            color = AppColorPalette.TextSecondary
+        )
+
+        TableCell(
+            text = if (totalStock == 0) "Out of stock" else totalStock.toString(),
+            width = 120,
+            color = when {
+                totalStock == 0 -> AppColorPalette.Error
+                totalStock <= 5 -> AppColorPalette.Primary
+                else -> AppColorPalette.Success
+            }
+        )
+
+        TableCell(
+            text = displayPrice,
+            width = 150,
+            color = AppColorPalette.TextPrimary
+        )
+    }
+}
+
+@Composable
+private fun EmptyProductTableRow() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "No products found.",
+            color = AppColorPalette.TextSecondary
+        )
+    }
+}
+
+@Composable
+private fun ProductDetailsDialog(
+    product: Product,
+    categories: List<Category>,
+    isSaving: Boolean,
+    onDismiss: () -> Unit,
+    onUpdateProduct: (
+        productId: Int,
+        name: String,
+        description: String,
+        imageUrl: String,
+        sku: String,
+        price: Double,
+        stockQuantity: Int,
+        categoryId: Int?
+    ) -> Unit,
+    onUpdateVariant: (
+        productId: Int,
+        variantId: Int,
         sku: String,
         name: String,
         colour: String,
@@ -368,293 +476,673 @@ private fun StockTableRow(
         stockQuantity: Int
     ) -> Unit
 ) {
-    var showEditDialog by remember { mutableStateOf(false) }
-    var showAddVariantDialog by remember { mutableStateOf(false) }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        TableCell(product.name, 220, AppColorPalette.TextPrimary)
-
-        VariantCell(
-            variants = variants,
-            selectedVariant = selectedVariant,
-            fallbackLabel = variantLabel,
-            onVariantSelected = onVariantSelected,
-            width = 160
-        )
-
-        TableCell(sku, 150, AppColorPalette.TextSecondary)
-
-        TableCell(
-            text = if (stockQuantity == 0) "Out of stock" else stockQuantity.toString(),
-            width = 120,
-            color = when {
-                stockQuantity == 0 -> AppColorPalette.Error
-                stockQuantity <= 5 -> AppColorPalette.Primary
-                else -> AppColorPalette.Success
-            }
-        )
-
-        TableCell("${price} lei", 120, AppColorPalette.TextPrimary)
-
-        Row(
-            modifier = Modifier.width(116.dp)
-        ) {
-            Button(
-                modifier = Modifier.size(AppDimensions.ActionButtonSize),
-                enabled = canEditQuantity,
-                onClick = {
-                    showEditDialog = true
-                },
-                colors = AppComponentDefaults.primaryButtonColors(),
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                EditIcon(tint = AppColorPalette.OnPrimary)
-            }
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            Button(
-                modifier = Modifier.size(AppDimensions.ActionButtonSize),
-                onClick = onDeleteProduct,
-                colors = AppComponentDefaults.primaryButtonColors(),
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                DeleteIcon(tint = AppColorPalette.OnPrimary)
-            }
-            Spacer(modifier = Modifier.width(4.dp))
-
-            Button(
-                modifier = Modifier.size(AppDimensions.ActionButtonSize),
-                onClick = {
-                    showAddVariantDialog = true
-                },
-                colors = AppComponentDefaults.primaryButtonColors(),
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Text("+")
-            }
-        }
+    var name by remember(product.id, product.name) {
+        mutableStateOf(product.name)
     }
 
-    if (showEditDialog) {
-        EditQuantityDialog(
-            currentQuantity = stockQuantity,
-            onDismiss = {
-                showEditDialog = false
-            },
-            onSave = { newQuantity ->
-                onUpdateQuantity(newQuantity)
-                showEditDialog = false
-            }
-        )
+    var description by remember(product.id, product.description) {
+        mutableStateOf(product.description ?: "")
     }
 
-    if (showAddVariantDialog) {
-        AddVariantDialog(
-            defaultPrice = price,
-            onDismiss = {
-                showAddVariantDialog = false
-            },
-            onSave = { variantSku, variantName, colour, weight, weightUnit, variantPrice, variantStock ->
-                showAddVariantDialog = false
-
-                onAddVariant(
-                    variantSku,
-                    variantName,
-                    colour,
-                    weight,
-                    weightUnit,
-                    variantPrice,
-                    variantStock
-                )
-            }
-        )
+    var imageUrl by remember(product.id, product.imageUrl) {
+        mutableStateOf(product.imageUrl ?: "")
     }
-}
 
-@Composable
-private fun VariantCell(
-    variants: List<ProductVariant>,
-    selectedVariant: ProductVariant?,
-    fallbackLabel: String,
-    onVariantSelected: (ProductVariant) -> Unit,
-    width: Int
-) {
-    var expanded by remember { mutableStateOf(false) }
+    var sku by remember(product.id, product.sku) {
+        mutableStateOf(product.sku ?: "")
+    }
 
-    Box(
-        modifier = Modifier.width(width.dp)
-    ) {
-        if (variants.size <= 1) {
-            Text(
-                text = fallbackLabel,
-                color = AppColorPalette.TextSecondary
-            )
-        } else {
-            Button(
-                onClick = {
-                    expanded = true
-                },
-                colors = AppComponentDefaults.paginationButtonColors(),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+    var price by remember(product.id, product.price) {
+        mutableStateOf(product.price.toString())
+    }
+
+    var stockQuantity by remember(product.id, product.stockQuantity) {
+        mutableStateOf(product.stockQuantity.toString())
+    }
+
+    var selectedCategoryId by remember(product.id, product.categoryId) {
+        mutableStateOf(product.categoryId)
+    }
+
+    var isEditingProduct by remember(product.id) {
+        mutableStateOf(false)
+    }
+
+    var editingVariantId by remember(product.id) {
+        mutableStateOf<Int?>(null)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = AppColorPalette.Surface,
+        titleContentColor = AppColorPalette.TextPrimary,
+        textContentColor = AppColorPalette.TextPrimary,
+        title = {
+            Text("Product details")
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = selectedVariant?.let { variant ->
-                        variantLabel(variant)
-                    } ?: fallbackLabel,
-                    color = AppColorPalette.TextPrimary
-                )
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = {
-                    expanded = false
-                }
-            ) {
-                variants.forEach { variant ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(variantLabel(variant))
+                if (isEditingProduct) {
+                    ProductEditSection(
+                        product = product,
+                        categories = categories,
+                        isSaving = isSaving,
+                        onCancel = {
+                            isEditingProduct = false
                         },
-                        onClick = {
-                            onVariantSelected(variant)
-                            expanded = false
+                        onSave = { name, description, imageUrl, sku, price, stockQuantity, categoryId ->
+                            onUpdateProduct(
+                                product.id,
+                                name,
+                                description,
+                                imageUrl,
+                                sku,
+                                price,
+                                stockQuantity,
+                                categoryId
+                            )
+
+                            isEditingProduct = false
+                        }
+                    )
+                } else {
+                    ProductReadOnlySection(
+                        product = product,
+                        onEditClick = {
+                            isEditingProduct = true
                         }
                     )
                 }
+
+                Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
+
+                Text(
+                    text = "Variants",
+                    color = AppColorPalette.TextPrimary,
+                    style = AppTextStyles.TableHeader
+                )
+
+                Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+                if (product.variants.isEmpty()) {
+                    Text(
+                        text = "No variants.",
+                        color = AppColorPalette.TextSecondary
+                    )
+                } else {
+                    product.variants.forEach { variant ->
+                        if (editingVariantId == variant.id) {
+                            VariantEditCard(
+                                productId = product.id,
+                                variant = variant,
+                                isSaving = isSaving,
+                                onCancel = {
+                                    editingVariantId = null
+                                },
+                                onUpdateVariant = { productId, variantId, sku, name, colour, weight, weightUnit, price, stockQuantity ->
+                                    onUpdateVariant(
+                                        productId,
+                                        variantId,
+                                        sku,
+                                        name,
+                                        colour,
+                                        weight,
+                                        weightUnit,
+                                        price,
+                                        stockQuantity
+                                    )
+
+                                    editingVariantId = null
+                                }
+                            )
+                        } else {
+                            VariantInfoCard(
+                                variant = variant,
+                                onEditClick = {
+                                    editingVariantId = variant.id
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text(
+                    text = "Close",
+                    color = AppColorPalette.Primary
+                )
+            }
+        }
+    )
+}
+@Composable
+private fun ProductEditSection(
+    product: Product,
+    categories: List<Category>,
+    isSaving: Boolean,
+    onCancel: () -> Unit,
+    onSave: (
+        name: String,
+        description: String,
+        imageUrl: String,
+        sku: String,
+        price: Double,
+        stockQuantity: Int,
+        categoryId: Int?
+    ) -> Unit
+) {
+    var name by remember(product.id, product.name) {
+        mutableStateOf(product.name)
+    }
+
+    var description by remember(product.id, product.description) {
+        mutableStateOf(product.description ?: "")
+    }
+
+    var imageUrl by remember(product.id, product.imageUrl) {
+        mutableStateOf(product.imageUrl ?: "")
+    }
+
+    var sku by remember(product.id, product.sku) {
+        mutableStateOf(product.sku ?: "")
+    }
+
+    var price by remember(product.id, product.price) {
+        mutableStateOf(product.price.toString())
+    }
+
+    var stockQuantity by remember(product.id, product.stockQuantity) {
+        mutableStateOf(product.stockQuantity.toString())
+    }
+
+    var selectedCategoryId by remember(product.id, product.categoryId) {
+        mutableStateOf(product.categoryId)
+    }
+
+    Column {
+        Text(
+            text = "Edit product",
+            color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.TableHeader
+        )
+
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+        ProductEditField(
+            value = name,
+            onValueChange = { name = it },
+            label = "Name"
+        )
+
+        ProductEditField(
+            value = description,
+            onValueChange = { description = it },
+            label = "Description",
+            singleLine = false
+        )
+
+        ProductEditField(
+            value = imageUrl,
+            onValueChange = { imageUrl = it },
+            label = "Image URL"
+        )
+
+        ProductEditField(
+            value = sku,
+            onValueChange = { sku = it },
+            label = "SKU"
+        )
+
+        CategoryDropdownField(
+            categories = categories,
+            selectedCategoryId = selectedCategoryId,
+            onCategorySelected = { category ->
+                selectedCategoryId = category.id
+            }
+        )
+
+        ProductEditField(
+            value = price,
+            onValueChange = { price = it },
+            label = "Price"
+        )
+
+        ProductEditField(
+            value = stockQuantity,
+            onValueChange = { stockQuantity = it },
+            label = "Stock quantity"
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Button(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
+                colors = AppComponentDefaults.paginationButtonColors()
+            ) {
+                Text("Cancel")
+            }
+
+            Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
+
+            Button(
+                onClick = {
+                    val priceValue = price.trim().toDoubleOrNull()
+                    val stockValue = stockQuantity.trim().toIntOrNull()
+
+                    if (
+                        name.isNotBlank() &&
+                        priceValue != null &&
+                        stockValue != null &&
+                        stockValue >= 0
+                    ) {
+                        onSave(
+                            name,
+                            description,
+                            imageUrl,
+                            sku,
+                            priceValue,
+                            stockValue,
+                            selectedCategoryId
+                        )
+                    }
+                },
+                enabled = !isSaving,
+                modifier = Modifier.weight(1f),
+                colors = AppComponentDefaults.primaryButtonColors()
+            ) {
+                Text(if (isSaving) "Saving..." else "Save")
             }
         }
     }
 }
 
-private fun variantLabel(variant: ProductVariant): String {
-    val parts = mutableListOf<String>()
-
-    if (!variant.colour.isNullOrBlank()) {
-        parts.add(variant.colour)
-    }
-
-    if (variant.weight != null && variant.weight > 0) {
-        val unit = variant.weight_unit.orEmpty()
-        parts.add("${variant.weight}${unit}")
-    }
-
-    if (parts.isNotEmpty()) {
-        return parts.joinToString(" / ")
-    }
-
-    if (!variant.name.isNullOrBlank()) {
-        return variant.name
-    }
-
-    return "Default variant"
-}
-
 @Composable
-private fun EditIcon(
-    tint: Color,
-    modifier: Modifier = Modifier
+private fun ProductReadOnlySection(
+    product: Product,
+    onEditClick: () -> Unit
 ) {
-    androidx.compose.foundation.Canvas(modifier = modifier.size(AppDimensions.ActionIconSize)) {
-        val strokeWidth = size.width * 0.1f
+    Column {
+        Text(
+            text = product.name,
+            color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.PageTitle
+        )
 
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.28f, size.height * 0.76f),
-            end = Offset(size.width * 0.72f, size.height * 0.32f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.66f, size.height * 0.24f),
-            end = Offset(size.width * 0.82f, size.height * 0.4f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.2f, size.height * 0.84f),
-            end = Offset(size.width * 0.34f, size.height * 0.78f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.72f, size.height * 0.3f),
-            end = Offset(size.width * 0.78f, size.height * 0.24f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+        ProductInfoLine("SKU", product.sku ?: "-")
+        ProductInfoLine("Category", product.categoryName ?: "-")
+        ProductInfoLine("Price", "${product.price} lei")
+        ProductInfoLine("Stock", product.stockQuantity.toString())
+
+        if (!product.description.isNullOrBlank()) {
+            Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+            Text(
+                text = "Description:",
+                color = AppColorPalette.TextSecondary
+            )
+
+            Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
+
+            ReadMoreText(
+                text = product.description,
+                maxCharacters = 140
+            )
+        }
+
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+        Button(
+            onClick = onEditClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = AppComponentDefaults.primaryButtonColors()
+        ) {
+            Text("Edit product")
+        }
     }
 }
 
 @Composable
-private fun DeleteIcon(
-    tint: Color,
-    modifier: Modifier = Modifier
+private fun VariantEditCard(
+    productId: Int,
+    variant: ProductVariant,
+    isSaving: Boolean,
+    onCancel: () -> Unit,
+    onUpdateVariant: (
+        productId: Int,
+        variantId: Int,
+        sku: String,
+        name: String,
+        colour: String,
+        weight: Double?,
+        weightUnit: String,
+        price: Double,
+        stockQuantity: Int
+    ) -> Unit
 ) {
-    androidx.compose.foundation.Canvas(modifier = modifier.size(AppDimensions.ActionIconSize)) {
-        val strokeWidth = size.width * 0.1f
+    var sku by remember(variant.id, variant.sku) {
+        mutableStateOf(variant.sku)
+    }
 
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.24f, size.height * 0.34f),
-            end = Offset(size.width * 0.76f, size.height * 0.34f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
+    var name by remember(variant.id, variant.name) {
+        mutableStateOf(variant.name ?: "")
+    }
+
+    var colour by remember(variant.id, variant.colour) {
+        mutableStateOf(variant.colour ?: "")
+    }
+
+    var weight by remember(variant.id, variant.weight) {
+        mutableStateOf(variant.weight?.toString() ?: "")
+    }
+
+    var weightUnit by remember(variant.id, variant.weightUnit) {
+        mutableStateOf(variant.weightUnit ?: "")
+    }
+
+    var price by remember(variant.id, variant.price) {
+        mutableStateOf(variant.price.toString())
+    }
+
+    var stockQuantity by remember(variant.id, variant.stockQuantity) {
+        mutableStateOf(variant.stockQuantity.toString())
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = AppDimensions.SmallSpacing)
+            .border(
+                width = 1.dp,
+                color = AppColorPalette.Border,
+                shape = RoundedCornerShape(AppDimensions.TableCornerRadius)
+            )
+            .padding(AppDimensions.SmallSpacing)
+    ) {
+        Text(
+            text = variantLabel(variant),
+            color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.TableHeader
         )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.42f, size.height * 0.22f),
-            end = Offset(size.width * 0.58f, size.height * 0.22f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
+
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+        ProductEditField(
+            value = sku,
+            onValueChange = { sku = it },
+            label = "Variant SKU"
         )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.48f, size.height * 0.16f),
-            end = Offset(size.width * 0.52f, size.height * 0.16f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
+
+        ProductEditField(
+            value = name,
+            onValueChange = { name = it },
+            label = "Variant name"
         )
-        drawRoundRect(
-            color = tint,
-            topLeft = Offset(size.width * 0.32f, size.height * 0.42f),
-            size = androidx.compose.ui.geometry.Size(size.width * 0.36f, size.height * 0.42f),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.05f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
+
+        ProductEditField(
+            value = colour,
+            onValueChange = { colour = it },
+            label = "Colour"
         )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.44f, size.height * 0.5f),
-            end = Offset(size.width * 0.44f, size.height * 0.76f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
+
+        ProductEditField(
+            value = weight,
+            onValueChange = { weight = it },
+            label = "Weight"
         )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.56f, size.height * 0.5f),
-            end = Offset(size.width * 0.56f, size.height * 0.76f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
+
+        ProductEditField(
+            value = weightUnit,
+            onValueChange = { weightUnit = it },
+            label = "Weight unit"
         )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.5f, size.height * 0.5f),
-            end = Offset(size.width * 0.5f, size.height * 0.76f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
+
+        ProductEditField(
+            value = price,
+            onValueChange = { price = it },
+            label = "Price"
+        )
+
+        ProductEditField(
+            value = stockQuantity,
+            onValueChange = { stockQuantity = it },
+            label = "Stock quantity"
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Button(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
+                colors = AppComponentDefaults.paginationButtonColors()
+            ) {
+                Text("Cancel")
+            }
+
+            Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
+
+            Button(
+                onClick = {
+                    val priceValue = price.trim().toDoubleOrNull()
+                    val stockValue = stockQuantity.trim().toIntOrNull()
+                    val weightValue = weight.trim().takeIf { it.isNotBlank() }?.toDoubleOrNull()
+
+                    if (
+                        sku.isNotBlank() &&
+                        priceValue != null &&
+                        stockValue != null &&
+                        stockValue >= 0
+                    ) {
+                        onUpdateVariant(
+                            productId,
+                            variant.id,
+                            sku,
+                            name,
+                            colour,
+                            weightValue,
+                            weightUnit,
+                            priceValue,
+                            stockValue
+                        )
+                    }
+                },
+                enabled = !isSaving,
+                modifier = Modifier.weight(1f),
+                colors = AppComponentDefaults.primaryButtonColors()
+            ) {
+                Text(if (isSaving) "Saving..." else "Save")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductEditField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    singleLine: Boolean = true
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = {
+            Text(label)
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = AppDimensions.SmallSpacing),
+        singleLine = singleLine,
+        colors = AppComponentDefaults.appTextFieldColors()
+    )
+}
+
+@Composable
+private fun CategoryDropdownField(
+    categories: List<Category>,
+    selectedCategoryId: Int?,
+    onCategorySelected: (Category) -> Unit
+) {
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+
+    val selectedCategory = categories.firstOrNull { category ->
+        category.id == selectedCategoryId
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = AppDimensions.SmallSpacing)
+    ) {
+        OutlinedTextField(
+            value = selectedCategory?.name ?: "",
+            onValueChange = {},
+            readOnly = true,
+            label = {
+                Text("Category")
+            },
+            placeholder = {
+                Text("Select category")
+            },
+            trailingIcon = {
+                Text(
+                    text = if (expanded) "▲" else "▼",
+                    color = AppColorPalette.TextSecondary
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = AppComponentDefaults.appTextFieldColors()
+        )
+
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable {
+                    expanded = true
+                }
+        )
+
+        androidx.compose.material3.DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = {
+                expanded = false
+            }
+        ) {
+            categories.forEach { category ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = {
+                        Text(category.name)
+                    },
+                    onClick = {
+                        onCategorySelected(category)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductInfoLine(
+    label: String,
+    value: String
+) {
+    Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
+
+    Row {
+        Text(
+            text = "$label: ",
+            color = AppColorPalette.TextSecondary
+        )
+
+        Text(
+            text = value,
+            color = AppColorPalette.TextPrimary
         )
     }
 }
 
+@Composable
+private fun VariantInfoCard(
+    variant: ProductVariant,
+    onEditClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = AppDimensions.SmallSpacing)
+            .border(
+                width = 1.dp,
+                color = AppColorPalette.Border,
+                shape = RoundedCornerShape(AppDimensions.TableCornerRadius)
+            )
+            .padding(AppDimensions.SmallSpacing)
+    ) {
+        Text(
+            text = variantLabel(variant),
+            color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.TableHeader
+        )
+
+        Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
+
+        Text(
+            text = "SKU: ${variant.sku}",
+            color = AppColorPalette.TextSecondary
+        )
+
+        Text(
+            text = "Stock: ${variant.stockQuantity}",
+            color = AppColorPalette.TextSecondary
+        )
+
+        Text(
+            text = "Price: ${variant.price} lei",
+            color = AppColorPalette.TextSecondary
+        )
+
+        if (!variant.colour.isNullOrBlank()) {
+            Text(
+                text = "Colour: ${variant.colour}",
+                color = AppColorPalette.TextSecondary
+            )
+        }
+
+        if (variant.weight != null && variant.weight > 0) {
+            Text(
+                text = "Weight: ${variant.weight}${variant.weightUnit.orEmpty()}",
+                color = AppColorPalette.TextSecondary
+            )
+        }
+
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+        Button(
+            onClick = onEditClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = AppComponentDefaults.paginationButtonColors()
+        ) {
+            Text("Edit variant")
+        }
+    }
+}
 @Composable
 private fun StockPagination(
     currentPage: Int,
@@ -695,193 +1183,6 @@ private fun StockPagination(
 }
 
 @Composable
-private fun EditQuantityDialog(
-    currentQuantity: Int,
-    onDismiss: () -> Unit,
-    onSave: (Int) -> Unit
-) {
-    var quantityText by remember {
-        mutableStateOf(currentQuantity.toString())
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = AppColorPalette.Surface,
-        titleContentColor = AppColorPalette.TextPrimary,
-        textContentColor = AppColorPalette.TextPrimary,
-        title = {
-            Text("Edit")
-        },
-        text = {
-            OutlinedTextField(
-                value = quantityText,
-                onValueChange = {
-                    quantityText = it
-                },
-                label = {
-                    Text("Quantity")
-                },
-                singleLine = true,
-                colors = AppComponentDefaults.appTextFieldColors()
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val quantity = quantityText.toIntOrNull()
-
-                    if (quantity != null && quantity >= 0) {
-                        onSave(quantity)
-                    }
-                }
-            ) {
-                Text("Save", color = AppColorPalette.Primary)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss
-            ) {
-                Text("Cancel", color = AppColorPalette.TextSecondary)
-            }
-        }
-    )
-}
-
-@Composable
-private fun AddVariantDialog(
-    defaultPrice: Double,
-    onDismiss: () -> Unit,
-    onSave: (
-        sku: String,
-        name: String,
-        colour: String,
-        weight: Double?,
-        weightUnit: String,
-        price: Double,
-        stockQuantity: Int
-    ) -> Unit
-) {
-    var sku by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
-    var colour by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
-    var weightUnit by remember { mutableStateOf("g") }
-    var price by remember { mutableStateOf(defaultPrice.toString()) }
-    var stockQuantity by remember { mutableStateOf("0") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = AppColorPalette.Surface,
-        titleContentColor = AppColorPalette.TextPrimary,
-        textContentColor = AppColorPalette.TextPrimary,
-        title = {
-            Text("Add variant")
-        },
-        text = {
-            Column {
-                VariantInput(
-                    value = sku,
-                    onValueChange = { sku = it },
-                    label = "SKU"
-                )
-
-                VariantInput(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = "Variant name"
-                )
-
-                VariantInput(
-                    value = colour,
-                    onValueChange = { colour = it },
-                    label = "Colour"
-                )
-
-                VariantInput(
-                    value = weight,
-                    onValueChange = { weight = it },
-                    label = "Weight"
-                )
-
-                VariantInput(
-                    value = weightUnit,
-                    onValueChange = { weightUnit = it },
-                    label = "Weight unit"
-                )
-
-                VariantInput(
-                    value = price,
-                    onValueChange = { price = it },
-                    label = "Price"
-                )
-
-                VariantInput(
-                    value = stockQuantity,
-                    onValueChange = { stockQuantity = it },
-                    label = "Stock quantity"
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val priceValue = price.trim().toDoubleOrNull()
-                    val stockValue = stockQuantity.trim().toIntOrNull()
-                    val weightValue = weight.trim().toDoubleOrNull()
-
-                    if (
-                        sku.isNotBlank() &&
-                        priceValue != null &&
-                        stockValue != null &&
-                        stockValue >= 0
-                    ) {
-                        onSave(
-                            sku,
-                            name,
-                            colour,
-                            weightValue,
-                            weightUnit,
-                            priceValue,
-                            stockValue
-                        )
-                    }
-                }
-            ) {
-                Text("Save", color = AppColorPalette.Primary)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss
-            ) {
-                Text("Cancel", color = AppColorPalette.TextSecondary)
-            }
-        }
-    )
-}
-
-@Composable
-private fun VariantInput(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = {
-            Text(label)
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = AppDimensions.SmallSpacing),
-        singleLine = true,
-        colors = AppComponentDefaults.appTextFieldColors()
-    )
-}
-
-@Composable
 private fun TableHeaderCell(
     text: String,
     width: Int
@@ -898,11 +1199,102 @@ private fun TableHeaderCell(
 private fun TableCell(
     text: String,
     width: Int,
-    color: Color
+    color: androidx.compose.ui.graphics.Color
 ) {
     Text(
         text = text,
         color = color,
         modifier = Modifier.width(width.dp)
     )
+}
+
+private fun productTotalStock(product: Product): Int {
+    return if (product.variants.isNotEmpty()) {
+        product.variants.sumOf { variant ->
+            variant.stockQuantity
+        }
+    } else {
+        product.stockQuantity
+    }
+}
+
+private fun productDisplayPrice(product: Product): String {
+    if (product.variants.isEmpty()) {
+        return "${product.price} lei"
+    }
+
+    val prices = product.variants.map { variant ->
+        variant.price
+    }
+
+    val min = prices.minOrNull() ?: product.price
+    val max = prices.maxOrNull() ?: product.price
+
+    return if (min == max) {
+        "$min lei"
+    } else {
+        "$min - $max lei"
+    }
+}
+
+private fun variantLabel(variant: ProductVariant): String {
+    val parts = mutableListOf<String>()
+
+    if (!variant.colour.isNullOrBlank()) {
+        parts.add(variant.colour)
+    }
+
+    if (variant.weight != null && variant.weight > 0) {
+        val unit = variant.weightUnit.orEmpty()
+        parts.add("${variant.weight}${unit}")
+    }
+
+    if (parts.isNotEmpty()) {
+        return parts.joinToString(" / ")
+    }
+
+    if (!variant.name.isNullOrBlank()) {
+        return variant.name
+    }
+
+    return "Default variant"
+}
+
+@Composable
+private fun ReadMoreText(
+    text: String,
+    maxCharacters: Int = 120
+) {
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+
+    val shouldShowReadMore = text.length > maxCharacters
+
+    val displayedText = if (!shouldShowReadMore || expanded) {
+        text
+    } else {
+        text.take(maxCharacters).trimEnd() + "..."
+    }
+
+    Column {
+        Text(
+            text = displayedText,
+            color = AppColorPalette.TextPrimary
+        )
+
+        if (shouldShowReadMore) {
+            TextButton(
+                onClick = {
+                    expanded = !expanded
+                },
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text(
+                    text = if (expanded) "Show less" else "Read more",
+                    color = AppColorPalette.Primary
+                )
+            }
+        }
+    }
 }

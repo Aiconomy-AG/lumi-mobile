@@ -1,14 +1,15 @@
 package org.example.project.presentation.stock
 
-import org.example.project.data.stock.Category
+import org.example.project.domain.stock.Category
 import org.example.project.domain.stock.Product
 
 data class StockState(
     val products: List<Product> = emptyList(),
+    val categories: List<Category> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null,
-    val categories: List<Category> = emptyList()
+    val isSaving: Boolean = false,
+    val errorMessage: String? = null
 ) {
     val filteredProducts: List<Product>
         get() {
@@ -21,37 +22,34 @@ data class StockState(
             return products.filter { product ->
                 product.name.contains(query, ignoreCase = true) ||
                         product.sku?.contains(query, ignoreCase = true) == true ||
-                        product.variants?.any { variant ->
-                            variant.sku.contains(query, ignoreCase = true)
-                        } == true
+                        product.categoryName?.contains(query, ignoreCase = true) == true ||
+                        product.variants.any { variant ->
+                            variant.sku.contains(query, ignoreCase = true) ||
+                                    variant.name?.contains(query, ignoreCase = true) == true ||
+                                    variant.colour?.contains(query, ignoreCase = true) == true
+                        }
             }
         }
 
-    val lowStockCount: Int
-        get() = products.count { product ->
-            val variants = product.variants
+    val productCount: Int
+        get() = products.size
 
-            if (!variants.isNullOrEmpty()) {
-                variants.any { variant ->
-                    val quantity = variant.stock_quantity ?: 0
-                    quantity in 1..5
-                }
-            } else {
-                product.stock_quantity in 1..5
+    val variantCount: Int
+        get() = products.sumOf { product ->
+            product.variants.size
+        }
+
+    val lowStockCount: Int
+        get() = products.sumOf { product ->
+            product.variants.count { variant ->
+                variant.stockQuantity in 1..5
             }
         }
 
     val outOfStockCount: Int
-        get() = products.count { product ->
-            val variants = product.variants
-
-            if (!variants.isNullOrEmpty()) {
-                variants.any { variant ->
-                    val quantity = variant.stock_quantity ?: 0
-                    quantity == 0
-                }
-            } else {
-                product.stock_quantity == 0
+        get() = products.sumOf { product ->
+            product.variants.count { variant ->
+                variant.stockQuantity == 0
             }
         }
 }
