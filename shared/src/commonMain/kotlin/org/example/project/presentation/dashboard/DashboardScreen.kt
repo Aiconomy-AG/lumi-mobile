@@ -56,7 +56,7 @@ fun DashboardScreen(
     val todayIso = remember { currentIsoDate() }
     val dueTodayTasks = remember(uiState.tasks, todayIso) {
         uiState.tasks
-            .filter { it.dueDate == todayIso && it.status != TaskStatus.COMPLETE }
+            .filter { it.dueDate.take(10) == todayIso && it.status != TaskStatus.COMPLETE }
             .sortedWith(compareBy<Task> { taskStatusRank(it.status) }.thenBy { it.title })
     }
     val onlinePeople = remember(uiState.users, user) {
