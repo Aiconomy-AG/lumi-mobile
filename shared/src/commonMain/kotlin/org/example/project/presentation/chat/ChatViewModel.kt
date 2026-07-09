@@ -151,6 +151,26 @@ class ChatViewModel(
         }
     }
 
+    fun openConversationById(conversationId: Int) {
+        viewModelScope.launch {
+            val existing = _uiState.value.conversations
+                .firstOrNull { it.conversation.id == conversationId }
+
+            if (existing != null) {
+                selectConversation(existing)
+                return@launch
+            }
+
+            refreshChat(showLoading = false, showError = false)
+            val conversation = _uiState.value.conversations
+                .firstOrNull { it.conversation.id == conversationId }
+
+            if (conversation != null) {
+                selectConversation(conversation)
+            }
+        }
+    }
+
     fun backToConversationList() {
         _uiState.value = _uiState.value.copy(
             selectedConversation = null,
