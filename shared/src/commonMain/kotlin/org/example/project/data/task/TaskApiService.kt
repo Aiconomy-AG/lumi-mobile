@@ -79,6 +79,11 @@ class TaskApiService(
         return tasksJson.decodeFromString<TaskResponse>(text).data.toTask()
     }
 
+    override suspend fun deleteTask(id: Int) {
+        val response = client.delete("$baseUrl/v1/workspace/tasks/$id") { bearerAuth() }
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(response.bodyAsText()))
+    }
+
     override suspend fun assignUser(taskId: Int, userId: Int): Task {
         val response = client.post("$baseUrl/v1/workspace/tasks/$taskId/assignees") {
             bearerAuth()
