@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import org.example.project.data.chat.chatClockTimeLabel
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
@@ -178,7 +179,7 @@ private fun ContactRow(
                 )
 
                 Text(
-                    text = contact.lastSentAt,
+                    text = chatClockTimeLabel(contact.lastSentAt),
                     color = AppColorPalette.TextSecondary,
                     style = MaterialTheme.typography.labelSmall,
                 )
@@ -351,7 +352,7 @@ private fun MessageBubble(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = message.sentAt,
+                text = chatClockTimeLabel(message.sentAt),
                 color = if (isMine) AppColorPalette.OnPrimary.copy(alpha = 0.7f) else AppColorPalette.TextSecondary,
                 style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.SansSerif),
                 modifier = Modifier.align(Alignment.End),
