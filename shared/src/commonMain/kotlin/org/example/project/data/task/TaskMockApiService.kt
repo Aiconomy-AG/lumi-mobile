@@ -55,6 +55,11 @@ class TaskMockApiService : TaskApi {
         return updated
     }
 
+    override suspend fun deleteTask(id: Int) {
+        delay(300)
+        tasks.removeAll { it.id == id }
+    }
+
     override suspend fun assignUser(taskId: Int, userId: Int): Task {
         delay(200)
         val index = tasks.indexOfFirst { it.id == taskId }
