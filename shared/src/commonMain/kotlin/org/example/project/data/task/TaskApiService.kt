@@ -33,15 +33,39 @@ class TaskApiService(
         return tasksJson.decodeFromString<TaskListResponse>(text).data.map { it.toTask() }
     }
 
-    override suspend fun createTask(title: String, description: String, dueDate: String, status: TaskStatus, projectId: Int, assigneeIds: List<Int>): Task {
+    override suspend fun createTask(
+        title: String,
+        description: String,
+        dueDate: String,
+        status: TaskStatus,
+        projectId: Int,
+        assigneeIds: List<Int>
+    ): Task {
         val response = client.post("$baseUrl/v1/workspace/tasks") {
             bearerAuth()
             contentType(ContentType.Application.Json)
             setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate, projectId = projectId))
         }
+
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
-        return tasksJson.decodeFromString<TaskResponse>(text).data.toTask()
+
+        val createdTask = tasksJson.decodeFromString<TaskResponse>(text).data.toTask()
+
+        if (assigneeIds.isNotEmpty()) {
+            val assignResponse = client.post("$baseUrl/v1/workspace/tasks/${createdTask.id}/assignees") {
+                bearerAuth()
+                contentType(ContentType.Application.Json)
+                setBody(AssigneeRequestBody(employeeIds = assigneeIds))
+            }
+
+            val assignText = assignResponse.bodyAsText()
+            if (!assignResponse.status.isSuccess()) throw Exception(parseErrorMessage(assignText))
+
+            return tasksJson.decodeFromString<TaskResponse>(assignText).data.toTask()
+        }
+
+        return createdTask
     }
 
     override suspend fun updateTask(id: Int, title: String, description: String, dueDate: String, status: TaskStatus, projectId: Int): Task {

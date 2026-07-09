@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.Product
+import org.example.project.presentation.components.PaginationBar
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
@@ -71,19 +72,12 @@ fun StockScreen(
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        StockPagination(
+        PaginationBar(
             currentPage = currentPage,
             totalPages = totalPages,
-            onPreviousClick = {
-                if (currentPage > 0) {
-                    currentPage--
-                }
-            },
-            onNextClick = {
-                if (currentPage < totalPages - 1) {
-                    currentPage++
-                }
-            }
+            onPreviousClick = { if (currentPage > 0) currentPage-- },
+            onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
+
         )
     }
 }
@@ -449,46 +443,6 @@ private fun DeleteIcon(
     }
 }
 
-@Composable
-private fun StockPagination(
-    currentPage: Int,
-    totalPages: Int,
-    onPreviousClick: () -> Unit,
-    onNextClick: () -> Unit
-) {
-    val strings = LocalAppStrings.current
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Button(
-            onClick = onPreviousClick,
-            enabled = currentPage > 0,
-            colors = AppComponentDefaults.paginationButtonColors()
-        ) {
-            Text(strings.text("Previous"))
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Text(
-            text = strings.format("Page {page} of {total}", "page" to (currentPage + 1).toString(), "total" to totalPages.toString()),
-            color = AppColorPalette.TextSecondary
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Button(
-            onClick = onNextClick,
-            enabled = currentPage < totalPages - 1,
-            colors = AppComponentDefaults.paginationButtonColors()
-        ) {
-            Text(strings.text("Next"))
-        }
-    }
-}
 
 @Composable
 private fun EditQuantityDialog(
