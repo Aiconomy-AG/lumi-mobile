@@ -175,4 +175,17 @@ class TaskDetailViewModel(
             }
         }
     }
+
+    fun deleteTask(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            savingState.value = true to null
+            try {
+                taskApi.deleteTask(task.id)
+                savingState.value = false to null
+                onSuccess()
+            } catch (e: Exception) {
+                savingState.value = false to e.message
+            }
+        }
+    }
 }

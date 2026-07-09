@@ -384,7 +384,7 @@ private fun EditIcon(
 }
 
 @Composable
-private fun DeleteIcon(
+fun DeleteIcon(
     tint: Color,
     modifier: Modifier = Modifier
 ) {

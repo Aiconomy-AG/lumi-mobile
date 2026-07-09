@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -41,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import org.example.project.data.accounts.User
 import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.localization.LocalAppStrings
+
 
 @Composable
 fun TaskDetailScreen(
@@ -90,6 +93,10 @@ fun TaskDetailScreen(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clickable(onClick = onEditClick),
             )
+            Spacer(modifier = Modifier.width(10.dp))
+
+
+
         }
 
         Spacer(modifier = Modifier.height(24.dp))

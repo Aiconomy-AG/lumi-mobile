@@ -67,6 +67,15 @@ fun EditTaskScreen(
             fontWeight = FontWeight.Bold
         )
 
+        Text(
+            text = strings.text("Delete"),
+            color = colors.error,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.clickable{
+                viewModel.deleteTask(onSuccess = onBackClick)
+            }
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         TaskInput(value = title, onValueChange = { title = it }, label = strings.text("Task"))
