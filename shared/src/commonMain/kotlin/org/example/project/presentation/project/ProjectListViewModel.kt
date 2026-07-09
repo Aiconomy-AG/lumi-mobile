@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.example.project.data.project.ProjectMockApiService
 import org.example.project.domain.project.Project
 import org.example.project.domain.project.ProjectApi
 import org.example.project.domain.project.ProjectStatus
@@ -26,7 +25,7 @@ data class ProjectListUiState(
 }
 
 class ProjectListViewModel(
-    private val api: ProjectApi = ProjectMockApiService(),
+    private val api: ProjectApi,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProjectListUiState())

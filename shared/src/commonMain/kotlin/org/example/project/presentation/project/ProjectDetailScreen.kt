@@ -74,7 +74,7 @@ fun ProjectDetailScreen(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "${strings.text("Deadline")} ${project.deadline}",
+            text = "${strings.text("Deadline")} ${project.deadline.take(10)}",
             color = colors.onSurfaceVariant,
         )
 

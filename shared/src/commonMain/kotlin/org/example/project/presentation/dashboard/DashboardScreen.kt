@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.time.Clock
 import org.example.project.data.auth.UserSession
-import org.example.project.domain.employee.Employee
+import org.example.project.data.accounts.User
 import org.example.project.domain.project.Project
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
@@ -59,8 +59,8 @@ fun DashboardScreen(
             .filter { it.dueDate == todayIso && it.status != TaskStatus.COMPLETE }
             .sortedWith(compareBy<Task> { taskStatusRank(it.status) }.thenBy { it.title })
     }
-    val onlinePeople = remember(uiState.employees, user) {
-        onlinePeopleFor(user = user, employees = uiState.employees)
+    val onlinePeople = remember(uiState.users, user) {
+        onlinePeopleFor(user = user, users = uiState.users)
     }
 
     Box(
@@ -101,7 +101,7 @@ fun DashboardScreen(
                                 dateLabel = dashboardDateLabel(todayIso),
                                 tasks = dueTodayTasks,
                                 projects = uiState.projects,
-                                employees = uiState.employees,
+                                users = uiState.users,
                                 onTaskClick = onTaskClick,
                                 modifier = Modifier.weight(1f),
                             )
@@ -123,7 +123,7 @@ fun DashboardScreen(
                                 dateLabel = dashboardDateLabel(todayIso),
                                 tasks = dueTodayTasks,
                                 projects = uiState.projects,
-                                employees = uiState.employees,
+                                users = uiState.users,
                                 onTaskClick = onTaskClick,
                             )
 
@@ -145,7 +145,7 @@ private fun DashboardMainColumn(
     dateLabel: String,
     tasks: List<Task>,
     projects: List<Project>,
-    employees: List<Employee>,
+    users: List<User>,
     onTaskClick: (Task) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -209,7 +209,7 @@ private fun DashboardMainColumn(
                     DashboardTaskRow(
                         task = task,
                         project = projects.firstOrNull { it.id == task.projectId },
-                        assignees = employees.filter { it.id in task.assigneeIds },
+                        assignees = users.filter { it.id in task.assigneeIds },
                         onClick = { onTaskClick(task) },
                     )
 
@@ -226,7 +226,7 @@ private fun DashboardMainColumn(
 private fun DashboardTaskRow(
     task: Task,
     project: Project?,
-    assignees: List<Employee>,
+    assignees: List<User>,
     onClick: () -> Unit,
 ) {
     Row(
@@ -421,10 +421,10 @@ private data class OnlinePerson(
     val initials: String,
 )
 
-private fun onlinePeopleFor(user: UserSession, employees: List<Employee>): List<OnlinePerson> {
+private fun onlinePeopleFor(user: UserSession, users: List<User>): List<OnlinePerson> {
     val names = buildList {
         add(user.name)
-        addAll(employees.filterNot { it.id == user.id }.take(2).map { it.name })
+        addAll(users.filterNot { it.id == user.id }.take(2).map { it.name })
     }.distinct().take(3)
 
     return names.map { name ->
@@ -458,7 +458,7 @@ private fun weekdayName(year: Int, month: Int, day: Int): String {
 }
 
 @Composable
-private fun taskMeta(project: Project?, assignees: List<Employee>): String {
+private fun taskMeta(project: Project?, assignees: List<User>): String {
     val strings = LocalAppStrings.current
     val projectName = project?.name ?: strings.text("No project")
     val assigneeText = assignees
