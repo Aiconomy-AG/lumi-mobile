@@ -229,6 +229,11 @@ fun MainScreen(
                                 viewModel = taskDetailViewModel,
                                 onTaskUpdated = { showEditTaskScreen = false },
                                 onBackClick = { showEditTaskScreen = false },
+                                onDelete = {
+                                    showEditTaskScreen = false
+                                    selectedTask = null
+                                    taskListViewModel.loadTasks()
+                                },
                                 modifier = Modifier.padding(paddingValues),
                             )
                         } else {
@@ -267,6 +272,10 @@ fun MainScreen(
                                 viewModel = taskDetailViewModel,
                                 onTaskUpdated = { showEditTaskScreen = false },
                                 onBackClick = { showEditTaskScreen = false },
+                                onDelete = {
+                                    showEditTaskScreen = false
+                                    selectedTask = null
+                                },
                                 modifier = Modifier.padding(paddingValues),
                             )
                         } else {
