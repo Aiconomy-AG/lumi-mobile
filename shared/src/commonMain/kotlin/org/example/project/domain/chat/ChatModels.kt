@@ -1,10 +1,15 @@
 package org.example.project.domain.chat
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 enum class ConversationType {
-    DIRECT, GROUP
+    @SerialName("direct")
+    DIRECT,
+
+    @SerialName("group")
+    GROUP,
 }
 
 @Serializable
