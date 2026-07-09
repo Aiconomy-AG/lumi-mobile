@@ -12,6 +12,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.example.project.data.accounts.User
 import org.example.project.data.accounts.UserApiService
+import org.example.project.data.chat.currentTimeLabel
 import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.domain.chat.ChatNotificationEvent
@@ -71,6 +72,7 @@ class ChatViewModel(
     private val viewModelScope = CoroutineScope(Dispatchers.Default)
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
+    private var nextOptimisticMessageId = -1
 
     init {
         loadChat()
@@ -189,6 +191,39 @@ class ChatViewModel(
 
         if (text.isBlank()) return
 
+        val optimisticMessage = ChatMessage(
+            id = nextOptimisticMessageId--,
+            conversationId = selectedConversation.conversation.id,
+            senderId = currentEmployeeId,
+            messageText = text,
+            sentAt = currentTimeLabel(),
+        )
+        val optimisticConversation = selectedConversation.copy(
+            lastMessage = optimisticMessage.messageText,
+            lastSentAt = optimisticMessage.sentAt,
+        )
+
+        _uiState.value = _uiState.value.copy(
+            messages = _uiState.value.messages + optimisticMessage,
+            messageDraft = "",
+            conversations = _uiState.value.conversations.map {
+                if (it.conversation.id == selectedConversation.conversation.id) {
+                    optimisticConversation
+                } else {
+                    it
+                }
+            },
+            selectedConversation = optimisticConversation,
+            contacts = _uiState.value.contacts.map {
+                if (it.conversation?.conversation?.id == selectedConversation.conversation.id) {
+                    it.copy(conversation = optimisticConversation)
+                } else {
+                    it
+                }
+            },
+            error = null,
+        )
+
         viewModelScope.launch {
             try {
                 val message = chatApi.sendMessage(
@@ -197,34 +232,12 @@ class ChatViewModel(
                     messageText = text,
                 )
 
-                _uiState.value = _uiState.value.copy(
-                    messages = _uiState.value.messages + message,
-                    messageDraft = "",
-                    conversations = _uiState.value.conversations.map {
-                        if (it.conversation.id == selectedConversation.conversation.id) {
-                            it.copy(lastMessage = message.messageText, lastSentAt = message.sentAt)
-                        } else {
-                            it
-                        }
-                    },
-                    selectedConversation = selectedConversation.copy(
-                        lastMessage = message.messageText,
-                        lastSentAt = message.sentAt,
-                    ),
-                    contacts = _uiState.value.contacts.map {
-                        if (it.conversation?.conversation?.id == selectedConversation.conversation.id) {
-                            it.copy(
-                                conversation = it.conversation.copy(
-                                    lastMessage = message.messageText,
-                                    lastSentAt = message.sentAt,
-                                )
-                            )
-                        } else {
-                            it
-                        }
-                    },
+                replaceOptimisticMessage(
+                    optimisticMessage = optimisticMessage,
+                    savedMessage = message,
                 )
             } catch (e: Exception) {
+                removeOptimisticMessage(optimisticMessage)
                 _uiState.value = _uiState.value.copy(
                     error = e.message ?: "Mesajul nu a putut fi trimis.",
                 )
@@ -304,13 +317,22 @@ class ChatViewModel(
                 items.firstOrNull { it.conversation.id == id }
             }
             val selectedMessages = selectedConversationId?.let { chatApi.getMessages(it) }
+            val mergedSelectedMessages = if (selectedConversationId != null && selectedMessages != null) {
+                mergeWithOptimisticMessages(
+                    serverMessages = selectedMessages,
+                    currentMessages = _uiState.value.messages,
+                    conversationId = selectedConversationId,
+                )
+            } else {
+                null
+            }
 
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 conversations = items,
                 contacts = contacts,
                 selectedConversation = selectedConversation ?: _uiState.value.selectedConversation,
-                messages = selectedMessages ?: _uiState.value.messages,
+                messages = mergedSelectedMessages ?: _uiState.value.messages,
                 usersById = usersById,
                 error = null,
             )
@@ -348,10 +370,15 @@ class ChatViewModel(
 
         val messages = chatApi.getMessages(conversationId)
         val currentState = _uiState.value
+        val mergedMessages = mergeWithOptimisticMessages(
+            serverMessages = messages,
+            currentMessages = currentState.messages,
+            conversationId = conversationId,
+        )
         val conversation = currentState.conversations
             .firstOrNull { it.conversation.id == conversationId }
             ?: existingConversation
-        val lastMessage = messages.lastOrNull()
+        val lastMessage = mergedMessages.lastOrNull()
         val updatedConversation = conversation.copy(
             lastMessage = lastMessage?.messageText ?: conversation.lastMessage,
             lastSentAt = lastMessage?.sentAt ?: conversation.lastSentAt,
@@ -372,12 +399,109 @@ class ChatViewModel(
                 if (it.conversation.id == conversationId) updatedConversation else it
             },
             messages = if (currentState.selectedConversation?.conversation?.id == conversationId) {
-                messages
+                mergedMessages
             } else {
                 currentState.messages
             },
             error = null,
         )
+    }
+
+    private fun replaceOptimisticMessage(
+        optimisticMessage: ChatMessage,
+        savedMessage: ChatMessage,
+    ) {
+        val currentState = _uiState.value
+        val nextMessages = currentState.messages
+            .map { if (it.id == optimisticMessage.id) savedMessage else it }
+            .let { messages ->
+                if (messages.any { it.id == savedMessage.id }) {
+                    messages
+                } else {
+                    messages + savedMessage
+                }
+            }
+            .distinctBy { it.id }
+        val lastMessage = nextMessages
+            .lastOrNull { it.conversationId == savedMessage.conversationId }
+            ?: savedMessage
+        val updatedConversation = currentState.selectedConversation
+            ?.takeIf { it.conversation.id == savedMessage.conversationId }
+            ?.copy(lastMessage = lastMessage.messageText, lastSentAt = lastMessage.sentAt)
+
+        _uiState.value = currentState.copy(
+            messages = nextMessages,
+            conversations = currentState.conversations.map {
+                if (it.conversation.id == savedMessage.conversationId) {
+                    it.copy(lastMessage = lastMessage.messageText, lastSentAt = lastMessage.sentAt)
+                } else {
+                    it
+                }
+            },
+            selectedConversation = updatedConversation ?: currentState.selectedConversation,
+            contacts = currentState.contacts.map {
+                if (it.conversation?.conversation?.id == savedMessage.conversationId) {
+                    it.copy(
+                        conversation = it.conversation.copy(
+                            lastMessage = lastMessage.messageText,
+                            lastSentAt = lastMessage.sentAt,
+                        )
+                    )
+                } else {
+                    it
+                }
+            },
+        )
+    }
+
+    private fun removeOptimisticMessage(message: ChatMessage) {
+        val currentState = _uiState.value
+        val nextMessages = currentState.messages.filterNot { it.id == message.id }
+        val lastMessage = nextMessages.lastOrNull { it.conversationId == message.conversationId }
+        val fallbackLastMessage = lastMessage?.messageText ?: "Nu exista mesaje inca."
+        val fallbackLastSentAt = lastMessage?.sentAt ?: ""
+
+        _uiState.value = currentState.copy(
+            messages = nextMessages,
+            conversations = currentState.conversations.map {
+                if (it.conversation.id == message.conversationId) {
+                    it.copy(lastMessage = fallbackLastMessage, lastSentAt = fallbackLastSentAt)
+                } else {
+                    it
+                }
+            },
+            selectedConversation = currentState.selectedConversation?.let {
+                if (it.conversation.id == message.conversationId) {
+                    it.copy(lastMessage = fallbackLastMessage, lastSentAt = fallbackLastSentAt)
+                } else {
+                    it
+                }
+            },
+            contacts = currentState.contacts.map {
+                if (it.conversation?.conversation?.id == message.conversationId) {
+                    it.copy(
+                        conversation = it.conversation.copy(
+                            lastMessage = fallbackLastMessage,
+                            lastSentAt = fallbackLastSentAt,
+                        )
+                    )
+                } else {
+                    it
+                }
+            },
+        )
+    }
+
+    private fun mergeWithOptimisticMessages(
+        serverMessages: List<ChatMessage>,
+        currentMessages: List<ChatMessage>,
+        conversationId: Int,
+    ): List<ChatMessage> {
+        val pendingMessages = currentMessages.filter {
+            it.conversationId == conversationId && it.id < 0
+        }
+
+        return (serverMessages + pendingMessages).distinctBy { it.id }
     }
 
     private fun Conversation.toConversationItem(
@@ -413,7 +537,7 @@ class ChatViewModel(
     }
 
     private companion object {
-        const val CHAT_REFRESH_INTERVAL_MS = 5_000L
+        const val CHAT_REFRESH_INTERVAL_MS = 1_000L
     }
 
 }
