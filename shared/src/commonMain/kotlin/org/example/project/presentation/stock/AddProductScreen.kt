@@ -14,6 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import org.example.project.domain.stock.Category
 import org.example.project.presentation.stock.StockViewModel
+import org.example.project.presentation.stock.parseStockDouble
+import org.example.project.presentation.stock.parseStockInt
+import org.example.project.presentation.stock.validateRequiredDouble
+import org.example.project.presentation.stock.validateRequiredInt
+import org.example.project.presentation.stock.validateRequiredText
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
@@ -33,6 +38,13 @@ fun AddProductScreen(
     var stockQuantity by remember { mutableStateOf("") }
     val state by viewModel.state.collectAsState()
     var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
+    var hasTriedSubmit by remember {
+        mutableStateOf(false)
+    }
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var skuError by remember { mutableStateOf<String?>(null) }
+    var priceError by remember { mutableStateOf<String?>(null) }
+    var stockQuantityError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -52,13 +64,15 @@ fun AddProductScreen(
         ProductInput(
             value = name,
             onValueChange = { name = it },
-            label = "Product name"
+            label = "Product name",
+            isError = nameError != null,
+            errorMessage = nameError
         )
 
         ProductInput(
             value = description,
             onValueChange = { description = it },
-            label = "Description"
+            label = "Description",
         )
 
         ProductInput(
@@ -70,19 +84,26 @@ fun AddProductScreen(
         ProductInput(
             value = sku,
             onValueChange = { sku = it },
-            label = "SKU"
+            label = "SKU",
+            isError = skuError != null,
+            errorMessage = skuError
         )
 
         ProductInput(
             value = price,
             onValueChange = { price = it },
-            label = "Price"
+            label = "Price",
+            isError = priceError != null,
+            errorMessage = priceError
         )
 
         ProductInput(
             value = stockQuantity,
             onValueChange = { stockQuantity = it },
-            label = "Stock quantity"
+            label = "Stock quantity",
+            isError = stockQuantityError != null,
+            errorMessage = stockQuantityError
+
         )
 
         CategoryDropdown(
@@ -97,17 +118,49 @@ fun AddProductScreen(
 
         Button(
             onClick = {
-                val priceValue = price.toDoubleOrNull()
-                val stockValue = stockQuantity.toIntOrNull()
-                val categoryIdValue = selectedCategoryId
+                nameError = null
+                skuError = null
+                priceError = null
+                stockQuantityError = null
 
-                if (
-                    name.isNotBlank() &&
-                    sku.isNotBlank() &&
-                    priceValue != null &&
-                    stockValue != null &&
-                    categoryIdValue != null
-                ) {
+                val priceValue = price.trim().replace(",", ".").toDoubleOrNull()
+                val stockValue = stockQuantity.trim().toIntOrNull()
+
+                var hasError = false
+
+                if (name.isBlank()) {
+                    nameError = "Product name is required"
+                    hasError = true
+                }
+
+                if (sku.isBlank()) {
+                    skuError = "SKU is required"
+                    hasError = true
+                }
+
+                if (price.isBlank()) {
+                    priceError = "Price is required"
+                    hasError = true
+                } else if (priceValue == null) {
+                    priceError = "Price must be a number"
+                    hasError = true
+                } else if (priceValue < 0) {
+                    priceError = "Price cannot be negative"
+                    hasError = true
+                }
+
+                if (stockQuantity.isBlank()) {
+                    stockQuantityError = "Stock quantity is required"
+                    hasError = true
+                } else if (stockValue == null) {
+                    stockQuantityError = "Stock quantity must be a whole number"
+                    hasError = true
+                } else if (stockValue < 0) {
+                    stockQuantityError = "Stock quantity cannot be negative"
+                    hasError = true
+                }
+
+                if (!hasError && priceValue != null && stockValue != null) {
                     viewModel.addProduct(
                         name = name,
                         description = description,
@@ -115,12 +168,13 @@ fun AddProductScreen(
                         sku = sku,
                         price = priceValue,
                         stockQuantity = stockValue,
-                        categoryId = categoryIdValue
+                        categoryId = selectedCategoryId
                     )
 
                     onProductAdded()
                 }
             },
+            enabled = !state.isSaving,
             modifier = Modifier.fillMaxWidth(),
             colors = AppComponentDefaults.primaryButtonColors()
         ) {
@@ -143,7 +197,10 @@ fun AddProductScreen(
 private fun ProductInput(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String
+    label: String,
+    singleLine: Boolean = true,
+    isError: Boolean = false,
+    errorMessage: String? = null
 ) {
     OutlinedTextField(
         value = value,
@@ -154,7 +211,16 @@ private fun ProductInput(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = AppDimensions.SmallSpacing),
-        singleLine = true,
+        singleLine = singleLine,
+        isError = isError,
+        supportingText = {
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    color = AppColorPalette.Error
+                )
+            }
+        },
         colors = AppComponentDefaults.appTextFieldColors()
     )
 }
