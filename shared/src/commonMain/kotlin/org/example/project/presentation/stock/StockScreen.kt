@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import org.example.project.domain.stock.Category
 import org.example.project.domain.stock.Product
 import org.example.project.domain.stock.ProductVariant
@@ -174,17 +175,35 @@ fun StockScreen(
                     categoryId = categoryId
                 )
             },
-            onUpdateVariant = { productId, variantId, variantSku, variantName, colour, weight, weightUnit, variantPrice, variantStock ->
+            onUpdateVariant = { productId, variantId, sku, name, colour, weight, weightUnit, price, stockQuantity ->
                 viewModel.updateProductVariant(
                     productId = productId,
                     variantId = variantId,
-                    sku = variantSku,
-                    name = variantName,
+                    sku = sku,
+                    name = name,
                     colour = colour,
                     weight = weight,
                     weightUnit = weightUnit,
-                    price = variantPrice,
-                    stockQuantity = variantStock
+                    price = price,
+                    stockQuantity = stockQuantity
+                )
+            },
+            onAddVariant = { productId, sku, name, colour, weight, weightUnit, price, stockQuantity ->
+                viewModel.addProductVariant(
+                    productId = productId,
+                    sku = sku,
+                    name = name,
+                    colour = colour,
+                    weight = weight,
+                    weightUnit = weightUnit,
+                    price = price,
+                    stockQuantity = stockQuantity
+                )
+            },
+            onDeleteVariant = { productId, variantId ->
+                viewModel.deleteProductVariant(
+                    productId = productId,
+                    variantId = variantId
                 )
             }
         )
@@ -474,6 +493,20 @@ private fun ProductDetailsDialog(
         weightUnit: String,
         price: Double,
         stockQuantity: Int
+    ) -> Unit,
+    onAddVariant: (
+        productId: Int,
+        sku: String,
+        name: String,
+        colour: String,
+        weight: Double?,
+        weightUnit: String,
+        price: Double,
+        stockQuantity: Int
+    ) -> Unit,
+    onDeleteVariant: (
+        productId: Int,
+        variantId: Int
     ) -> Unit
 ) {
     var name by remember(product.id, product.name) {
@@ -510,6 +543,14 @@ private fun ProductDetailsDialog(
 
     var editingVariantId by remember(product.id) {
         mutableStateOf<Int?>(null)
+    }
+
+    var isAddingVariant by remember(product.id) {
+        mutableStateOf(false)
+    }
+
+    var variantToDelete by remember(product.id) {
+        mutableStateOf<ProductVariant?>(null)
     }
 
     AlertDialog(
@@ -561,6 +602,44 @@ private fun ProductDetailsDialog(
 
                 Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
+                if (isAddingVariant) {
+                    AddVariantCard(
+                        defaultPrice = product.price,
+                        isSaving = isSaving,
+                        onCancel = {
+                            isAddingVariant = false
+                        },
+                        onSave = { sku, name, colour, weight, weightUnit, price, stockQuantity ->
+                            onAddVariant(
+                                product.id,
+                                sku,
+                                name,
+                                colour,
+                                weight,
+                                weightUnit,
+                                price,
+                                stockQuantity
+                            )
+
+                            isAddingVariant = false
+                        }
+                    )
+                } else {
+                    Button(
+                        onClick = {
+                            editingVariantId = null
+                            isAddingVariant = true
+                        },
+                        enabled = !isSaving,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = AppComponentDefaults.primaryButtonColors()
+                    ) {
+                        Text("+ Add variant")
+                    }
+
+                    Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+                }
+
                 Text(
                     text = "Variants",
                     color = AppColorPalette.TextPrimary,
@@ -604,11 +683,71 @@ private fun ProductDetailsDialog(
                             VariantInfoCard(
                                 variant = variant,
                                 onEditClick = {
+                                    isAddingVariant = false
                                     editingVariantId = variant.id
+                                },
+                                onDeleteClick = {
+                                    variantToDelete = variant
                                 }
                             )
                         }
                     }
+                }
+                val selectedVariantToDelete = variantToDelete
+
+                if (selectedVariantToDelete != null) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            variantToDelete = null
+                        },
+                        containerColor = AppColorPalette.Surface,
+                        title = {
+                            Text(
+                                text = "Delete variant?",
+                                color = AppColorPalette.TextPrimary
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = "Are you sure you want to delete variant ${selectedVariantToDelete.sku}?",
+                                color = AppColorPalette.TextSecondary
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    onDeleteVariant(
+                                        product.id,
+                                        selectedVariantToDelete.id
+                                    )
+
+                                    if (editingVariantId == selectedVariantToDelete.id) {
+                                        editingVariantId = null
+                                    }
+
+                                    variantToDelete = null
+                                },
+                                enabled = !isSaving,
+                                colors = AppComponentDefaults.primaryButtonColors()
+                            ) {
+                                Text(
+                                    text = if (isSaving) "Deleting..." else "Delete"
+                                )
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    variantToDelete = null
+                                }
+                            ) {
+                                Text(
+                                    text = "Cancel",
+                                    color = AppColorPalette.Primary
+                                )
+                            }
+                        }
+                    )
                 }
             }
         },
@@ -623,6 +762,167 @@ private fun ProductDetailsDialog(
             }
         }
     )
+}
+
+@Composable
+private fun AddVariantCard(
+    defaultPrice: Double,
+    isSaving: Boolean,
+    onCancel: () -> Unit,
+    onSave: (
+        sku: String,
+        name: String,
+        colour: String,
+        weight: Double?,
+        weightUnit: String,
+        price: Double,
+        stockQuantity: Int
+    ) -> Unit
+) {
+    var sku by remember {
+        mutableStateOf("")
+    }
+
+    var name by remember {
+        mutableStateOf("")
+    }
+
+    var colour by remember {
+        mutableStateOf("")
+    }
+
+    var weight by remember {
+        mutableStateOf("")
+    }
+
+    var weightUnit by remember {
+        mutableStateOf("g")
+    }
+
+    var price by remember(defaultPrice) {
+        mutableStateOf(defaultPrice.toString())
+    }
+
+    var stockQuantity by remember {
+        mutableStateOf("0")
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = AppDimensions.SmallSpacing)
+            .border(
+                width = 1.dp,
+                color = AppColorPalette.Border,
+                shape = RoundedCornerShape(AppDimensions.TableCornerRadius)
+            )
+            .padding(AppDimensions.SmallSpacing)
+    ) {
+        Text(
+            text = "Add variant",
+            color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.TableHeader
+        )
+
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+        ProductEditField(
+            value = sku,
+            onValueChange = { sku = it },
+            label = "SKU"
+        )
+
+        ProductEditField(
+            value = name,
+            onValueChange = { name = it },
+            label = "Variant name"
+        )
+
+        ProductEditField(
+            value = colour,
+            onValueChange = { colour = it },
+            label = "Colour"
+        )
+
+        ProductEditField(
+            value = weight,
+            onValueChange = { weight = it },
+            label = "Weight"
+        )
+
+        ProductEditField(
+            value = weightUnit,
+            onValueChange = { weightUnit = it },
+            label = "Weight unit"
+        )
+
+        ProductEditField(
+            value = price,
+            onValueChange = { price = it },
+            label = "Price"
+        )
+
+        ProductEditField(
+            value = stockQuantity,
+            onValueChange = { stockQuantity = it },
+            label = "Stock quantity"
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Button(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
+                colors = AppComponentDefaults.paginationButtonColors()
+            ) {
+                Text("Cancel")
+            }
+
+            Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
+
+            Button(
+                onClick = {
+                    val priceValue = price.trim().toDoubleOrNull()
+                    val stockValue = stockQuantity.trim().toIntOrNull()
+
+                    val weightText = weight.trim()
+                    val weightValue = if (weightText.isBlank()) {
+                        null
+                    } else {
+                        weightText.toDoubleOrNull()
+                    }
+
+                    val isWeightValid = weightText.isBlank() || weightValue != null
+
+                    if (
+                        sku.isNotBlank() &&
+                        priceValue != null &&
+                        stockValue != null &&
+                        stockValue >= 0 &&
+                        isWeightValid
+                    ) {
+                        onSave(
+                            sku,
+                            name,
+                            colour,
+                            weightValue,
+                            weightUnit,
+                            priceValue,
+                            stockValue
+                        )
+                    }
+                },
+                enabled = !isSaving,
+                modifier = Modifier.weight(1f),
+                colors = AppComponentDefaults.primaryButtonColors()
+            ) {
+                Text(
+                    text = if (isSaving) "Saving..." else "Save"
+                )
+            }
+        }
+    }
 }
 @Composable
 private fun ProductEditSection(
@@ -1082,7 +1382,8 @@ private fun ProductInfoLine(
 @Composable
 private fun VariantInfoCard(
     variant: ProductVariant,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1132,14 +1433,28 @@ private fun VariantInfoCard(
             )
         }
 
-        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-
-        Button(
-            onClick = onEditClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = AppComponentDefaults.paginationButtonColors()
+        Row(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Edit variant")
+            Button(
+                onClick = onEditClick,
+                modifier = Modifier.weight(1f),
+                colors = AppComponentDefaults.paginationButtonColors()
+            ) {
+                Text("Edit")
+            }
+
+            Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
+
+            TextButton(
+                onClick = onDeleteClick,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "Delete",
+                    color = AppColorPalette.Error
+                )
+            }
         }
     }
 }
