@@ -11,7 +11,6 @@ import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
-import org.example.project.data.employee.EmployeeMockApiService
 import org.example.project.data.project.ProjectMockApiService
 import org.example.project.data.task.TaskMockApiService
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
@@ -61,26 +60,21 @@ fun MainScreen(
     val taskApi = remember(user.token) {
         TaskApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
     }
-    val employeeApi = remember { EmployeeMockApiService() }
+    val userApi = remember(user.token) {
+        UserApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
     val projectApi = remember(user.token) {
         ProjectApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
     }
-    val taskListViewModel = remember { TaskListViewModel(api = taskApi, employeeApi = employeeApi, projectApi = projectApi, currentUserId = user.id) }
+    val taskListViewModel = remember { TaskListViewModel(userApi = userApi, api = taskApi, projectApi = projectApi, currentUserId = user.id) }
     val projectListViewModel = remember { ProjectListViewModel(api = projectApi) }
     var showAddProjectScreen by remember { mutableStateOf(false) }
     var selectedProject by remember { mutableStateOf<Project?>(null) }
     val stockViewModel = remember { StockViewModel(MockStockRepository()) }
     var showAddProductScreen by remember { mutableStateOf(false) }
 
-    val adminHttpClient = remember { createHttpClient() }
     val adminViewModel = remember(user.token) {
-        AdminViewModel(
-            UserApiService(
-                client = adminHttpClient,
-                baseUrl = ApiConfig.BASE_URL,
-                token = user.token
-            )
-        )
+        AdminViewModel(userApi)
     }
 
     var showAddUserScreen by remember { mutableStateOf(false) }
@@ -89,7 +83,7 @@ fun MainScreen(
     var showEditTaskScreen by remember { mutableStateOf(false) }
     val taskTimeEntryApi = remember(user.id) { TaskTimeEntryMockApiService(employeeId = user.id) }
     val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
-    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id) }
+    val chatViewModel = remember(user.id) { ChatViewModel(currentEmployeeId = user.id, userApi = userApi) }
 
     val strings = LocalAppStrings.current
 
@@ -216,7 +210,7 @@ fun MainScreen(
                                 activeTimerViewModel = activeTimerViewModel,
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
-                                employeeApi = employeeApi,
+                                userApi = userApi,
                                 projectApi = projectApi,
                             )
                         }
@@ -254,7 +248,7 @@ fun MainScreen(
                                 activeTimerViewModel = activeTimerViewModel,
                                 taskApi = taskApi,
                                 timeEntryApi = taskTimeEntryApi,
-                                employeeApi = employeeApi,
+                                userApi = userApi,
                                 projectApi = projectApi,
                             )
                         }

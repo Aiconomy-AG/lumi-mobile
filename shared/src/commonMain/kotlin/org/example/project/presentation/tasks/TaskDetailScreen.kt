@@ -38,7 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.domain.employee.Employee
+import org.example.project.data.accounts.User
 import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.localization.LocalAppStrings
 
@@ -136,7 +136,7 @@ fun TaskDetailScreen(
 
         AssigneesSection(
             assignees = uiState.assignees,
-            allEmployees = uiState.allEmployees,
+            allUsers = uiState.allUsers,
             onAssign = viewModel::assignUser,
             onUnassign = viewModel::unassignUser,
             pickerOpen = assigneePickerOpen,
@@ -149,8 +149,8 @@ fun TaskDetailScreen(
 
 @Composable
 private fun AssigneesSection(
-    assignees: List<Employee>,
-    allEmployees: List<Employee>,
+    assignees: List<User>,
+    allUsers: List<User>,
     onAssign: (Int) -> Unit,
     onUnassign: (Int) -> Unit,
     pickerOpen: Boolean,
@@ -190,7 +190,7 @@ private fun AssigneesSection(
     }
 
     if (pickerOpen) {
-        val filtered = allEmployees.filter { it.name.contains(query, ignoreCase = true) }
+        val filtered = allUsers.filter { it.name.contains(query, ignoreCase = true) }
 
         Spacer(modifier = Modifier.height(12.dp))
         Column(
@@ -235,7 +235,7 @@ private fun AssigneesSection(
                             .padding(vertical = 8.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        EmployeeAvatar(employee = employee, size = 28.dp)
+                        UserAvatar(user = employee, size =28.dp)
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = employee.name,
@@ -253,7 +253,7 @@ private fun AssigneesSection(
 }
 
 @Composable
-private fun AssigneeChip(employee: Employee, onRemove: () -> Unit) {
+private fun AssigneeChip(employee: User, onRemove: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Row(
         modifier = Modifier
@@ -262,7 +262,7 @@ private fun AssigneeChip(employee: Employee, onRemove: () -> Unit) {
             .padding(start = 6.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        EmployeeAvatar(employee = employee, size = 24.dp)
+        UserAvatar(user = employee, size =24.dp)
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = employee.name, color = colors.onBackground, fontSize = 14.sp)
         Spacer(modifier = Modifier.width(8.dp))

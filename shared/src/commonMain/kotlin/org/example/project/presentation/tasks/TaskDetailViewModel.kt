@@ -11,12 +11,11 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.example.project.data.employee.EmployeeMockApiService
+import org.example.project.data.accounts.User
+import org.example.project.data.accounts.UserApiService
 import org.example.project.data.project.ProjectMockApiService
 import org.example.project.data.task.TaskMockApiService
 import org.example.project.data.tasktimeentry.TaskTimeEntryMockApiService
-import org.example.project.domain.employee.Employee
-import org.example.project.domain.employee.EmployeeApi
 import org.example.project.domain.project.Project
 import org.example.project.domain.project.ProjectApi
 import org.example.project.domain.task.Task
@@ -31,15 +30,15 @@ data class TaskDetailUiState(
     val elapsedSeconds: Int = 0,
     val taskTotalSeconds: Int = 0,
     val isSaving: Boolean = false,
-    val assignees: List<Employee> = emptyList(),
-    val allEmployees: List<Employee> = emptyList(),
+    val assignees: List<User> = emptyList(),
+    val allUsers: List<User> = emptyList(),
     val project: Project? = null,
     val allProjects: List<Project> = emptyList(),
     val error: String? = null,
 )
 
 private data class ReferenceData(
-    val employees: List<Employee> = emptyList(),
+    val users: List<User> = emptyList(),
     val projects: List<Project> = emptyList(),
 )
 
@@ -54,9 +53,9 @@ class TaskDetailViewModel(
     private val task: Task,
     private val employeeId: Int,
     private val activeTimerViewModel: ActiveTimerViewModel,
+    private val userApi: UserApiService,
     private val taskApi: TaskApi = TaskMockApiService(),
     private val timeEntryApi: TaskTimeEntryApi = TaskTimeEntryMockApiService(),
-    private val employeeApi: EmployeeApi = EmployeeMockApiService(),
     private val projectApi: ProjectApi = ProjectMockApiService(),
 ) : ViewModel() {
 
@@ -75,8 +74,8 @@ class TaskDetailViewModel(
                 elapsedSeconds = historical.myPastSeconds + if (isMine) active.elapsedSeconds else 0,
                 taskTotalSeconds = historical.taskTotalPastSeconds + if (isMine) active.elapsedSeconds else 0,
                 isSaving = saving.first,
-                assignees = currentTask.assigneeIds.mapNotNull { id -> reference.employees.find { it.id == id } },
-                allEmployees = reference.employees,
+                assignees = currentTask.assigneeIds.mapNotNull { id -> reference.users.find { it.id == id } },
+                allUsers = reference.users,
                 project = reference.projects.find { it.id == currentTask.projectId },
                 allProjects = reference.projects,
                 error = historical.error ?: active.error ?: saving.second,
@@ -122,9 +121,9 @@ class TaskDetailViewModel(
     private fun loadReferenceData() {
         viewModelScope.launch {
             try {
-                val employees = employeeApi.getEmployees()
+                val users = userApi.getUsers().getOrThrow()
                 val projects = projectApi.getProjects()
-                referenceState.value = ReferenceData(employees = employees, projects = projects)
+                referenceState.value = ReferenceData(users = users, projects = projects)
             } catch (e: Exception) {
                 savingState.value = false to e.message
             }

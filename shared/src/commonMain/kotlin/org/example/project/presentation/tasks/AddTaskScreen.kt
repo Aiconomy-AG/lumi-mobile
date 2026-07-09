@@ -37,7 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.domain.employee.Employee
+import org.example.project.data.accounts.User
 import org.example.project.domain.project.Project
 import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.localization.LocalAppStrings
@@ -110,7 +110,7 @@ fun AddTaskScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         AssigneePicker(
-            employees = uiState.employees,
+            users = uiState.users,
             selectedIds = selectedAssignees,
             onToggle = { id ->
                 selectedAssignees = if (id in selectedAssignees) {
@@ -269,7 +269,7 @@ fun ProjectDropdown(
 
 @Composable
 private fun AssigneePicker(
-    employees: List<Employee>,
+    users: List<User>,
     selectedIds: Set<Int>,
     onToggle: (Int) -> Unit,
 ) {
@@ -280,8 +280,8 @@ private fun AssigneePicker(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        employees.forEach { employee ->
-            val isSelected = employee.id in selectedIds
+        users.forEach { user ->
+            val isSelected = user.id in selectedIds
             Row(
                 modifier = Modifier
                     .background(
@@ -293,14 +293,14 @@ private fun AssigneePicker(
                         color = if (isSelected) colors.primary else colors.outline,
                         shape = RoundedCornerShape(20.dp),
                     )
-                    .clickable { onToggle(employee.id) }
+                    .clickable { onToggle(user.id) }
                     .padding(start = 6.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                EmployeeAvatar(employee = employee, size = 24.dp)
+                UserAvatar(user = user, size = 24.dp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = employee.name,
+                    text = user.name,
                     color = if (isSelected) colors.onSurface else colors.onSurfaceVariant,
                     fontSize = 14.sp,
                 )
