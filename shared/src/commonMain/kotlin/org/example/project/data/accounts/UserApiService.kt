@@ -24,7 +24,7 @@ class UserApiService(
 
     override suspend fun getUsers(): Result<List<User>> {
         return try {
-            val response = client.get("$baseUrl/v1/admin/users") {
+            val response = client.get("$baseUrl/admin/users") {
                 bearerAuth()
             }
 
@@ -53,7 +53,7 @@ class UserApiService(
         isActive: Boolean
     ): Result<User> {
         return try {
-            val response = client.post("$baseUrl/v1/admin/users") {
+            val response = client.post("$baseUrl/admin/users") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -86,7 +86,7 @@ class UserApiService(
 
     override suspend fun setUserActive(userId: Int, isActive: Boolean): Result<User> {
         return try {
-            val response = client.put("$baseUrl/v1/admin/users/$userId") {
+            val response = client.put("$baseUrl/admin/users/$userId") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(UpdateUserActiveRequest(isActive = isActive))

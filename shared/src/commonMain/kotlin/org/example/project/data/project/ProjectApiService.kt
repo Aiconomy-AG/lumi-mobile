@@ -26,21 +26,21 @@ class ProjectApiService(
 ) : ProjectApi {
 
     override suspend fun getProjects(): List<Project> {
-        val response = client.get("$baseUrl/v1/workspace/projects") { bearerAuth() }
+        val response = client.get("$baseUrl/workspace/projects") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return projectsJson.decodeFromString<ProjectListResponse>(text).data.map { it.toProject() }
     }
 
     override suspend fun getProject(id: Int): Project {
-        val response = client.get("$baseUrl/v1/workspace/projects/$id") { bearerAuth() }
+        val response = client.get("$baseUrl/workspace/projects/$id") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return projectsJson.decodeFromString<ProjectResponse>(text).data.toProject()
     }
 
     override suspend fun createProject(name: String, description: String, deadline: String, status: ProjectStatus): Project {
-        val response = client.post("$baseUrl/v1/workspace/projects") {
+        val response = client.post("$baseUrl/workspace/projects") {
             bearerAuth()
             contentType(ContentType.Application.Json)
             setBody(ProjectRequestBody(name = name, description = description, deadline = deadline, status = status))
@@ -51,7 +51,7 @@ class ProjectApiService(
     }
 
     override suspend fun updateProject(id: Int, name: String, description: String, deadline: String, status: ProjectStatus): Project {
-        val response = client.put("$baseUrl/v1/workspace/projects/$id") {
+        val response = client.put("$baseUrl/workspace/projects/$id") {
             bearerAuth()
             contentType(ContentType.Application.Json)
             setBody(ProjectRequestBody(name = name, description = description, deadline = deadline, status = status))
@@ -62,7 +62,7 @@ class ProjectApiService(
     }
 
     override suspend fun deleteProject(id: Int) {
-        val response = client.delete("$baseUrl/v1/workspace/projects/$id") { bearerAuth() }
+        val response = client.delete("$baseUrl/workspace/projects/$id") { bearerAuth() }
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(response.bodyAsText()))
     }
 
