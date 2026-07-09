@@ -48,7 +48,7 @@ class StockApiService(
             var lastPage = 1
 
             do {
-                val response = client.get("$baseUrl/v1/admin/products") {
+                val response = client.get("$baseUrl/admin/products") {
                     bearerAuth()
                     parameter("page", page)
                     parameter("per_page", 100)
@@ -81,7 +81,7 @@ class StockApiService(
 
     override suspend fun getCategories(): Result<List<Category>> {
         return try {
-            val response = client.get("$baseUrl/v1/shop/categories") {
+            val response = client.get("$baseUrl/shop/categories") {
                 bearerAuth()
             }
 
@@ -110,7 +110,7 @@ class StockApiService(
         input: CreateProductInput
     ): Result<Product> {
         return try {
-            val response = client.post("$baseUrl/v1/admin/products") {
+            val response = client.post("$baseUrl/admin/products") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(input.toCreateProductRequest())
@@ -135,7 +135,7 @@ class StockApiService(
         input: UpdateProductInput
     ): Result<Product> {
         return try {
-            val response = client.put("$baseUrl/v1/admin/products/$productId") {
+            val response = client.put("$baseUrl/admin/products/$productId") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(input.toUpdateProductRequest())
@@ -159,7 +159,7 @@ class StockApiService(
         productId: Int
     ): Result<Unit> {
         return try {
-            val response = client.delete("$baseUrl/v1/admin/products/$productId") {
+            val response = client.delete("$baseUrl/admin/products/$productId") {
                 bearerAuth()
             }
 
@@ -180,7 +180,7 @@ class StockApiService(
         input: CreateProductVariantInput
     ): Result<Product> {
         return try {
-            val response = client.post("$baseUrl/v1/admin/products/$productId/variants") {
+            val response = client.post("$baseUrl/admin/products/$productId/variants") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(input.toVariantRequest())
@@ -206,7 +206,7 @@ class StockApiService(
         input: UpdateProductVariantInput
     ): Result<Product> {
         return try {
-            val response = client.put("$baseUrl/v1/admin/products/$productId/variants/$variantId") {
+            val response = client.put("$baseUrl/admin/products/$productId/variants/$variantId") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(input.toVariantRequest())
@@ -231,7 +231,7 @@ class StockApiService(
         variantId: Int
     ): Result<Unit> {
         return try {
-            val response = client.delete("$baseUrl/v1/admin/products/$productId/variants/$variantId") {
+            val response = client.delete("$baseUrl/admin/products/$productId/variants/$variantId") {
                 bearerAuth()
             }
 

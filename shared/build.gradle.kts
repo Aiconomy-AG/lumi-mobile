@@ -4,6 +4,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.jetbrains.compose.internal.com.squareup.kotlinpoet.PropertySpec
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -30,11 +31,15 @@ val configuredApiBaseUrl = localProperties.getProperty(
     "https://lumi-server.internship.aico.dev/api"
 )
 
+val configuredApiVersion = localProperties.getProperty("API_VERSION", "v1")
 val generatedApiConfigDir = layout.buildDirectory.dir("generated/apiConfig/commonMain/kotlin")
 
 abstract class GenerateApiConfigTask : DefaultTask() {
     @get:Input
     abstract val apiBaseUrl: Property<String>
+
+    @get:Input
+    abstract val apiVersion: Property<String>
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -44,6 +49,10 @@ abstract class GenerateApiConfigTask : DefaultTask() {
         val escapedApiBaseUrl = apiBaseUrl.get()
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
+
+        val escapedVersion = apiVersion.get().replace("\"", "\\\"")
+
+        val finalUrl = "$escapedApiBaseUrl/$escapedVersion"
 
         val outputFile = outputDir
             .file("org/example/project/data/ApiConfig.kt")
@@ -56,7 +65,7 @@ abstract class GenerateApiConfigTask : DefaultTask() {
             package org.example.project.data
 
             object ApiConfig {
-                const val BASE_URL = "$escapedApiBaseUrl"
+                const val BASE_URL = "$finalUrl"
             }
             """.trimIndent()
         )
@@ -65,6 +74,7 @@ abstract class GenerateApiConfigTask : DefaultTask() {
 
 val generateApiConfig by tasks.registering(GenerateApiConfigTask::class) {
     apiBaseUrl.set(configuredApiBaseUrl)
+    apiVersion.set(configuredApiVersion)
     outputDir.set(generatedApiConfigDir)
 }
 

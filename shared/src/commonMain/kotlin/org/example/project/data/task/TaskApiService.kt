@@ -27,7 +27,7 @@ class TaskApiService(
 ) : TaskApi {
 
     override suspend fun getTasks(): List<Task> {
-        val response = client.get("$baseUrl/v1/workspace/tasks") { bearerAuth() }
+        val response = client.get("$baseUrl/workspace/tasks") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return tasksJson.decodeFromString<TaskListResponse>(text).data.map { it.toTask() }
@@ -41,7 +41,7 @@ class TaskApiService(
         projectId: Int,
         assigneeIds: List<Int>
     ): Task {
-        val response = client.post("$baseUrl/v1/workspace/tasks") {
+        val response = client.post("$baseUrl/workspace/tasks") {
             bearerAuth()
             contentType(ContentType.Application.Json)
             setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate, projectId = projectId))
@@ -53,7 +53,7 @@ class TaskApiService(
         val createdTask = tasksJson.decodeFromString<TaskResponse>(text).data.toTask()
 
         if (assigneeIds.isNotEmpty()) {
-            val assignResponse = client.post("$baseUrl/v1/workspace/tasks/${createdTask.id}/assignees") {
+            val assignResponse = client.post("$baseUrl/workspace/tasks/${createdTask.id}/assignees") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(AssigneeRequestBody(employeeIds = assigneeIds))
@@ -69,7 +69,7 @@ class TaskApiService(
     }
 
     override suspend fun updateTask(id: Int, title: String, description: String, dueDate: String, status: TaskStatus, projectId: Int): Task {
-        val response = client.put("$baseUrl/v1/workspace/tasks/$id") {
+        val response = client.put("$baseUrl/workspace/tasks/$id") {
             bearerAuth()
             contentType(ContentType.Application.Json)
             setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate, projectId = projectId))
@@ -80,12 +80,12 @@ class TaskApiService(
     }
 
     override suspend fun deleteTask(id: Int) {
-        val response = client.delete("$baseUrl/v1/workspace/tasks/$id") { bearerAuth() }
+        val response = client.delete("$baseUrl/workspace/tasks/$id") { bearerAuth() }
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(response.bodyAsText()))
     }
 
     override suspend fun assignUser(taskId: Int, userId: Int): Task {
-        val response = client.post("$baseUrl/v1/workspace/tasks/$taskId/assignees") {
+        val response = client.post("$baseUrl/workspace/tasks/$taskId/assignees") {
             bearerAuth()
             contentType(ContentType.Application.Json)
             setBody(AssigneeRequestBody(employeeIds = listOf(userId)))
@@ -96,7 +96,7 @@ class TaskApiService(
     }
 
     override suspend fun unassignUser(taskId: Int, userId: Int): Task {
-        val response = client.delete("$baseUrl/v1/workspace/tasks/$taskId/assignees/$userId") { bearerAuth() }
+        val response = client.delete("$baseUrl/workspace/tasks/$taskId/assignees/$userId") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return tasksJson.decodeFromString<TaskResponse>(text).data.toTask()

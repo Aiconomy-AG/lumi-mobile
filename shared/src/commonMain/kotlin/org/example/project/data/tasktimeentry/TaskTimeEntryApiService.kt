@@ -22,21 +22,21 @@ class TaskTimeEntryApiService(
 ) : TaskTimeEntryApi {
 
     override suspend fun getTimeEntries(taskId: Int): List<TaskTimeEntry> {
-        val response = client.get("$baseUrl/v1/workspace/tasks/$taskId/time-entries") { bearerAuth() }
+        val response = client.get("$baseUrl/workspace/tasks/$taskId/time-entries") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return timeEntryJson.decodeFromString<TimeEntryListResponse>(text).data.map { it.toTimeEntry() }
     }
 
     override suspend fun startTimer(taskId: Int): TaskTimeEntry {
-        val response = client.post("$baseUrl/v1/workspace/tasks/$taskId/time-entries/start") { bearerAuth() }
+        val response = client.post("$baseUrl/workspace/tasks/$taskId/time-entries/start") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return timeEntryJson.decodeFromString<TimeEntryResponse>(text).data.toTimeEntry()
     }
 
     override suspend fun stopTimer(taskId: Int, entryId: Int): TaskTimeEntry {
-        val response = client.post("$baseUrl/v1/workspace/tasks/$taskId/time-entries/$entryId/stop") { bearerAuth() }
+        val response = client.post("$baseUrl/workspace/tasks/$taskId/time-entries/$entryId/stop") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return timeEntryJson.decodeFromString<TimeEntryResponse>(text).data.toTimeEntry()

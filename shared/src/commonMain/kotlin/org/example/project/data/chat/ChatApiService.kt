@@ -28,14 +28,14 @@ class ChatApiService(
 
 
     override suspend fun getConversations(employeeId: Int): List<Conversation> {
-        val response = client.get("$baseUrl/v1/workspace/conversations") { bearerAuth() }
+        val response = client.get("$baseUrl/workspace/conversations") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return chatJson.decodeFromString<ConversationListResponse>(text).data.map { it.toConversation() }
     }
 
     override suspend fun getParticipants(conversationId: Int): List<ConversationParticipant> {
-        val response = client.get("$baseUrl/v1/workspace/conversations/$conversationId") { bearerAuth() }
+        val response = client.get("$baseUrl/workspace/conversations/$conversationId") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return chatJson.decodeFromString<ConversationResponse>(text).data.participants.map {
@@ -48,14 +48,14 @@ class ChatApiService(
     }
 
     override suspend fun getMessages(conversationId: Int): List<ChatMessage> {
-        val response = client.get("$baseUrl/v1/workspace/conversations/$conversationId/messages") { bearerAuth() }
+        val response = client.get("$baseUrl/workspace/conversations/$conversationId/messages") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
         return chatJson.decodeFromString<MessageListResponse>(text).data.map { it.toChatMessage() }
     }
 
     override suspend fun sendMessage(conversationId: Int, senderId: Int, messageText: String): ChatMessage {
-        val response = client.post("$baseUrl/v1/workspace/conversations/$conversationId/messages") {
+        val response = client.post("$baseUrl/workspace/conversations/$conversationId/messages") {
             bearerAuth()
             contentType(ContentType.Application.Json)
             setBody(SendMessageRequestBody(message = messageText))
