@@ -31,7 +31,8 @@ fun AppTopBar(
     user: UserSession,
     activeTimerViewModel: ActiveTimerViewModel,
     onOpenActiveTask: (Task) -> Unit,
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    onProfileClick: () -> Unit = {}
 ) {
     val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val activeTimerState by activeTimerViewModel.uiState.collectAsState()
@@ -72,7 +73,8 @@ fun AppTopBar(
         Box(
             modifier = Modifier
                 .size(34.dp)
-                .background(AppColorPalette.SelectionOverlay, CircleShape),
+                .background(AppColorPalette.SelectionOverlay, CircleShape)
+                .clickable(onClick = onProfileClick),
             contentAlignment = Alignment.Center
         ) {
             Text(

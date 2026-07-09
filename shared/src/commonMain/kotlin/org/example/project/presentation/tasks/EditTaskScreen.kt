@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.localization.LocalAppStrings
 
 @Composable
 fun EditTaskScreen(
@@ -42,6 +43,7 @@ fun EditTaskScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
     val initialTask = uiState.task
 
@@ -59,7 +61,7 @@ fun EditTaskScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Edit task",
+            text = strings.text("Edit task"),
             color = colors.onBackground,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
@@ -67,11 +69,11 @@ fun EditTaskScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TaskInput(value = title, onValueChange = { title = it }, label = "Title")
-        TaskInput(value = description, onValueChange = { description = it }, label = "Description")
+        TaskInput(value = title, onValueChange = { title = it }, label = strings.text("Task"))
+        TaskInput(value = description, onValueChange = { description = it }, label = strings.text("Description"))
         TaskInput(value = dueDate, onValueChange = { dueDate = it }, label = "Due date (YYYY-MM-DD)")
 
-        Text(text = "Project", color = colors.onSurfaceVariant)
+        Text(text = strings.text("Project"), color = colors.onSurfaceVariant)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -83,7 +85,7 @@ fun EditTaskScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Status", color = colors.onSurfaceVariant)
+        Text(text = strings.text("Status"), color = colors.onSurfaceVariant)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -116,7 +118,7 @@ fun EditTaskScreen(
                 contentColor = colors.onPrimary
             )
         ) {
-            Text(if (uiState.isSaving) "Saving..." else "Save changes")
+            Text(if (uiState.isSaving) strings.text("Saving...") else strings.text("Save changes"))
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -129,7 +131,7 @@ fun EditTaskScreen(
                 contentColor = colors.onPrimary
             )
         ) {
-            Text("Cancel")
+            Text(strings.text("Cancel"))
         }
     }
 }
@@ -167,6 +169,7 @@ private fun TaskInput(
 @Composable
 private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> Unit) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -186,17 +189,10 @@ private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> U
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = status.label(),
+                    text = strings.taskStatus(status),
                     color = if (isSelected) colors.onSurface else colors.onSurfaceVariant
                 )
             }
         }
     }
-}
-
-private fun TaskStatus.label(): String = when (this) {
-    TaskStatus.TO_DO -> "To do"
-    TaskStatus.IN_PROGRESS -> "In progress"
-    TaskStatus.COMPLETE -> "Complete"
-    TaskStatus.BLOCKED -> "Blocked"
 }

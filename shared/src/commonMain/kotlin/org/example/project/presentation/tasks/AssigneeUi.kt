@@ -13,32 +13,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.domain.employee.Employee
+import org.example.project.data.accounts.User
 import org.example.project.presentation.theme.AppColorPalette
 
-fun Employee.initials(): String =
-    name.split(" ")
-        .mapNotNull { it.firstOrNull()?.uppercase() }
-        .take(2)
-        .joinToString("")
-
-fun Employee.avatarColor(): Color =
+fun User.avatarColor(): Color =
     AppColorPalette.AvatarPalette[id % AppColorPalette.AvatarPalette.size]
 
 @Composable
-fun EmployeeAvatar(
-    employee: Employee,
+fun UserAvatar(
+    user: User,
     size: Dp = 28.dp,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .size(size)
-            .background(color = employee.avatarColor(), shape = CircleShape),
+            .background(color = user.avatarColor(), shape = CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = employee.initials(),
+            text = user.initials,
             color = Color.White,
             fontSize = (size.value * 0.4f).sp,
             fontWeight = FontWeight.Bold,

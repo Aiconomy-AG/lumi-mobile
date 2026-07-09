@@ -40,6 +40,9 @@ class AuthApiService(
                     name = loginResponse.user.name,
                     email = loginResponse.user.email,
                     role = loginResponse.user.role.toUserRole(),
+                    phoneNumber = loginResponse.user.resolvedPhoneNumber(),
+                    status = loginResponse.user.status ?: "",
+                    languageFlag = loginResponse.user.languageFlag ?: "en",
                     token = loginResponse.token
                 )
             )
@@ -80,11 +83,21 @@ private data class AuthUserResponse(
     val status: String? = null,
     @SerialName("phone_number")
     val phoneNumber: String? = null,
+    @SerialName("phoneNumber")
+    val phoneNumberCamel: String? = null,
+    val phone: String? = null,
+    val mobile: String? = null,
+    val telephone: String? = null,
     @SerialName("language_flag")
     val languageFlag: String? = null,
     @SerialName("is_active")
     val isActive: Boolean? = null
 )
+
+private fun AuthUserResponse.resolvedPhoneNumber(): String =
+    listOf(phoneNumber, phoneNumberCamel, phone, mobile, telephone)
+        .firstOrNull { !it.isNullOrBlank() }
+        ?: ""
 
 @Serializable
 private data class AuthErrorResponse(

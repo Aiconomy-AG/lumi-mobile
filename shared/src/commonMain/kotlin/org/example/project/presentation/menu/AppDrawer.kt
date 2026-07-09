@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.data.auth.UserSession
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
@@ -23,8 +24,9 @@ fun AppDrawer(
     sections: List<AppSection>,
     selectedSection: AppSection,
     onSectionSelected: (AppSection) -> Unit,
-    onLogout: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     ModalDrawerSheet(
         drawerContainerColor = AppColorPalette.OverlaySurface,
         modifier = Modifier.width(260.dp)
@@ -82,7 +84,7 @@ fun AppDrawer(
                     Spacer(modifier = Modifier.width(12.dp))
 
                     Text(
-                        text = section.title,
+                        text = strings.text(section.title),
                         color = color,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                     )
@@ -94,21 +96,12 @@ fun AppDrawer(
             Spacer(modifier = Modifier.weight(1f))
 
             Text(
-                text = "Logged in as ${user.name}",
+                text = strings.format("Logged in as {name}", "name" to user.name),
                 color = AppColorPalette.IconSecondaryTranslucent,
                 fontSize = 13.sp
             )
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "Logout",
-                color = AppColorPalette.Error,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .clickable { onLogout() }
-                    .padding(vertical = 12.dp)
-            )
         }
     }
 }

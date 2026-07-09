@@ -37,9 +37,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.example.project.domain.employee.Employee
+import org.example.project.data.accounts.User
 import org.example.project.domain.project.Project
 import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.localization.LocalAppStrings
 
 @Composable
 fun AddTaskScreen(
@@ -50,6 +51,7 @@ fun AddTaskScreen(
     projectId: Int = 0,
 ) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -69,7 +71,7 @@ fun AddTaskScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Add task",
+            text = strings.text("Add task"),
             color = colors.onBackground,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
@@ -77,12 +79,12 @@ fun AddTaskScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TaskInput(value = title, onValueChange = { title = it }, label = "Title")
-        TaskInput(value = description, onValueChange = { description = it }, label = "Description")
+        TaskInput(value = title, onValueChange = { title = it }, label = strings.text("Task"))
+        TaskInput(value = description, onValueChange = { description = it }, label = strings.text("Description"))
         TaskInput(value = dueDate, onValueChange = { dueDate = it }, label = "Due date (YYYY-MM-DD)")
 
         if (showProjectPicker) {
-            Text(text = "Project", color = colors.onSurfaceVariant)
+            Text(text = strings.text("Project"), color = colors.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -95,7 +97,7 @@ fun AddTaskScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        Text(text = "Status", color = colors.onSurfaceVariant)
+        Text(text = strings.text("Status"), color = colors.onSurfaceVariant)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -103,12 +105,12 @@ fun AddTaskScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Assignees", color = colors.onSurfaceVariant)
+        Text(text = strings.text("Assignees"), color = colors.onSurfaceVariant)
 
         Spacer(modifier = Modifier.height(8.dp))
 
         AssigneePicker(
-            employees = uiState.employees,
+            users = uiState.users,
             selectedIds = selectedAssignees,
             onToggle = { id ->
                 selectedAssignees = if (id in selectedAssignees) {
@@ -142,7 +144,7 @@ fun AddTaskScreen(
                 contentColor = colors.onPrimary
             )
         ) {
-            Text("Save task")
+            Text(strings.text("Save task"))
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -155,7 +157,7 @@ fun AddTaskScreen(
                 contentColor = colors.onPrimary
             )
         ) {
-            Text("Cancel")
+            Text(strings.text("Cancel"))
         }
     }
 }
@@ -193,6 +195,7 @@ private fun TaskInput(
 @Composable
 private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> Unit) {
     val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
 
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -212,7 +215,7 @@ private fun TaskStatusPicker(selected: TaskStatus, onSelected: (TaskStatus) -> U
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
-                    text = status.label(),
+                    text = strings.taskStatus(status),
                     color = if (isSelected) colors.onSurface else colors.onSurfaceVariant
                 )
             }
@@ -228,7 +231,7 @@ fun ProjectDropdown(
 ) {
     val colors = MaterialTheme.colorScheme
     var expanded by remember { mutableStateOf(false) }
-    val selectedName = projects.find { it.id == selectedId }?.name ?: "Select project"
+    val selectedName = projects.find { it.id == selectedId }?.name ?: LocalAppStrings.current.text("Project")
 
     Box {
         Row(
@@ -266,7 +269,7 @@ fun ProjectDropdown(
 
 @Composable
 private fun AssigneePicker(
-    employees: List<Employee>,
+    users: List<User>,
     selectedIds: Set<Int>,
     onToggle: (Int) -> Unit,
 ) {
@@ -277,8 +280,8 @@ private fun AssigneePicker(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        employees.forEach { employee ->
-            val isSelected = employee.id in selectedIds
+        users.forEach { user ->
+            val isSelected = user.id in selectedIds
             Row(
                 modifier = Modifier
                     .background(
@@ -290,25 +293,18 @@ private fun AssigneePicker(
                         color = if (isSelected) colors.primary else colors.outline,
                         shape = RoundedCornerShape(20.dp),
                     )
-                    .clickable { onToggle(employee.id) }
+                    .clickable { onToggle(user.id) }
                     .padding(start = 6.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                EmployeeAvatar(employee = employee, size = 24.dp)
+                UserAvatar(user = user, size = 24.dp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = employee.name,
+                    text = user.name,
                     color = if (isSelected) colors.onSurface else colors.onSurfaceVariant,
                     fontSize = 14.sp,
                 )
             }
         }
     }
-}
-
-private fun TaskStatus.label(): String = when (this) {
-    TaskStatus.TO_DO -> "To do"
-    TaskStatus.IN_PROGRESS -> "In progress"
-    TaskStatus.COMPLETE -> "Complete"
-    TaskStatus.BLOCKED -> "Blocked"
 }

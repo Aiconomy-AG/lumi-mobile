@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
@@ -20,6 +21,8 @@ fun AppBottomBar(
     selectedSection: AppSection,
     onSectionSelected: (AppSection) -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -49,7 +52,7 @@ fun AppBottomBar(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = section.title,
+                    text = strings.text(section.title),
                     fontSize = 12.sp,
                     color = color,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
