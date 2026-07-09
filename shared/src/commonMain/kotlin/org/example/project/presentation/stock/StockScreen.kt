@@ -1,24 +1,20 @@
 package org.example.project.presentation.stock
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import org.example.project.domain.stock.Category
 import org.example.project.domain.stock.Product
 import org.example.project.presentation.components.PaginationBar
 import org.example.project.presentation.localization.LocalAppStrings
@@ -33,10 +29,23 @@ fun StockScreen(
     onAddProductClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    var currentPage by remember { mutableStateOf(0) }
-    val pageSize = 5
+
+    var selectedProductId by remember {
+        mutableStateOf<Int?>(null)
+    }
+
+    var currentPage by remember {
+        mutableStateOf(0)
+    }
+    val pageSize = 7
+
     val filteredProducts = state.filteredProducts
-    val totalPages = maxOf(1, (filteredProducts.size + pageSize - 1) / pageSize)
+
+    val totalPages = maxOf(
+        1,
+        (filteredProducts.size + pageSize - 1) / pageSize
+    )
+
     val pagedProducts = filteredProducts
         .drop(currentPage * pageSize)
         .take(pageSize)
@@ -47,6 +56,14 @@ fun StockScreen(
         }
     }
 
+
+    val selectedProduct = selectedProductId?.let { id ->
+        state.products.firstOrNull { product ->
+            product.id == id
+        }
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -54,10 +71,13 @@ fun StockScreen(
             .padding(AppDimensions.ScreenPadding)
     ) {
         StockHeader(
-            productCount = state.products.size,
+            productCount = state.productCount,
+            variantCount = state.variantCount,
             lowStockCount = state.lowStockCount,
             outOfStockCount = state.outOfStockCount,
             searchQuery = state.searchQuery,
+            isLoading = state.isLoading,
+            errorMessage = state.errorMessage,
             onSearchQueryChanged = viewModel::onSearchQueryChanged,
             onAddProductClick = onAddProductClick
         )
@@ -138,7 +158,10 @@ private fun StockHeader(
             colors = AppComponentDefaults.appTextFieldColors()
         )
 
-        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+                val totalPages = maxOf(
+                    1,
+                    (filteredProducts.size + pageSize - 1) / pageSize
+                )
 
         Button(
             onClick = onAddProductClick,
@@ -150,71 +173,42 @@ private fun StockHeader(
     }
 }
 
-@Composable
-private fun StockTable(
-    products: List<Product>,
-    onDeleteProduct: (Int) -> Unit,
-    onUpdateQuantity: (Int, Int, Int) -> Unit
-) {
-    val verticalScrollState = rememberScrollState()
-    val horizontalScrollState = rememberScrollState()
+                LaunchedEffect(filteredProducts.size, pageSize) {
+                    if (currentPage > totalPages - 1) {
+                        currentPage = totalPages - 1
+                    }
+                }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = AppDimensions.TableMaxHeight)
-            .border(
-                width = 1.dp,
-                color = AppColorPalette.Border,
-                shape = RoundedCornerShape(AppDimensions.TableCornerRadius)
-            )
-            .background(
-                color = AppColorPalette.Surface,
-                shape = RoundedCornerShape(AppDimensions.TableCornerRadius)
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(verticalScrollState)
-                .horizontalScroll(horizontalScrollState)
-                .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 26.dp)
-                .width(686.dp)
-        ) {
-            StockTableHeader()
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    ProductTable(
+                        products = pagedProducts,
+                        onProductClick = { product ->
+                            selectedProductId = product.id
+                        }
+                    )
 
-            products.forEach { product ->
-                val variant = product.variants.firstOrNull()
+                    Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-                if (variant != null) {
-                    StockTableRow(
-                        product = product,
-                        sku = variant.sku,
-                        stockQuantity = variant.stockQuantity,
-                        price = variant.price,
-                        onDeleteProduct = {
-                            onDeleteProduct(product.id)
+                    StockPagination(
+                        currentPage = currentPage,
+                        totalPages = totalPages,
+                        onPreviousClick = {
+                            if (currentPage > 0) {
+                                currentPage--
+                            }
                         },
-                        onUpdateQuantity = { newQuantity ->
-                            onUpdateQuantity(
-                                product.id,
-                                variant.id,
-                                newQuantity
-                            )
+                        onNextClick = {
+                            if (currentPage < totalPages - 1) {
+                                currentPage++
+                            }
                         }
                     )
                 }
             }
         }
-
-        HorizontalScrollBar(
-            scrollValue = horizontalScrollState.value,
-            maxScrollValue = horizontalScrollState.maxValue,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 14.dp, vertical = 8.dp)
-        )
     }
-}
 
 @Composable
 private fun HorizontalScrollBar(
@@ -334,54 +328,59 @@ private fun StockTableRow(
         EditQuantityDialog(
             currentQuantity = stockQuantity,
             onDismiss = {
-                showEditDialog = false
+                selectedProductId = null
             },
-            onSave = { newQuantity ->
-                onUpdateQuantity(newQuantity)
-                showEditDialog = false
+            onUpdateProduct = { productId, name, description, imageUrl, sku, price, stockQuantity, categoryId ->
+                viewModel.updateProduct(
+                    productId = productId,
+                    name = name,
+                    description = description,
+                    imageUrl = imageUrl,
+                    sku = sku,
+                    price = price,
+                    stockQuantity = stockQuantity,
+                    categoryId = categoryId
+                )
+            },
+            onUpdateVariant = { productId, variantId, sku, name, colour, weight, weightUnit, price, stockQuantity ->
+                viewModel.updateProductVariant(
+                    productId = productId,
+                    variantId = variantId,
+                    sku = sku,
+                    name = name,
+                    colour = colour,
+                    weight = weight,
+                    weightUnit = weightUnit,
+                    price = price,
+                    stockQuantity = stockQuantity
+                )
+            },
+            onAddVariant = { productId, sku, name, colour, weight, weightUnit, price, stockQuantity ->
+                viewModel.addProductVariant(
+                    productId = productId,
+                    sku = sku,
+                    name = name,
+                    colour = colour,
+                    weight = weight,
+                    weightUnit = weightUnit,
+                    price = price,
+                    stockQuantity = stockQuantity
+                )
+            },
+            onDeleteVariant = { productId, variantId ->
+                viewModel.deleteProductVariant(
+                    productId = productId,
+                    variantId = variantId
+                )
+            },
+            onDeleteProduct = { productId ->
+                viewModel.deleteProduct(productId)
+                selectedProductId = null
             }
         )
     }
 }
 
-@Composable
-private fun EditIcon(
-    tint: Color,
-    modifier: Modifier = Modifier
-) {
-    androidx.compose.foundation.Canvas(modifier = modifier.size(AppDimensions.ActionIconSize)) {
-        val strokeWidth = size.width * 0.1f
-
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.28f, size.height * 0.76f),
-            end = Offset(size.width * 0.72f, size.height * 0.32f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.66f, size.height * 0.24f),
-            end = Offset(size.width * 0.82f, size.height * 0.4f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.2f, size.height * 0.84f),
-            end = Offset(size.width * 0.34f, size.height * 0.78f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = tint,
-            start = Offset(size.width * 0.72f, size.height * 0.3f),
-            end = Offset(size.width * 0.78f, size.height * 0.24f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-    }
-}
 
 @Composable
 private fun DeleteIcon(
