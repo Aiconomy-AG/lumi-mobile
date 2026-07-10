@@ -85,7 +85,6 @@ fun MainScreen(
             )
         )
     }
-
     var showAddProductScreen by remember { mutableStateOf(false) }
     var showAddUserScreen by remember { mutableStateOf(false) }
     var showUserDetail by remember { mutableStateOf(false) }
@@ -458,14 +457,6 @@ fun MainScreen(
                     }
                 }
 
-                else -> {
-                    EmptySectionScreen(
-                        title = strings.text(selectedSection.title),
-                        modifier = Modifier
-                            .padding(paddingValues)
-                            .background(AppColorPalette.Background)
-                    )
-                }
             }
 
             if (showUserDetail) {
