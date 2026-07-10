@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>org.example.project.KotlinProject</string>
+	<string>com.aico.lumi</string>
 	<key>PROJECT_ID</key>
 	<string>lumi-c95bd</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1044344586093:ios:d51aa2879507ce5676a464</string>
+	<string>1:1044344586093:ios:ec22110aa33c8bba76a464</string>
 </dict>
 </plist>

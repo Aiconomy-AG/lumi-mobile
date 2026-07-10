@@ -1,0 +1,70 @@
+package org.example.project.notifications
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+
+private val bridgeScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+object IosPushTokenStore {
+    var fcmToken: String? = null
+        private set
+
+    var permissionGranted: Boolean = false
+        private set
+
+    private val tokenWaiters = mutableListOf<(String?) -> Unit>()
+    private val permissionWaiters = mutableListOf<(Boolean) -> Unit>()
+
+    fun updateToken(token: String?) {
+        fcmToken = token
+        if (token != null) {
+            val waiters = tokenWaiters.toList()
+            tokenWaiters.clear()
+            waiters.forEach { it(token) }
+        }
+    }
+
+    fun updatePermission(granted: Boolean) {
+        permissionGranted = granted
+        val waiters = permissionWaiters.toList()
+        permissionWaiters.clear()
+        waiters.forEach { it(granted) }
+    }
+
+    fun awaitToken(callback: (String?) -> Unit) {
+        val current = fcmToken
+        if (current != null) {
+            callback(current)
+            return
+        }
+        tokenWaiters.add(callback)
+    }
+
+    fun awaitPermission(callback: (Boolean) -> Unit) {
+        if (permissionGranted) {
+            callback(true)
+            return
+        }
+        permissionWaiters.add(callback)
+    }
+}
+
+fun updateIosNotificationPermission(granted: Boolean) {
+    IosPushTokenStore.updatePermission(granted)
+}
+
+fun onIosFcmTokenRefreshed(token: String) {
+    IosPushTokenStore.updateToken(token)
+
+    val handler = TokenRefreshHandlerHolder.handler ?: return
+    bridgeScope.launch {
+        handler(token)
+    }
+}
+
+fun onIosNotificationDataReceived(data: Map<String, String>) {
+    val link = NotificationRouter.parse(data) ?: return
+    NotificationRouter.emit(link)
+}
