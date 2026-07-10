@@ -253,6 +253,33 @@ fun AppSectionIcon(
                     style = thinStroke
                 )
             }
+
+            AppSection.AUDIT_LOGS -> {
+                listOf(0.32f, 0.5f, 0.68f).forEach { y ->
+                    drawLine(
+                        color = tint,
+                        start = Offset(w * 0.18f, h * y),
+                        end = Offset(w * 0.82f, h * y),
+                        strokeWidth = thinStroke.width,
+                        cap = StrokeCap.Round
+                    )
+                }
+                drawCircle(
+                    color = tint.copy(alpha = 0.7f),
+                    radius = w * 0.035f,
+                    center = Offset(w * 0.12f, h * 0.32f)
+                )
+                drawCircle(
+                    color = tint.copy(alpha = 0.7f),
+                    radius = w * 0.035f,
+                    center = Offset(w * 0.12f, h * 0.5f)
+                )
+                drawCircle(
+                    color = tint.copy(alpha = 0.7f),
+                    radius = w * 0.035f,
+                    center = Offset(w * 0.12f, h * 0.68f)
+                )
+            }
         }
     }
 }
