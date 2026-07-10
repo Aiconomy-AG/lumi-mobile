@@ -17,14 +17,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.launch
+import org.example.project.data.auth.AuthRepository
 import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import org.example.project.presentation.localization.AppLanguage
@@ -35,11 +45,14 @@ import org.example.project.presentation.theme.AppColorPalette
 fun UserDetailDialog(
     user: UserSession,
     selectedLanguage: AppLanguage,
+    authRepository: AuthRepository,
     onLanguageSelected: (AppLanguage) -> Unit,
+    onPhoneNumberUpdated: (String) -> Unit,
     onDismiss: () -> Unit,
     onLogout: () -> Unit,
 ) {
     val strings = LocalAppStrings.current
+    var displayedPhone by remember(user.phoneNumber) { mutableStateOf(user.phoneNumber) }
 
     Dialog(onDismissRequest = onDismiss) {
         Column(
@@ -88,7 +101,15 @@ fun UserDetailDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             InfoRow(label = strings.text("Email"), value = user.email)
-            InfoRow(label = strings.text("Phone"), value = user.phoneNumber.ifBlank { "-" })
+            EditablePhoneRow(
+                phoneNumber = displayedPhone,
+                authRepository = authRepository,
+                token = user.token,
+                onPhoneNumberUpdated = { updatedPhone ->
+                    displayedPhone = updatedPhone
+                    onPhoneNumberUpdated(updatedPhone)
+                },
+            )
             StatusRow(status = user.status)
             InfoRow(label = strings.text("Role"), value = strings.userRole(user.role))
 
@@ -229,5 +250,123 @@ private fun InfoRow(label: String, value: String) {
     ) {
         Text(text = label, color = AppColorPalette.TextSecondary, fontSize = 14.sp)
         Text(text = value, color = AppColorPalette.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun EditablePhoneRow(
+    phoneNumber: String,
+    authRepository: AuthRepository,
+    token: String,
+    onPhoneNumberUpdated: (String) -> Unit,
+) {
+    val strings = LocalAppStrings.current
+    val scope = rememberCoroutineScope()
+    var isEditing by remember { mutableStateOf(false) }
+    var draftPhone by remember(phoneNumber) { mutableStateOf(phoneNumber) }
+    var isSaving by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = strings.text("Phone"), color = AppColorPalette.TextSecondary, fontSize = 14.sp)
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (isEditing) {
+                    OutlinedTextField(
+                        value = draftPhone,
+                        onValueChange = {
+                            draftPhone = it
+                            errorMessage = null
+                        },
+                        modifier = Modifier.width(160.dp),
+                        singleLine = true,
+                        enabled = !isSaving,
+                        placeholder = { Text("+40722123456") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = AppColorPalette.TextPrimary,
+                            unfocusedTextColor = AppColorPalette.TextPrimary,
+                            cursorColor = AppColorPalette.Primary,
+                            focusedBorderColor = AppColorPalette.Primary,
+                            unfocusedBorderColor = AppColorPalette.Border,
+                        ),
+                    )
+                } else {
+                    Text(
+                        text = phoneNumber.ifBlank { "-" },
+                        color = AppColorPalette.TextPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = AppColorPalette.Primary,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text(
+                        text = if (isEditing) "✓" else "✎",
+                        color = AppColorPalette.Primary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clickable {
+                                if (isEditing) {
+                                    val trimmed = draftPhone.trim()
+                                    if (trimmed.isBlank()) {
+                                        errorMessage = strings.text("Phone number is required.")
+                                        return@clickable
+                                    }
+                                    if (trimmed.length > 20) {
+                                        errorMessage = strings.text("Phone number is too long.")
+                                        return@clickable
+                                    }
+
+                                    scope.launch {
+                                        isSaving = true
+                                        errorMessage = null
+                                        authRepository.updatePhoneNumber(token, trimmed)
+                                            .onSuccess { updatedPhone ->
+                                                onPhoneNumberUpdated(updatedPhone)
+                                                draftPhone = updatedPhone
+                                                isEditing = false
+                                            }
+                                            .onFailure { error ->
+                                                errorMessage = error.message
+                                            }
+                                        isSaving = false
+                                    }
+                                } else {
+                                    draftPhone = phoneNumber
+                                    errorMessage = null
+                                    isEditing = true
+                                }
+                            }
+                            .padding(4.dp),
+                    )
+                }
+            }
+        }
+
+        errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = AppColorPalette.Error,
+                fontSize = 12.sp,
+                modifier = Modifier.align(Alignment.End),
+            )
+        }
     }
 }

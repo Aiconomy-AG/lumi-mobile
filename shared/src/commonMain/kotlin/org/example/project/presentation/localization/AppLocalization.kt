@@ -7,6 +7,7 @@ import androidx.compose.runtime.compositionLocalOf
 import org.example.project.domain.accounts.AccountRole
 import org.example.project.domain.auth.UserRole
 import org.example.project.domain.project.ProjectStatus
+import org.example.project.domain.returns.ReturnStatus
 import org.example.project.domain.task.TaskStatus
 
 enum class AppLanguage(
@@ -76,6 +77,17 @@ class AppStrings(
 
     fun accountStatus(status: String): String =
         text(status.ifBlank { "Unknown" }.lowercase().replaceFirstChar { it.uppercase() })
+
+    fun returnStatus(status: ReturnStatus): String =
+        text(
+            when (status) {
+                ReturnStatus.REQUESTED -> "Requested"
+                ReturnStatus.APPROVED -> "Approved"
+                ReturnStatus.REJECTED -> "Rejected"
+                ReturnStatus.RECEIVED -> "Received"
+                ReturnStatus.REFUNDED -> "Refunded"
+            }
+        )
 }
 
 val LocalAppLanguage = compositionLocalOf { AppLanguage.EN }
@@ -100,6 +112,7 @@ private val translations = mapOf(
         "Projects" to "Projects",
         "Chat" to "Chat",
         "Stock" to "Stock",
+        "Returns" to "Returns",
         "Admin" to "Admin",
         "Sign in" to "Sign in",
         "Email" to "Email",
@@ -154,6 +167,12 @@ private val translations = mapOf(
         "Saving..." to "Saving...",
         "Description" to "Description",
         "Assigned to" to "Assigned to",
+        "Subtasks" to "Subtasks",
+        "Add subtask" to "Add subtask",
+        "Subtask title" to "Subtask title",
+        "Create subtask" to "Create subtask",
+        "No subtasks yet" to "No subtasks yet",
+        "Delete parent task warning" to "Deleting this task may turn its subtasks into top-level tasks.",
         "+ Assign" to "+ Assign",
         "Search by name..." to "Search by name...",
         "No users found" to "No users found",
@@ -185,6 +204,8 @@ private val translations = mapOf(
         "Save product" to "Save product",
         "Previous" to "Previous",
         "Next" to "Next",
+        "Phone number is required." to "Phone number is required.",
+        "Phone number is too long." to "Phone number is too long.",
         "Edit" to "Edit",
         "Quantity" to "Quantity",
         "Save" to "Save",
@@ -212,6 +233,28 @@ private val translations = mapOf(
         "Send" to "Send",
         "Unknown sender" to "Unknown",
         "Error: {message}" to "Error: {message}",
+        "Search returns..." to "Search returns...",
+        "{count} returns" to "{count} returns",
+        "{count} requested" to "{count} requested",
+        "{count} active" to "{count} active",
+        "No returns found." to "No returns found.",
+        "Return #{id}" to "Return #{id}",
+        "Order" to "Order",
+        "Customer" to "Customer",
+        "Reason" to "Reason",
+        "Refund amount" to "Refund amount",
+        "Created" to "Created",
+        "Received" to "Received",
+        "Refunded" to "Refunded",
+        "Notes" to "Notes",
+        "{count} return items" to "{count} return items",
+        "No item details available." to "No item details available.",
+        "Quantity: {count}" to "Quantity: {count}",
+        "Requested" to "Requested",
+        "Approved" to "Approved",
+        "Rejected" to "Rejected",
+        "Received" to "Received",
+        "Refunded" to "Refunded",
     ),
     AppLanguage.RO to mapOf(
         "Dashboard" to "Dashboard",
@@ -219,6 +262,7 @@ private val translations = mapOf(
         "Projects" to "Proiecte",
         "Chat" to "Chat",
         "Stock" to "Stoc",
+        "Returns" to "Retururi",
         "Admin" to "Admin",
         "Sign in" to "Autentificare",
         "Email" to "Email",
@@ -232,6 +276,8 @@ private val translations = mapOf(
         "Account" to "Cont",
         "Phone" to "Telefon",
         "Phone number" to "Număr de telefon",
+        "Phone number is required." to "Numărul de telefon este obligatoriu.",
+        "Phone number is too long." to "Numărul de telefon este prea lung.",
         "Status" to "Status",
         "Role" to "Rol",
         "Language" to "Limbă",
@@ -273,6 +319,12 @@ private val translations = mapOf(
         "Saving..." to "Se salvează...",
         "Description" to "Descriere",
         "Assigned to" to "Alocat către",
+        "Subtasks" to "Subtask-uri",
+        "Add subtask" to "Adaugă subtask",
+        "Subtask title" to "Titlu subtask",
+        "Create subtask" to "Creează subtask",
+        "No subtasks yet" to "Nu există subtask-uri încă",
+        "Delete parent task warning" to "Ștergerea acestui task poate transforma subtask-urile în task-uri principale.",
         "+ Assign" to "+ Alocă",
         "Search by name..." to "Caută după nume...",
         "No users found" to "Nu am găsit utilizatori.",
@@ -330,6 +382,28 @@ private val translations = mapOf(
         "Send" to "Trimite",
         "Unknown sender" to "Necunoscut",
         "Error: {message}" to "Eroare: {message}",
+        "Search returns..." to "Caută retururi...",
+        "{count} returns" to "{count} retururi",
+        "{count} requested" to "{count} cerute",
+        "{count} active" to "{count} active",
+        "No returns found." to "Nu am găsit retururi.",
+        "Return #{id}" to "Retur #{id}",
+        "Order" to "Comandă",
+        "Customer" to "Client",
+        "Reason" to "Motiv",
+        "Refund amount" to "Sumă rambursată",
+        "Created" to "Creat",
+        "Received" to "Primit",
+        "Refunded" to "Rambursat",
+        "Notes" to "Notițe",
+        "{count} return items" to "{count} produse returnate",
+        "No item details available." to "Nu există detalii despre produse.",
+        "Quantity: {count}" to "Cantitate: {count}",
+        "Requested" to "Cerut",
+        "Approved" to "Aprobat",
+        "Rejected" to "Respins",
+        "Received" to "Primit",
+        "Refunded" to "Rambursat",
     ),
     AppLanguage.DE to mapOf(
         "Dashboard" to "Dashboard",
@@ -337,6 +411,7 @@ private val translations = mapOf(
         "Projects" to "Projekte",
         "Chat" to "Chat",
         "Stock" to "Lager",
+        "Returns" to "Retouren",
         "Admin" to "Admin",
         "Sign in" to "Anmelden",
         "Email" to "E-Mail",
@@ -350,6 +425,8 @@ private val translations = mapOf(
         "Account" to "Konto",
         "Phone" to "Telefon",
         "Phone number" to "Telefonnummer",
+        "Phone number is required." to "Telefonnummer ist erforderlich.",
+        "Phone number is too long." to "Telefonnummer ist zu lang.",
         "Status" to "Status",
         "Role" to "Rolle",
         "Language" to "Sprache",
@@ -391,6 +468,12 @@ private val translations = mapOf(
         "Saving..." to "Speichert...",
         "Description" to "Beschreibung",
         "Assigned to" to "Zugewiesen an",
+        "Subtasks" to "Unteraufgaben",
+        "Add subtask" to "Unteraufgabe hinzufügen",
+        "Subtask title" to "Unteraufgabentitel",
+        "Create subtask" to "Unteraufgabe erstellen",
+        "No subtasks yet" to "Noch keine Unteraufgaben",
+        "Delete parent task warning" to "Das Löschen dieser Aufgabe kann Unteraufgaben zu Hauptaufgaben machen.",
         "+ Assign" to "+ Zuweisen",
         "Search by name..." to "Nach Namen suchen...",
         "No users found" to "Keine Benutzer gefunden.",
@@ -448,5 +531,27 @@ private val translations = mapOf(
         "Send" to "Senden",
         "Unknown sender" to "Unbekannt",
         "Error: {message}" to "Fehler: {message}",
+        "Search returns..." to "Retouren suchen...",
+        "{count} returns" to "{count} Retouren",
+        "{count} requested" to "{count} angefragt",
+        "{count} active" to "{count} aktiv",
+        "No returns found." to "Keine Retouren gefunden.",
+        "Return #{id}" to "Retoure #{id}",
+        "Order" to "Bestellung",
+        "Customer" to "Kunde",
+        "Reason" to "Grund",
+        "Refund amount" to "Erstattungsbetrag",
+        "Created" to "Erstellt",
+        "Received" to "Erhalten",
+        "Refunded" to "Erstattet",
+        "Notes" to "Notizen",
+        "{count} return items" to "{count} Retourenartikel",
+        "No item details available." to "Keine Artikeldetails verfügbar.",
+        "Quantity: {count}" to "Menge: {count}",
+        "Requested" to "Angefragt",
+        "Approved" to "Genehmigt",
+        "Rejected" to "Abgelehnt",
+        "Received" to "Erhalten",
+        "Refunded" to "Erstattet",
     ),
 )

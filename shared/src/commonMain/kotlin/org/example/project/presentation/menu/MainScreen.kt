@@ -20,6 +20,7 @@ import org.example.project.presentation.tasks.TaskDetailScreen
 import org.example.project.presentation.tasks.TaskDetailViewModel
 import feature.stock.presentation.AddProductScreen
 import org.example.project.data.ApiConfig
+import org.example.project.data.auth.AuthApiService
 import org.example.project.presentation.accounts.AddUserScreen
 import org.example.project.presentation.accounts.AdminScreen
 import org.example.project.presentation.accounts.AdminViewModel
@@ -56,6 +57,7 @@ fun MainScreen(
     user: UserSession,
     selectedLanguage: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit,
+    onPhoneNumberUpdated: (String) -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
@@ -130,6 +132,9 @@ fun MainScreen(
             chatRealtimeApi = chatRealtimeApi,
         )
     }
+    val authRepository = remember(apiHttpClient) {
+        AuthApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL)
+    }
 
     val strings = LocalAppStrings.current
     val pendingDeepLink by NotificationRouter.pending.collectAsState()
@@ -149,10 +154,8 @@ fun MainScreen(
         var task = taskListViewModel.uiState.value.tasks.find { it.id == taskId }
         if (task == null) {
             try {
-                task = taskApi.getTasks().find { it.id == taskId }
-                if (task != null) {
-                    taskListViewModel.loadTasks()
-                }
+                task = taskApi.getTask(taskId)
+                taskListViewModel.loadTasks()
             } catch (_: Exception) {
             }
         }
@@ -334,6 +337,10 @@ fun MainScreen(
                                     taskListViewModel.loadTasks()
                                 },
                                 onEditClick = { showEditTaskScreen = true },
+                                onSubtaskClick = { subtask ->
+                                    selectedTask = subtask
+                                    showEditTaskScreen = false
+                                },
                                 modifier = Modifier.padding(paddingValues),
                             )
                         }
@@ -373,6 +380,10 @@ fun MainScreen(
                                 viewModel = taskDetailViewModel,
                                 onBack = { selectedTask = null },
                                 onEditClick = { showEditTaskScreen = true },
+                                onSubtaskClick = { subtask ->
+                                    selectedTask = subtask
+                                    showEditTaskScreen = false
+                                },
                                 modifier = Modifier.padding(paddingValues),
                             )
                         }
@@ -479,21 +490,15 @@ fun MainScreen(
                     }
                 }
 
-                else -> {
-                    EmptySectionScreen(
-                        title = strings.text(selectedSection.title),
-                        modifier = Modifier
-                            .padding(paddingValues)
-                            .background(AppColorPalette.Background)
-                    )
-                }
             }
 
             if (showUserDetail) {
                 UserDetailDialog(
                     user = user,
                     selectedLanguage = selectedLanguage,
+                    authRepository = authRepository,
                     onLanguageSelected = onLanguageSelected,
+                    onPhoneNumberUpdated = onPhoneNumberUpdated,
                     onDismiss = { showUserDetail = false },
                     onLogout = onLogout,
                 )
