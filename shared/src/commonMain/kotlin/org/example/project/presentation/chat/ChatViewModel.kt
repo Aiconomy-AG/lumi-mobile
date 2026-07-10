@@ -12,6 +12,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.example.project.data.accounts.User
 import org.example.project.data.accounts.UserApiService
+import org.example.project.data.chat.ChatReadStateStorage
+import org.example.project.data.chat.chatActivitySortKey
+import org.example.project.data.chat.currentActivitySortKey
 import org.example.project.data.chat.currentTimeLabel
 import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatMessage
@@ -27,11 +30,15 @@ data class ChatConversationItem(
     val initials: String,
     val lastMessage: String,
     val lastSentAt: String,
+    val lastMessageId: Int? = null,
+    val lastMessageSenderId: Int? = null,
+    val lastActivitySortKey: Long = 0L,
 )
 
 data class ChatContactItem(
     val user: User,
     val conversation: ChatConversationItem?,
+    val hasUnread: Boolean = false,
 ) {
     val title: String = user.name
     val subtitle: String = user.email
@@ -61,6 +68,12 @@ data class ChatUiState(
                         it.user.role.displayName.contains(searchQuery, ignoreCase = true)
             }
         }
+
+    val sortedContacts: List<ChatContactItem>
+        get() = filteredContacts.sortedWith(
+            compareByDescending<ChatContactItem> { it.conversation?.lastActivitySortKey ?: 0L }
+                .thenBy { it.title.lowercase() }
+        )
 }
 
 class ChatViewModel(
@@ -73,6 +86,7 @@ class ChatViewModel(
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
     private var nextOptimisticMessageId = -1
+    private var readStateByConversationId = ChatReadStateStorage.load(currentEmployeeId).toMutableMap()
 
     init {
         loadChat()
@@ -110,13 +124,15 @@ class ChatViewModel(
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     conversations = _uiState.value.conversations + conversationItem,
-                    contacts = _uiState.value.contacts.map {
-                        if (it.user.id == contact.user.id) {
-                            it.copy(conversation = conversationItem)
-                        } else {
-                            it
+                    contacts = finalizeContacts(
+                        _uiState.value.contacts.map {
+                            if (it.user.id == contact.user.id) {
+                                it.copy(conversation = conversationItem)
+                            } else {
+                                it
+                            }
                         }
-                    },
+                    ),
                     selectedConversation = conversationItem,
                     messages = emptyList(),
                     messageDraft = "",
@@ -140,9 +156,11 @@ class ChatViewModel(
 
             try {
                 val messages = chatApi.getMessages(conversation.conversation.id)
+                markConversationAsRead(conversation.conversation.id, messages)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     messages = messages,
+                    contacts = finalizeContacts(_uiState.value.contacts),
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -201,26 +219,33 @@ class ChatViewModel(
         val optimisticConversation = selectedConversation.copy(
             lastMessage = optimisticMessage.messageText,
             lastSentAt = optimisticMessage.sentAt,
+            lastMessageId = optimisticMessage.id,
+            lastMessageSenderId = optimisticMessage.senderId,
+            lastActivitySortKey = currentActivitySortKey(),
         )
 
         _uiState.value = _uiState.value.copy(
             messages = _uiState.value.messages + optimisticMessage,
             messageDraft = "",
-            conversations = _uiState.value.conversations.map {
-                if (it.conversation.id == selectedConversation.conversation.id) {
-                    optimisticConversation
-                } else {
-                    it
+            conversations = sortConversations(
+                _uiState.value.conversations.map {
+                    if (it.conversation.id == selectedConversation.conversation.id) {
+                        optimisticConversation
+                    } else {
+                        it
+                    }
                 }
-            },
+            ),
             selectedConversation = optimisticConversation,
-            contacts = _uiState.value.contacts.map {
-                if (it.conversation?.conversation?.id == selectedConversation.conversation.id) {
-                    it.copy(conversation = optimisticConversation)
-                } else {
-                    it
+            contacts = finalizeContacts(
+                _uiState.value.contacts.map {
+                    if (it.conversation?.conversation?.id == selectedConversation.conversation.id) {
+                        it.copy(conversation = optimisticConversation)
+                    } else {
+                        it
+                    }
                 }
-            },
+            ),
             error = null,
         )
 
@@ -303,15 +328,10 @@ class ChatViewModel(
                     otherUserId to item
                 }
                 .toMap()
-            val contacts = users
-                .filter { it.id != currentEmployeeId && it.isActive }
-                .sortedBy { it.name.lowercase() }
-                .map { user ->
-                    ChatContactItem(
-                        user = user,
-                        conversation = directConversationByUserId[user.id],
-                    )
-                }
+            val contacts = buildContacts(
+                users = users,
+                directConversationByUserId = directConversationByUserId,
+            )
             val selectedConversationId = _uiState.value.selectedConversation?.conversation?.id
             val selectedConversation = selectedConversationId?.let { id ->
                 items.firstOrNull { it.conversation.id == id }
@@ -327,9 +347,13 @@ class ChatViewModel(
                 null
             }
 
+            if (selectedConversationId != null && mergedSelectedMessages != null) {
+                markConversationAsRead(selectedConversationId, mergedSelectedMessages)
+            }
+
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
-                conversations = items,
+                conversations = sortConversations(items),
                 contacts = contacts,
                 selectedConversation = selectedConversation ?: _uiState.value.selectedConversation,
                 messages = mergedSelectedMessages ?: _uiState.value.messages,
@@ -382,23 +406,37 @@ class ChatViewModel(
         val updatedConversation = conversation.copy(
             lastMessage = lastMessage?.messageText ?: conversation.lastMessage,
             lastSentAt = lastMessage?.sentAt ?: conversation.lastSentAt,
+            lastMessageId = lastMessage?.id?.takeIf { it > 0 } ?: conversation.lastMessageId,
+            lastMessageSenderId = lastMessage?.senderId ?: conversation.lastMessageSenderId,
+            lastActivitySortKey = chatActivitySortKey(lastMessage?.sentAt ?: conversation.lastSentAt),
+        )
+
+        val isSelected = currentState.selectedConversation?.conversation?.id == conversationId
+        if (isSelected) {
+            markConversationAsRead(conversationId, mergedMessages)
+        }
+
+        val nextConversations = sortConversations(
+            currentState.conversations.map {
+                if (it.conversation.id == conversationId) updatedConversation else it
+            }
         )
 
         _uiState.value = currentState.copy(
-            conversations = currentState.conversations.map {
-                if (it.conversation.id == conversationId) updatedConversation else it
-            },
-            contacts = currentState.contacts.map {
-                if (it.conversation?.conversation?.id == conversationId) {
-                    it.copy(conversation = updatedConversation)
-                } else {
-                    it
+            conversations = nextConversations,
+            contacts = finalizeContacts(
+                currentState.contacts.map {
+                    if (it.conversation?.conversation?.id == conversationId) {
+                        it.copy(conversation = updatedConversation)
+                    } else {
+                        it
+                    }
                 }
-            },
+            ),
             selectedConversation = currentState.selectedConversation?.let {
                 if (it.conversation.id == conversationId) updatedConversation else it
             },
-            messages = if (currentState.selectedConversation?.conversation?.id == conversationId) {
+            messages = if (isSelected) {
                 mergedMessages
             } else {
                 currentState.messages
@@ -427,30 +465,51 @@ class ChatViewModel(
             ?: savedMessage
         val updatedConversation = currentState.selectedConversation
             ?.takeIf { it.conversation.id == savedMessage.conversationId }
-            ?.copy(lastMessage = lastMessage.messageText, lastSentAt = lastMessage.sentAt)
+            ?.copy(
+                lastMessage = lastMessage.messageText,
+                lastSentAt = lastMessage.sentAt,
+                lastMessageId = lastMessage.id,
+                lastMessageSenderId = lastMessage.senderId,
+                lastActivitySortKey = chatActivitySortKey(lastMessage.sentAt),
+            )
+
+        markConversationAsRead(savedMessage.conversationId, nextMessages)
 
         _uiState.value = currentState.copy(
             messages = nextMessages,
-            conversations = currentState.conversations.map {
-                if (it.conversation.id == savedMessage.conversationId) {
-                    it.copy(lastMessage = lastMessage.messageText, lastSentAt = lastMessage.sentAt)
-                } else {
-                    it
-                }
-            },
-            selectedConversation = updatedConversation ?: currentState.selectedConversation,
-            contacts = currentState.contacts.map {
-                if (it.conversation?.conversation?.id == savedMessage.conversationId) {
-                    it.copy(
-                        conversation = it.conversation.copy(
+            conversations = sortConversations(
+                currentState.conversations.map {
+                    if (it.conversation.id == savedMessage.conversationId) {
+                        it.copy(
                             lastMessage = lastMessage.messageText,
                             lastSentAt = lastMessage.sentAt,
+                            lastMessageId = lastMessage.id,
+                            lastMessageSenderId = lastMessage.senderId,
+                            lastActivitySortKey = chatActivitySortKey(lastMessage.sentAt),
                         )
-                    )
-                } else {
-                    it
+                    } else {
+                        it
+                    }
                 }
-            },
+            ),
+            selectedConversation = updatedConversation ?: currentState.selectedConversation,
+            contacts = finalizeContacts(
+                currentState.contacts.map {
+                    if (it.conversation?.conversation?.id == savedMessage.conversationId) {
+                        it.copy(
+                            conversation = it.conversation.copy(
+                                lastMessage = lastMessage.messageText,
+                                lastSentAt = lastMessage.sentAt,
+                                lastMessageId = lastMessage.id,
+                                lastMessageSenderId = lastMessage.senderId,
+                                lastActivitySortKey = chatActivitySortKey(lastMessage.sentAt),
+                            )
+                        )
+                    } else {
+                        it
+                    }
+                }
+            ),
         )
     }
 
@@ -463,32 +522,51 @@ class ChatViewModel(
 
         _uiState.value = currentState.copy(
             messages = nextMessages,
-            conversations = currentState.conversations.map {
-                if (it.conversation.id == message.conversationId) {
-                    it.copy(lastMessage = fallbackLastMessage, lastSentAt = fallbackLastSentAt)
-                } else {
-                    it
-                }
-            },
-            selectedConversation = currentState.selectedConversation?.let {
-                if (it.conversation.id == message.conversationId) {
-                    it.copy(lastMessage = fallbackLastMessage, lastSentAt = fallbackLastSentAt)
-                } else {
-                    it
-                }
-            },
-            contacts = currentState.contacts.map {
-                if (it.conversation?.conversation?.id == message.conversationId) {
-                    it.copy(
-                        conversation = it.conversation.copy(
+            conversations = sortConversations(
+                currentState.conversations.map {
+                    if (it.conversation.id == message.conversationId) {
+                        it.copy(
                             lastMessage = fallbackLastMessage,
                             lastSentAt = fallbackLastSentAt,
+                            lastMessageId = lastMessage?.id?.takeIf { id -> id > 0 },
+                            lastMessageSenderId = lastMessage?.senderId,
+                            lastActivitySortKey = chatActivitySortKey(fallbackLastSentAt),
                         )
+                    } else {
+                        it
+                    }
+                }
+            ),
+            selectedConversation = currentState.selectedConversation?.let {
+                if (it.conversation.id == message.conversationId) {
+                    it.copy(
+                        lastMessage = fallbackLastMessage,
+                        lastSentAt = fallbackLastSentAt,
+                        lastMessageId = lastMessage?.id?.takeIf { id -> id > 0 },
+                        lastMessageSenderId = lastMessage?.senderId,
+                        lastActivitySortKey = chatActivitySortKey(fallbackLastSentAt),
                     )
                 } else {
                     it
                 }
             },
+            contacts = finalizeContacts(
+                currentState.contacts.map {
+                    if (it.conversation?.conversation?.id == message.conversationId) {
+                        it.copy(
+                            conversation = it.conversation.copy(
+                                lastMessage = fallbackLastMessage,
+                                lastSentAt = fallbackLastSentAt,
+                                lastMessageId = lastMessage?.id?.takeIf { id -> id > 0 },
+                                lastMessageSenderId = lastMessage?.senderId,
+                                lastActivitySortKey = chatActivitySortKey(fallbackLastSentAt),
+                            )
+                        )
+                    } else {
+                        it
+                    }
+                }
+            ),
         )
     }
 
@@ -525,7 +603,58 @@ class ChatViewModel(
             initials = title.initials(),
             lastMessage = lastMessage?.messageText ?: "Nu exista mesaje inca.",
             lastSentAt = lastMessage?.sentAt ?: "",
+            lastMessageId = lastMessage?.id?.takeIf { it > 0 },
+            lastMessageSenderId = lastMessage?.senderId,
+            lastActivitySortKey = chatActivitySortKey(lastMessage?.sentAt ?: ""),
         )
+    }
+
+    private fun buildContacts(
+        users: List<User>,
+        directConversationByUserId: Map<Int, ChatConversationItem>,
+    ): List<ChatContactItem> {
+        return finalizeContacts(
+            users
+                .filter { it.id != currentEmployeeId && it.isActive }
+                .map { user ->
+                    ChatContactItem(
+                        user = user,
+                        conversation = directConversationByUserId[user.id],
+                    )
+                }
+        )
+    }
+
+    private fun finalizeContacts(contacts: List<ChatContactItem>): List<ChatContactItem> {
+        return contacts
+            .map { contact ->
+                val conversation = contact.conversation ?: return@map contact
+                contact.copy(hasUnread = isConversationUnread(conversation))
+            }
+            .sortedWith(
+                compareByDescending<ChatContactItem> { it.conversation?.lastActivitySortKey ?: 0L }
+                    .thenBy { it.title.lowercase() }
+            )
+    }
+
+    private fun sortConversations(conversations: List<ChatConversationItem>): List<ChatConversationItem> {
+        return conversations.sortedByDescending { it.lastActivitySortKey }
+    }
+
+    private fun isConversationUnread(conversation: ChatConversationItem): Boolean {
+        val messageId = conversation.lastMessageId ?: return false
+        if (conversation.lastMessageSenderId == currentEmployeeId) return false
+        val lastReadId = readStateByConversationId[conversation.conversation.id] ?: 0
+        return messageId > lastReadId
+    }
+
+    private fun markConversationAsRead(conversationId: Int, messages: List<ChatMessage>) {
+        val lastReadId = messages.map { it.id }.filter { it > 0 }.maxOrNull() ?: return
+        val currentReadId = readStateByConversationId[conversationId] ?: 0
+        if (lastReadId <= currentReadId) return
+
+        readStateByConversationId[conversationId] = lastReadId
+        ChatReadStateStorage.save(currentEmployeeId, readStateByConversationId)
     }
 
     private fun String.initials(): String {
