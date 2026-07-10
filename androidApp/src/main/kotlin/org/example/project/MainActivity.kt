@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         PushNotifications.initialize(this)
+        org.example.project.data.auth.SessionStorage.initialize(this)
         AndroidNotificationIntents.handle(intent)
 
         lifecycleScope.launch {
