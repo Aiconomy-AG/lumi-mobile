@@ -33,18 +33,35 @@ class TaskApiService(
         return tasksJson.decodeFromString<TaskListResponse>(text).data.map { it.toTask() }
     }
 
+    override suspend fun getTask(taskId: Int): Task {
+        val response = client.get("$baseUrl/workspace/tasks/$taskId") { bearerAuth() }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
+        return tasksJson.decodeFromString<TaskResponse>(text).data.toTask()
+    }
+
     override suspend fun createTask(
         title: String,
         description: String,
         dueDate: String,
         status: TaskStatus,
         projectId: Int,
-        assigneeIds: List<Int>
+        assigneeIds: List<Int>,
+        parentId: Int?,
     ): Task {
         val response = client.post("$baseUrl/workspace/tasks") {
             bearerAuth()
             contentType(ContentType.Application.Json)
-            setBody(TaskRequestBody(title = title, description = description, status = status, dueDate = dueDate, projectId = projectId))
+            setBody(
+                TaskRequestBody(
+                    title = title,
+                    description = description,
+                    status = status,
+                    dueDate = dueDate,
+                    projectId = projectId,
+                    parentId = parentId,
+                )
+            )
         }
 
         val text = response.bodyAsText()
@@ -138,7 +155,10 @@ private data class TaskDto(
     val dueDate: String? = null,
     @SerialName("project_id")
     val projectId: Int? = null,
+    @SerialName("parent_id")
+    val parentId: Int? = null,
     val assignees: List<AssigneeDto> = emptyList(),
+    val subtasks: List<TaskDto> = emptyList(),
 ) {
     fun toTask(): Task = Task(
         id = id,
@@ -148,7 +168,9 @@ private data class TaskDto(
         createdBy = createdBy ?: 0,
         dueDate = dueDate ?: "",
         projectId = projectId ?: 0,
+        parentId = parentId,
         assigneeIds = assignees.map { it.id },
+        subtasks = subtasks.map { it.toTask().copy(parentId = it.parentId ?: id) },
     )
 }
 
@@ -168,6 +190,8 @@ private data class TaskRequestBody(
     val dueDate: String,
     @SerialName("project_id")
     val projectId: Int? = null,
+    @SerialName("parent_id")
+    val parentId: Int? = null,
 )
 
 @Serializable

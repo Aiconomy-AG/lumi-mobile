@@ -18,6 +18,7 @@ import org.example.project.domain.project.ProjectApi
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskApi
 import org.example.project.domain.task.TaskStatus
+import org.example.project.domain.task.canCreateSubtask
 import org.example.project.domain.tasktimeentry.TaskTimeEntryApi
 
 data class TaskDetailUiState(
@@ -31,8 +32,14 @@ data class TaskDetailUiState(
     val allUsers: List<User> = emptyList(),
     val project: Project? = null,
     val allProjects: List<Project> = emptyList(),
+    val subtasks: List<Task> = emptyList(),
+    val subtasksExpanded: Boolean = false,
+    val isSubtasksLoading: Boolean = false,
+    val isCreatingSubtask: Boolean = false,
     val error: String? = null,
-)
+) {
+    val isRootTask: Boolean get() = task.isRootTask
+}
 
 private data class ReferenceData(
     val users: List<User> = emptyList(),
@@ -43,6 +50,14 @@ private data class HistoricalTotals(
     val isLoading: Boolean = true,
     val myPastSeconds: Int = 0,
     val taskTotalPastSeconds: Int = 0,
+    val error: String? = null,
+)
+
+private data class SubtasksState(
+    val items: List<Task> = emptyList(),
+    val expanded: Boolean = false,
+    val isLoading: Boolean = false,
+    val isCreating: Boolean = false,
     val error: String? = null,
 )
 
@@ -60,9 +75,15 @@ class TaskDetailViewModel(
     private val currentTaskState = MutableStateFlow(task)
     private val savingState = MutableStateFlow(false to null as String?)
     private val referenceState = MutableStateFlow(ReferenceData())
+    private val subtasksState = MutableStateFlow(SubtasksState())
+
+    private val referenceAndSubtasksState = combine(referenceState, subtasksState) { reference, subtasks ->
+        reference to subtasks
+    }
 
     val uiState: StateFlow<TaskDetailUiState> =
-        combine(historicalState, activeTimerViewModel.uiState, currentTaskState, savingState, referenceState) { historical, active, currentTask, saving, reference ->
+        combine(historicalState, activeTimerViewModel.uiState, currentTaskState, savingState, referenceAndSubtasksState) { historical, active, currentTask, saving, referenceAndSubtasks ->
+            val (reference, subtasks) = referenceAndSubtasks
             val isMine = active.activeTask?.id == task.id
             TaskDetailUiState(
                 task = currentTask,
@@ -75,13 +96,20 @@ class TaskDetailViewModel(
                 allUsers = reference.users,
                 project = reference.projects.find { it.id == currentTask.projectId },
                 allProjects = reference.projects,
-                error = historical.error ?: active.error ?: saving.second,
+                subtasks = subtasks.items,
+                subtasksExpanded = subtasks.expanded,
+                isSubtasksLoading = subtasks.isLoading,
+                isCreatingSubtask = subtasks.isCreating,
+                error = historical.error ?: active.error ?: saving.second ?: subtasks.error,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TaskDetailUiState(task = task, isLoading = true))
 
     init {
         loadEntries()
         loadReferenceData()
+        if (task.isRootTask) {
+            loadSubtasks()
+        }
 
         viewModelScope.launch {
             activeTimerViewModel.uiState
@@ -89,6 +117,75 @@ class TaskDetailViewModel(
                 .distinctUntilChanged()
                 .drop(1)
                 .collect { isActiveNow -> if (!isActiveNow) loadEntries() }
+        }
+    }
+
+    fun toggleSubtasksExpanded() {
+        subtasksState.value = subtasksState.value.copy(expanded = !subtasksState.value.expanded)
+    }
+
+    fun loadSubtasks() {
+        if (!currentTaskState.value.isRootTask) return
+
+        viewModelScope.launch {
+            subtasksState.value = subtasksState.value.copy(isLoading = true, error = null)
+            try {
+                val refreshedTask = taskApi.getTask(currentTaskState.value.id)
+                subtasksState.value = subtasksState.value.copy(
+                    isLoading = false,
+                    items = refreshedTask.subtasks,
+                )
+            } catch (e: Exception) {
+                subtasksState.value = subtasksState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Could not load subtasks.",
+                )
+            }
+        }
+    }
+
+    fun createSubtask(
+        title: String,
+        description: String,
+        dueDate: String,
+        status: TaskStatus,
+        onSuccess: () -> Unit = {},
+    ) {
+        val parent = currentTaskState.value
+        if (!parent.canCreateSubtask()) {
+            subtasksState.value = subtasksState.value.copy(
+                error = "Subtasks can only be created under root tasks.",
+            )
+            return
+        }
+
+        if (title.isBlank() || dueDate.isBlank() || parent.projectId == 0) {
+            subtasksState.value = subtasksState.value.copy(
+                error = "Title, due date, and project are required.",
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            subtasksState.value = subtasksState.value.copy(isCreating = true, error = null, expanded = true)
+            try {
+                taskApi.createTask(
+                    title = title.trim(),
+                    description = description,
+                    dueDate = dueDate.trim(),
+                    status = status,
+                    projectId = parent.projectId,
+                    parentId = parent.id,
+                )
+                loadSubtasks()
+                subtasksState.value = subtasksState.value.copy(isCreating = false)
+                onSuccess()
+            } catch (e: Exception) {
+                subtasksState.value = subtasksState.value.copy(
+                    isCreating = false,
+                    error = e.message ?: "Could not create subtask.",
+                )
+            }
         }
     }
 

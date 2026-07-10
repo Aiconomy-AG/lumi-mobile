@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
 
         PushNotifications.initialize(this)
         org.example.project.data.auth.SessionStorage.initialize(this)
+        org.example.project.data.chat.ChatReadStateStorage.initialize(this)
         AndroidNotificationIntents.handle(intent)
 
         lifecycleScope.launch {

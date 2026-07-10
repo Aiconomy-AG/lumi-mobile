@@ -2,6 +2,7 @@ package org.example.project.data.chat
 
 import platform.Foundation.NSDate
 import platform.Foundation.NSDateFormatter
+import platform.Foundation.timeIntervalSince1970
 
 actual fun currentTimeLabel(): String {
     val formatter = NSDateFormatter()
@@ -27,6 +28,29 @@ actual fun chatClockTimeLabel(value: String): String {
     val outputFormatter = NSDateFormatter()
     outputFormatter.dateFormat = "HH:mm"
     return outputFormatter.stringFromDate(parsedDate)
+}
+
+actual fun currentActivitySortKey(): Long {
+    return (NSDate().timeIntervalSince1970 * 1000).toLong()
+}
+
+actual fun chatActivitySortKey(value: String): Long {
+    val trimmed = value.trim()
+    if (trimmed.isEmpty()) return 0L
+    if (trimmed.length >= 5 && trimmed[2] == ':') return currentActivitySortKey()
+
+    val normalized = normalizeFractionalSeconds(trimmed)
+    val parsedDate = listOf(
+        "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX",
+        "yyyy-MM-dd'T'HH:mm:ssXXXXX",
+        "yyyy-MM-dd HH:mm:ss",
+    ).firstNotNullOfOrNull { pattern ->
+        NSDateFormatter().apply {
+            dateFormat = pattern
+        }.dateFromString(normalized)
+    } ?: return 0L
+
+    return (parsedDate.timeIntervalSince1970 * 1000).toLong()
 }
 
 private fun normalizeFractionalSeconds(value: String): String {

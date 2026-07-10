@@ -17,6 +17,7 @@ class TaskMockApiService : TaskApi {
         Task(id = 4, title = "Coș de cumpărături", description = "Adaugă/elimină produse din coș", status = TaskStatus.BLOCKED, createdBy = 2, dueDate = today, projectId = 1, assigneeIds = emptyList()),
         Task(id = 5, title = "Notificări push", description = "Integrare notificări pentru comenzi", status = TaskStatus.TO_DO, createdBy = 5, dueDate = "2026-07-22", projectId = 3, assigneeIds = listOf(5, 6)),
         Task(id = 6, title = "Testare plăți", description = "Testează fluxul de plată end-to-end", status = TaskStatus.IN_PROGRESS, createdBy = 1, dueDate = "2026-07-25", projectId = 2, assigneeIds = listOf(3)),
+        Task(id = 7, title = "Scrie release notes", description = "Subtask pentru notificări", status = TaskStatus.TO_DO, createdBy = 5, dueDate = today, projectId = 3, parentId = 5, assigneeIds = listOf(5)),
     )
 
     override suspend fun getTasks(): List<Task> {
@@ -24,7 +25,22 @@ class TaskMockApiService : TaskApi {
         return tasks.toList()
     }
 
-    override suspend fun createTask(title: String, description: String, dueDate: String, status: TaskStatus, projectId: Int, assigneeIds: List<Int>): Task {
+    override suspend fun getTask(taskId: Int): Task {
+        delay(200)
+        val task = tasks.firstOrNull { it.id == taskId } ?: throw Exception("Task $taskId not found")
+        val subtasks = tasks.filter { it.parentId == taskId }
+        return task.copy(subtasks = subtasks)
+    }
+
+    override suspend fun createTask(
+        title: String,
+        description: String,
+        dueDate: String,
+        status: TaskStatus,
+        projectId: Int,
+        assigneeIds: List<Int>,
+        parentId: Int?,
+    ): Task {
         delay(300)
         val newTask = Task(
             id = (tasks.maxOfOrNull { it.id } ?: 0) + 1,
@@ -34,6 +50,7 @@ class TaskMockApiService : TaskApi {
             createdBy = 1,
             dueDate = dueDate,
             projectId = projectId,
+            parentId = parentId,
             assigneeIds = assigneeIds.distinct(),
         )
         tasks.add(newTask)

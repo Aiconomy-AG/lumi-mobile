@@ -32,7 +32,8 @@ class ProjectDetailViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val projectTasks = taskApi.getTasks().filter { it.projectId == project.id }
+                val projectTasks = taskApi.getTasks()
+                    .filter { it.projectId == project.id && it.parentId == null }
                 _uiState.value = _uiState.value.copy(isLoading = false, tasks = projectTasks)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
