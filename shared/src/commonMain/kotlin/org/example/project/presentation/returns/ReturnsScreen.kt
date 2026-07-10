@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -227,9 +226,6 @@ private fun ReturnsTable(
             .padding(12.dp),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            ReturnsTableHeader()
-            HorizontalDivider(color = AppColorPalette.Border, modifier = Modifier.padding(vertical = 8.dp))
-
             returns.forEachIndexed { index, returnRequest ->
                 ReturnRow(
                     returnRequest = returnRequest,
@@ -244,68 +240,57 @@ private fun ReturnsTable(
 }
 
 @Composable
-private fun ReturnsTableHeader() {
-    val strings = LocalAppStrings.current
-
-    Row(modifier = Modifier.fillMaxWidth()) {
-        TableHeaderCell(text = strings.text("Order"), weight = 1.2f)
-        TableHeaderCell(text = strings.text("Customer"), weight = 1.5f)
-        TableHeaderCell(text = strings.text("Reason"), weight = 1.4f)
-        TableHeaderCell(text = strings.text("Status"), weight = 1f)
-    }
-}
-
-@Composable
-private fun RowScope.TableHeaderCell(
-    text: String,
-    weight: Float,
-) {
-    Text(
-        text = text,
-        modifier = Modifier.weight(weight),
-        color = AppColorPalette.TextSecondary,
-        style = AppTextStyles.TableHeader,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-    )
-}
-
-@Composable
 private fun ReturnRow(
     returnRequest: ReturnRequest,
     onClick: () -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = returnRequest.orderLabel(),
-            modifier = Modifier.weight(1.2f),
-            color = AppColorPalette.TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = returnRequest.email ?: "—",
-            modifier = Modifier.weight(1.5f),
-            color = AppColorPalette.TextPrimarySoft,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = returnRequest.reason.ifBlank { "—" },
-            modifier = Modifier.weight(1.4f),
-            color = AppColorPalette.TextSecondary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Box(modifier = Modifier.weight(1f)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = returnRequest.orderLabel(),
+                modifier = Modifier.weight(1f),
+                color = AppColorPalette.TextPrimary,
+                style = AppTextStyles.Emphasis,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Text(
+                text = returnRequest.refundLabel(),
+                color = AppColorPalette.TextPrimary,
+                maxLines = 1,
+            )
+
+            Spacer(modifier = Modifier.width(AppDimensions.TinySpacing))
+
             ReturnStatusBadge(status = returnRequest.status)
         }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = returnRequest.customerLabel(),
+            color = AppColorPalette.TextPrimary.copy(alpha = 0.85f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = returnRequest.reason.ifBlank { "—" },
+            color = AppColorPalette.TextSecondary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -537,6 +522,10 @@ private fun ReturnRequest.orderLabel(): String {
 
 private fun ReturnRequest.refundLabel(): String {
     return refundAmount?.let { formatChf(it) } ?: "—"
+}
+
+private fun ReturnRequest.customerLabel(): String {
+    return email?.takeIf { it.isNotBlank() } ?: "—"
 }
 
 private fun String?.dateLabel(): String {

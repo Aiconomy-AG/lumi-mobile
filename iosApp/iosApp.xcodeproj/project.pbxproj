@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		FA12D7732FFFC1D400DF55A8 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FA12D7722FFFC1D400DF55A8 /* FirebaseMessaging */; };
+		325D260D3000EE4B001A0224 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 325D260C3000EE4B001A0224 /* FirebaseCore */; };
+		FA12D7732FFFC1D400DF55A8 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FA12D7722FFFC1D400DF55A8 /* FirebaseMessaging */; settings = {ATTRIBUTES = (Required, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				325D260D3000EE4B001A0224 /* FirebaseCore in Frameworks */,
 				FA12D7732FFFC1D400DF55A8 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -57,6 +59,7 @@
 			children = (
 				8291276C07594CC3EC8ADD61 /* Configuration */,
 				FC55A23C8D735255F770E715 /* iosApp */,
+				325D260B3000EE4B001A0224 /* Frameworks */,
 				184A2C880E41F80C42D4C723 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -67,6 +70,13 @@
 				7C3CC0AEDD8C89E15C798B3A /* KotlinProject.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		325D260B3000EE4B001A0224 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -91,6 +101,7 @@
 			name = iosApp;
 			packageProductDependencies = (
 				FA12D7722FFFC1D400DF55A8 /* FirebaseMessaging */,
+				325D260C3000EE4B001A0224 /* FirebaseCore */,
 			);
 			productName = iosApp;
 			productReference = 7C3CC0AEDD8C89E15C798B3A /* KotlinProject.app */;
@@ -392,6 +403,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		325D260C3000EE4B001A0224 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA12D7712FFFC1D400DF55A8 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
 		FA12D7722FFFC1D400DF55A8 /* FirebaseMessaging */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = FA12D7712FFFC1D400DF55A8 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
