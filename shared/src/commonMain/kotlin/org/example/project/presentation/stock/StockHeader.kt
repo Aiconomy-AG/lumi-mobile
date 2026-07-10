@@ -6,14 +6,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.example.project.presentation.components.AppButton
+import org.example.project.presentation.components.AppSearchField
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
-import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
 
@@ -29,9 +29,11 @@ fun StockHeader(
     onSearchQueryChanged: (String) -> Unit,
     onAddProductClick: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Column {
         Text(
-            text = "Stock",
+            text = strings.text("Stock"),
             color = AppColorPalette.TextPrimary,
             style = AppTextStyles.PageTitle
         )
@@ -42,14 +44,14 @@ fun StockHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "$productCount products",
+                text = strings.format("{count} products", "count" to productCount.toString()),
                 color = AppColorPalette.TextSecondary
             )
 
             Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
 
             Text(
-                text = "$variantCount variants",
+                text = strings.format("{count} variants", "count" to variantCount.toString()),
                 color = AppColorPalette.TextSecondary
             )
         }
@@ -60,14 +62,14 @@ fun StockHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "$lowStockCount low stock",
+                text = strings.format("{count} low stock", "count" to lowStockCount.toString()),
                 color = AppColorPalette.Primary
             )
 
             Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
 
             Text(
-                text = "$outOfStockCount out of stock",
+                text = strings.format("{count} out of stock", "count" to outOfStockCount.toString()),
                 color = AppColorPalette.Error
             )
         }
@@ -83,29 +85,21 @@ fun StockHeader(
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        OutlinedTextField(
+        AppSearchField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
-            placeholder = {
-                Text(
-                    text = "Search products...",
-                    color = AppColorPalette.TextSecondary
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            colors = AppComponentDefaults.appTextFieldColors()
+            placeholder = strings.text("Search products..."),
+            enabled = !isLoading,
         )
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        Button(
+        AppButton(
             onClick = onAddProductClick,
             enabled = !isLoading,
             modifier = Modifier.fillMaxWidth(),
-            colors = AppComponentDefaults.primaryButtonColors()
         ) {
-            Text("+ Add product")
+            Text(strings.text("+ Add product"))
         }
     }
 }

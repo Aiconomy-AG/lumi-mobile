@@ -1,5 +1,5 @@
 package org.example.project.presentation.orders
 
-internal fun formatOrderPrice(amount: Double): String {
-    return "$amount CHF"
-}
+import org.example.project.presentation.theme.formatChf
+
+internal fun formatOrderPrice(amount: Double): String = formatChf(amount)

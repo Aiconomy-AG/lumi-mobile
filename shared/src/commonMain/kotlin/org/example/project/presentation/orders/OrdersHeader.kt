@@ -5,13 +5,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.example.project.presentation.components.AppSearchField
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
-import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
 
@@ -23,9 +23,11 @@ fun OrdersHeader(
     errorMessage: String?,
     onSearchQueryChanged: (String) -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Column {
         Text(
-            text = "Orders",
+            text = strings.text("Orders"),
             color = AppColorPalette.TextPrimary,
             style = AppTextStyles.PageTitle
         )
@@ -36,7 +38,7 @@ fun OrdersHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "$orderCount orders",
+                text = strings.format("{count} orders", "count" to orderCount.toString()),
                 color = AppColorPalette.TextSecondary
             )
         }
@@ -52,19 +54,11 @@ fun OrdersHeader(
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        OutlinedTextField(
+        AppSearchField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
-            placeholder = {
-                Text(
-                    text = "Search orders...",
-                    color = AppColorPalette.TextSecondary
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
+            placeholder = strings.text("Search orders..."),
             enabled = !isLoading,
-            colors = AppComponentDefaults.appTextFieldColors()
         )
     }
 }

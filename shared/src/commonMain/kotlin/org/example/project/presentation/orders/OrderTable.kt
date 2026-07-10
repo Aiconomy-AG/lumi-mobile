@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.orders.Order
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
@@ -99,15 +100,17 @@ private fun TableHeaderCell(
 
 @Composable
 private fun OrderTableHeader() {
+    val strings = LocalAppStrings.current
+
     Row(
         modifier = Modifier.fillMaxWidth()
     ) {
-        TableHeaderCell("Order", 90)
-        TableHeaderCell("Customer", 200)
-        TableHeaderCell("Status", 130)
-        TableHeaderCell("Items", 90)
-        TableHeaderCell("Total", 120)
-        TableHeaderCell("Date", 130)
+        TableHeaderCell(strings.text("Order"), 90)
+        TableHeaderCell(strings.text("Customer"), 200)
+        TableHeaderCell(strings.text("Status"), 130)
+        TableHeaderCell(strings.text("Items"), 90)
+        TableHeaderCell(strings.text("Total"), 120)
+        TableHeaderCell(strings.text("Created"), 130)
     }
 }
 
@@ -206,6 +209,8 @@ private fun EmptyFixedOrderRow() {
 
 @Composable
 private fun EmptyOrderTableRow() {
+    val strings = LocalAppStrings.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -213,7 +218,7 @@ private fun EmptyOrderTableRow() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "No orders found.",
+            text = strings.text("No orders found."),
             color = AppColorPalette.TextSecondary
         )
     }
