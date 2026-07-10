@@ -92,7 +92,7 @@ class ReverbChatRealtimeService(
 
     private suspend fun authenticateChannel(channelName: String, socketId: String): BroadcastAuthResponse {
         val response = client.submitForm(
-            url = "${baseUrl.trimEnd('/')}/broadcasting/auth",
+            url = "${broadcastBaseUrl()}/broadcasting/auth",
             formParameters = Parameters.build {
                 append("channel_name", channelName)
                 append("socket_id", socketId)
@@ -237,5 +237,4 @@ private data class NotificationEventData(
 
 private val realtimeJson = Json {
     ignoreUnknownKeys = true
-    encodeDefaults = true
 }
