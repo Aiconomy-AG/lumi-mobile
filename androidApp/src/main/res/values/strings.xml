@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">KotlinProject</string>
+    <string name="app_name">Lumi</string>
     <string name="notification_channel_default_name">General</string>
     <string name="notification_channel_default_description">Task and app notifications</string>
 </resources>

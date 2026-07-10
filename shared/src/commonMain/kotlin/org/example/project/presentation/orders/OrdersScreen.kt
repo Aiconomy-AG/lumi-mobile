@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.orders.Order
+import org.example.project.presentation.components.AppPaginationBar
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
@@ -70,8 +71,8 @@ fun OrdersScreen(
             BoxWithConstraints(
                 modifier = Modifier.weight(1f)
             ) {
-                val tableHeaderHeight = 36.dp
-                val rowHeight = 54.dp
+                val tableHeaderHeight = 0.dp
+                val rowHeight = 92.dp
                 val paginationHeight = 56.dp
                 val spacing = AppDimensions.SmallSpacing
 
@@ -112,19 +113,11 @@ fun OrdersScreen(
 
                     Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-                    OrdersPagination(
+                    AppPaginationBar(
                         currentPage = currentPage,
                         totalPages = totalPages,
-                        onPreviousClick = {
-                            if (currentPage > 0) {
-                                currentPage--
-                            }
-                        },
-                        onNextClick = {
-                            if (currentPage < totalPages - 1) {
-                                currentPage++
-                            }
-                        }
+                        onPreviousClick = { if (currentPage > 0) currentPage-- },
+                        onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
                     )
                 }
             }

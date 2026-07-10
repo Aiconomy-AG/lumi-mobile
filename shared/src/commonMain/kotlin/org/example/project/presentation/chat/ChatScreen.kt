@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import org.example.project.presentation.components.AppSearchField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -90,13 +91,10 @@ private fun ConversationListScreen(
             .fillMaxSize()
             .padding(16.dp),
     ) {
-        OutlinedTextField(
+        AppSearchField(
             value = uiState.searchQuery,
             onValueChange = onSearchQueryChanged,
-            placeholder = { Text(strings.text("Search chat or person...")) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            colors = chatTextFieldColors(),
+            placeholder = strings.text("Search chat or person..."),
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -316,6 +314,7 @@ private fun ConversationDetailScreen(
             Button(
                 onClick = onSendClick,
                 enabled = uiState.messageDraft.isNotBlank(),
+                shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AppColorPalette.Primary,
                     contentColor = AppColorPalette.OnPrimary,
