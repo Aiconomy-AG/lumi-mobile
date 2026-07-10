@@ -539,7 +539,7 @@ private fun ReturnRequest.orderLabel(): String {
 }
 
 private fun ReturnRequest.refundLabel(): String {
-    return refundAmount?.let { "$" + it.toString() } ?: "—"
+    return refundAmount?.let { "${it} CHF" } ?: "—"
 }
 
 private fun String?.dateLabel(): String {
