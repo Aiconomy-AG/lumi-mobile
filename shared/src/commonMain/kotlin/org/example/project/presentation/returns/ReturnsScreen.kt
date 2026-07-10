@@ -149,6 +149,7 @@ fun ReturnsScreen(
         ReturnDetailsDialog(
             returnRequest = returnRequest,
             isSaving = state.isSaving,
+            errorMessage = state.dialogErrorMessage,
             onDismiss = viewModel::closeReturn,
             onSave = { status, notes ->
                 viewModel.updateReturn(
@@ -298,6 +299,7 @@ private fun ReturnRow(
 private fun ReturnDetailsDialog(
     returnRequest: ReturnRequest,
     isSaving: Boolean,
+    errorMessage: String?,
     onDismiss: () -> Unit,
     onSave: (ReturnStatus, String) -> Unit,
 ) {
@@ -378,6 +380,15 @@ private fun ReturnDetailsDialog(
                     minLines = 3,
                     colors = AppComponentDefaults.appTextFieldColors(),
                 )
+
+                errorMessage?.let { message ->
+                    Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+                    Text(
+                        text = message,
+                        color = AppColorPalette.Error,
+                        style = AppTextStyles.Emphasis,
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 

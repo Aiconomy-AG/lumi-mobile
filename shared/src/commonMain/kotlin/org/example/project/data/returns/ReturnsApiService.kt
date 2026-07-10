@@ -14,6 +14,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -100,14 +101,25 @@ class ReturnsApiService(
 
             val responseText = response.bodyAsText()
 
-            if (response.status != HttpStatusCode.OK) {
+            if (!response.status.isSuccess()) {
                 return Result.failure(Exception(parseErrorMessage(responseText)))
             }
 
-            val body = returnsJson.decodeFromString<ReturnResponse>(responseText)
-            Result.success(body.data.toReturnRequest())
+            if (responseText.isBlank()) {
+                return getReturn(id)
+            }
+
+            Result.success(parseReturnResponse(responseText))
         } catch (exception: Exception) {
             Result.failure(Exception(exception.message ?: "Could not update return."))
+        }
+    }
+
+    private fun parseReturnResponse(responseText: String): ReturnRequest {
+        return try {
+            returnsJson.decodeFromString<ReturnResponse>(responseText).data.toReturnRequest()
+        } catch (_: Exception) {
+            returnsJson.decodeFromString<ReturnRequestDto>(responseText).toReturnRequest()
         }
     }
 
@@ -118,7 +130,15 @@ class ReturnsApiService(
 
     private fun parseErrorMessage(responseText: String): String {
         return try {
-            returnsJson.decodeFromString<ApiErrorResponse>(responseText).message ?: "Request failed."
+            val body = returnsJson.decodeFromString<ApiErrorResponse>(responseText)
+            val validationErrors = body.errors
+                ?.values
+                ?.flatten()
+                ?.joinToString("\n")
+
+            validationErrors?.takeIf { it.isNotBlank() }
+                ?: body.message
+                ?: "Request failed."
         } catch (exception: Exception) {
             "Request failed."
         }
@@ -254,6 +274,7 @@ private data class UpdateReturnRequest(
 @Serializable
 private data class ApiErrorResponse(
     val message: String? = null,
+    val errors: Map<String, List<String>>? = null,
 )
 
 private fun JsonElement?.toDisplayItems(): List<ReturnDisplayItem> {

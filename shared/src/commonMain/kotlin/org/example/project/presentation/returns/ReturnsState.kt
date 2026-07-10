@@ -10,6 +10,7 @@ data class ReturnsState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
+    val dialogErrorMessage: String? = null,
 ) {
     val filteredReturns: List<ReturnRequest>
         get() {
