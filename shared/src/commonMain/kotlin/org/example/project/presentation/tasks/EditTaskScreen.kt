@@ -77,6 +77,15 @@ fun EditTaskScreen(
             }
         )
 
+        if (uiState.isRootTask && uiState.subtasks.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = strings.text("Delete parent task warning"),
+                color = colors.onSurfaceVariant,
+                fontSize = 13.sp,
+            )
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         TaskInput(value = title, onValueChange = { title = it }, label = strings.text("Task"))

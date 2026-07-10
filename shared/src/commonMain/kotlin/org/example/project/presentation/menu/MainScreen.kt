@@ -136,10 +136,8 @@ fun MainScreen(
         var task = taskListViewModel.uiState.value.tasks.find { it.id == taskId }
         if (task == null) {
             try {
-                task = taskApi.getTasks().find { it.id == taskId }
-                if (task != null) {
-                    taskListViewModel.loadTasks()
-                }
+                task = taskApi.getTask(taskId)
+                taskListViewModel.loadTasks()
             } catch (_: Exception) {
             }
         }
@@ -320,6 +318,10 @@ fun MainScreen(
                                     taskListViewModel.loadTasks()
                                 },
                                 onEditClick = { showEditTaskScreen = true },
+                                onSubtaskClick = { subtask ->
+                                    selectedTask = subtask
+                                    showEditTaskScreen = false
+                                },
                                 modifier = Modifier.padding(paddingValues),
                             )
                         }
@@ -359,6 +361,10 @@ fun MainScreen(
                                 viewModel = taskDetailViewModel,
                                 onBack = { selectedTask = null },
                                 onEditClick = { showEditTaskScreen = true },
+                                onSubtaskClick = { subtask ->
+                                    selectedTask = subtask
+                                    showEditTaskScreen = false
+                                },
                                 modifier = Modifier.padding(paddingValues),
                             )
                         }
