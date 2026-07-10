@@ -127,6 +127,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "Shared"
             isStatic = true
+            binaryOption("bundleId", "org.example.project.shared")
         }
     }
     

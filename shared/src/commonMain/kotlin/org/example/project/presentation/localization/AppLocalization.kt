@@ -7,6 +7,7 @@ import androidx.compose.runtime.compositionLocalOf
 import org.example.project.domain.accounts.AccountRole
 import org.example.project.domain.auth.UserRole
 import org.example.project.domain.project.ProjectStatus
+import org.example.project.domain.returns.ReturnStatus
 import org.example.project.domain.task.TaskStatus
 
 enum class AppLanguage(
@@ -76,6 +77,17 @@ class AppStrings(
 
     fun accountStatus(status: String): String =
         text(status.ifBlank { "Unknown" }.lowercase().replaceFirstChar { it.uppercase() })
+
+    fun returnStatus(status: ReturnStatus): String =
+        text(
+            when (status) {
+                ReturnStatus.REQUESTED -> "Requested"
+                ReturnStatus.APPROVED -> "Approved"
+                ReturnStatus.REJECTED -> "Rejected"
+                ReturnStatus.RECEIVED -> "Received"
+                ReturnStatus.REFUNDED -> "Refunded"
+            }
+        )
 }
 
 val LocalAppLanguage = compositionLocalOf { AppLanguage.EN }
@@ -100,6 +112,7 @@ private val translations = mapOf(
         "Projects" to "Projects",
         "Chat" to "Chat",
         "Stock" to "Stock",
+        "Returns" to "Returns",
         "Admin" to "Admin",
         "Sign in" to "Sign in",
         "Email" to "Email",
@@ -212,6 +225,28 @@ private val translations = mapOf(
         "Send" to "Send",
         "Unknown sender" to "Unknown",
         "Error: {message}" to "Error: {message}",
+        "Search returns..." to "Search returns...",
+        "{count} returns" to "{count} returns",
+        "{count} requested" to "{count} requested",
+        "{count} active" to "{count} active",
+        "No returns found." to "No returns found.",
+        "Return #{id}" to "Return #{id}",
+        "Order" to "Order",
+        "Customer" to "Customer",
+        "Reason" to "Reason",
+        "Refund amount" to "Refund amount",
+        "Created" to "Created",
+        "Received" to "Received",
+        "Refunded" to "Refunded",
+        "Notes" to "Notes",
+        "{count} return items" to "{count} return items",
+        "No item details available." to "No item details available.",
+        "Quantity: {count}" to "Quantity: {count}",
+        "Requested" to "Requested",
+        "Approved" to "Approved",
+        "Rejected" to "Rejected",
+        "Received" to "Received",
+        "Refunded" to "Refunded",
     ),
     AppLanguage.RO to mapOf(
         "Dashboard" to "Dashboard",
@@ -219,6 +254,7 @@ private val translations = mapOf(
         "Projects" to "Proiecte",
         "Chat" to "Chat",
         "Stock" to "Stoc",
+        "Returns" to "Retururi",
         "Admin" to "Admin",
         "Sign in" to "Autentificare",
         "Email" to "Email",
@@ -330,6 +366,28 @@ private val translations = mapOf(
         "Send" to "Trimite",
         "Unknown sender" to "Necunoscut",
         "Error: {message}" to "Eroare: {message}",
+        "Search returns..." to "Caută retururi...",
+        "{count} returns" to "{count} retururi",
+        "{count} requested" to "{count} cerute",
+        "{count} active" to "{count} active",
+        "No returns found." to "Nu am găsit retururi.",
+        "Return #{id}" to "Retur #{id}",
+        "Order" to "Comandă",
+        "Customer" to "Client",
+        "Reason" to "Motiv",
+        "Refund amount" to "Sumă rambursată",
+        "Created" to "Creat",
+        "Received" to "Primit",
+        "Refunded" to "Rambursat",
+        "Notes" to "Notițe",
+        "{count} return items" to "{count} produse returnate",
+        "No item details available." to "Nu există detalii despre produse.",
+        "Quantity: {count}" to "Cantitate: {count}",
+        "Requested" to "Cerut",
+        "Approved" to "Aprobat",
+        "Rejected" to "Respins",
+        "Received" to "Primit",
+        "Refunded" to "Rambursat",
     ),
     AppLanguage.DE to mapOf(
         "Dashboard" to "Dashboard",
@@ -337,6 +395,7 @@ private val translations = mapOf(
         "Projects" to "Projekte",
         "Chat" to "Chat",
         "Stock" to "Lager",
+        "Returns" to "Retouren",
         "Admin" to "Admin",
         "Sign in" to "Anmelden",
         "Email" to "E-Mail",
@@ -448,5 +507,27 @@ private val translations = mapOf(
         "Send" to "Senden",
         "Unknown sender" to "Unbekannt",
         "Error: {message}" to "Fehler: {message}",
+        "Search returns..." to "Retouren suchen...",
+        "{count} returns" to "{count} Retouren",
+        "{count} requested" to "{count} angefragt",
+        "{count} active" to "{count} aktiv",
+        "No returns found." to "Keine Retouren gefunden.",
+        "Return #{id}" to "Retoure #{id}",
+        "Order" to "Bestellung",
+        "Customer" to "Kunde",
+        "Reason" to "Grund",
+        "Refund amount" to "Erstattungsbetrag",
+        "Created" to "Erstellt",
+        "Received" to "Erhalten",
+        "Refunded" to "Erstattet",
+        "Notes" to "Notizen",
+        "{count} return items" to "{count} Retourenartikel",
+        "No item details available." to "Keine Artikeldetails verfügbar.",
+        "Quantity: {count}" to "Menge: {count}",
+        "Requested" to "Angefragt",
+        "Approved" to "Genehmigt",
+        "Rejected" to "Abgelehnt",
+        "Received" to "Erhalten",
+        "Refunded" to "Erstattet",
     ),
 )

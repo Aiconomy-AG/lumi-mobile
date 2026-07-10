@@ -91,7 +91,6 @@ fun AppSectionIcon(
             }
 
             AppSection.PROJECTS -> {
-                // Folder outline
                 drawLine(
                     color = tint,
                     start = Offset(w * 0.16f, h * 0.28f),
