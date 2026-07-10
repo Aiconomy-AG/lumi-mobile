@@ -127,6 +127,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "Shared"
             isStatic = true
+            binaryOption("bundleId", "org.example.project.shared")
         }
     }
     
@@ -172,6 +173,8 @@ kotlin {
                 implementation(libs.ktor.client.logging)
                 implementation(libs.ktor.client.websockets)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.coil.compose)
+                implementation(libs.coil.network.ktor)
             }
         }
         commonTest.dependencies {

@@ -27,7 +27,8 @@ data class TaskListUiState(
 ) {
     val filteredTasks: List<Task>
         get() = tasks.filter { task ->
-            (searchQuery.isBlank() || task.title.contains(searchQuery, ignoreCase = true)) &&
+            task.parentId == null &&
+                (searchQuery.isBlank() || task.title.contains(searchQuery, ignoreCase = true)) &&
                 (statusFilter == null || task.status == statusFilter) &&
                 (!onlyMine || currentUserId in task.assigneeIds)
         }
