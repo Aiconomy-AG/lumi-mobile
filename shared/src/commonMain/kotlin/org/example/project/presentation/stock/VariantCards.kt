@@ -1,12 +1,17 @@
 package org.example.project.presentation.stock
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -17,7 +22,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.ProductVariant
 import org.example.project.presentation.localization.LocalAppStrings
@@ -46,69 +58,205 @@ fun VariantInfoCard(
             )
             .padding(AppDimensions.SmallSpacing)
     ) {
-        Text(
-            text = variantLabel(variant),
-            color = AppColorPalette.TextPrimary,
-            style = AppTextStyles.TableHeader
-        )
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = variantLabel(variant),
+                    color = AppColorPalette.TextPrimary,
+                    style = AppTextStyles.TableHeader
+                )
 
-        Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
+                Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
 
-        Text(
-            text = strings.format("SKU: {value}", "value" to (variant.sku ?: "-")),
-            color = AppColorPalette.TextSecondary
-        )
+                Text(
+                    text = strings.format("SKU: {value}", "value" to variant.sku),
+                    color = AppColorPalette.TextSecondary
+                )
 
-        Text(
-            text = strings.format("Stock: {count}", "count" to variant.stockQuantity.toString()),
-            color = AppColorPalette.TextSecondary
-        )
+                Text(
+                    text = strings.format("Stock: {count}", "count" to variant.stockQuantity.toString()),
+                    color = AppColorPalette.TextSecondary
+                )
 
-        Text(
-            text = "${strings.text("Price")}: ${formatChf(variant.price)}",
-            color = AppColorPalette.TextSecondary
-        )
+                Text(
+                    text = "${strings.text("Price")}: ${formatChf(variant.price)}",
+                    color = AppColorPalette.TextSecondary
+                )
 
-        if (!variant.colour.isNullOrBlank()) {
-            Text(
-                text = strings.format("Colour: {value}", "value" to variant.colour),
-                color = AppColorPalette.TextSecondary
-            )
-        }
+                if (!variant.colour.isNullOrBlank()) {
+                    Text(
+                        text = strings.format("Colour: {value}", "value" to variant.colour),
+                        color = AppColorPalette.TextSecondary
+                    )
+                }
 
-        if (variant.weight != null && variant.weight > 0) {
-            Text(
-                text = strings.format(
-                    "Weight: {value}",
-                    "value" to "${variant.weight}${variant.weightUnit.orEmpty()}",
-                ),
-                color = AppColorPalette.TextSecondary
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Button(
-                onClick = onEditClick,
-                modifier = Modifier.weight(1f),
-                colors = AppComponentDefaults.paginationButtonColors()
-            ) {
-                Text(strings.text("Edit"))
+                if (variant.weight != null && variant.weight > 0) {
+                    Text(
+                        text = strings.format(
+                            "Weight: {value}",
+                            "value" to "${variant.weight}${variant.weightUnit.orEmpty()}",
+                        ),
+                        color = AppColorPalette.TextSecondary
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
 
-            TextButton(
-                onClick = onDeleteClick,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = strings.text("Delete"),
-                    color = AppColorPalette.Error
-                )
+            Column {
+                StockEditActionButton(onClick = onEditClick)
+                Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
+                StockDeleteActionButton(onClick = onDeleteClick)
             }
         }
+    }
+}
+
+@Composable
+fun StockEditActionButton(onClick: () -> Unit) {
+    StockActionIconButton(
+        onClick = onClick,
+        contentDescription = LocalAppStrings.current.text("Edit"),
+        tint = AppColorPalette.Primary,
+    ) {
+        EditActionIcon(color = AppColorPalette.Primary)
+    }
+}
+
+@Composable
+fun StockAddActionButton(
+    onClick: () -> Unit,
+    enabled: Boolean,
+) {
+    StockActionIconButton(
+        onClick = onClick,
+        contentDescription = LocalAppStrings.current.text("Add product"),
+        tint = AppColorPalette.Primary,
+        enabled = enabled,
+    ) {
+        AddActionIcon(color = AppColorPalette.Primary)
+    }
+}
+
+@Composable
+fun StockDeleteActionButton(onClick: () -> Unit) {
+    StockActionIconButton(
+        onClick = onClick,
+        contentDescription = LocalAppStrings.current.text("Delete"),
+        tint = AppColorPalette.Error,
+    ) {
+        DeleteActionIcon(color = AppColorPalette.Error)
+    }
+}
+
+@Composable
+private fun StockActionIconButton(
+    onClick: () -> Unit,
+    contentDescription: String,
+    tint: Color,
+    enabled: Boolean = true,
+    icon: @Composable () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(RoundedCornerShape(AppDimensions.ControlCornerRadius))
+            .background(tint.copy(alpha = if (enabled) 0.12f else 0.06f))
+            .clickable(enabled = enabled, onClick = onClick)
+            .semantics { this.contentDescription = contentDescription },
+        contentAlignment = Alignment.Center,
+    ) {
+        icon()
+    }
+}
+
+@Composable
+private fun AddActionIcon(color: Color) {
+    Canvas(modifier = Modifier.size(20.dp)) {
+        val strokeWidth = 2.dp.toPx()
+        val centerX = size.width / 2f
+        val centerY = size.height / 2f
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.25f, centerY),
+            end = Offset(size.width * 0.75f, centerY),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(centerX, size.height * 0.25f),
+            end = Offset(centerX, size.height * 0.75f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
+@Composable
+private fun EditActionIcon(color: Color) {
+    Canvas(modifier = Modifier.size(20.dp)) {
+        val strokeWidth = 2.dp.toPx()
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.28f, size.height * 0.72f),
+            end = Offset(size.width * 0.72f, size.height * 0.28f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.24f, size.height * 0.78f),
+            end = Offset(size.width * 0.42f, size.height * 0.74f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
+@Composable
+private fun DeleteActionIcon(color: Color) {
+    Canvas(modifier = Modifier.size(20.dp)) {
+        val strokeWidth = 2.dp.toPx()
+        val left = size.width * 0.32f
+        val right = size.width * 0.68f
+        val top = size.height * 0.34f
+        val bottom = size.height * 0.74f
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.24f, size.height * 0.26f),
+            end = Offset(size.width * 0.76f, size.height * 0.26f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.42f, size.height * 0.18f),
+            end = Offset(size.width * 0.58f, size.height * 0.18f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(left, top),
+            end = Offset(left, bottom),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(right, top),
+            end = Offset(right, bottom),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(left, bottom),
+            end = Offset(right, bottom),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
     }
 }
 

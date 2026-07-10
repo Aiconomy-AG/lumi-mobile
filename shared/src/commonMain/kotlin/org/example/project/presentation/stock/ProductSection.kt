@@ -3,7 +3,6 @@ package org.example.project.presentation.stock
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -87,7 +85,8 @@ fun ProductReadOnlySection(
         ProductInfoLine(strings.text("Price"), formatChf(product.price))
         ProductInfoLine(strings.text("Stock"), product.stockQuantity.toString())
 
-        if (!product.description.isNullOrBlank()) {
+        val description = product.description?.htmlToPlainText().orEmpty()
+        if (description.isNotBlank()) {
             Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
             Text(
@@ -97,9 +96,9 @@ fun ProductReadOnlySection(
 
             Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
 
-            ReadMoreText(
-                text = product.description,
-                maxCharacters = 140
+            Text(
+                text = description,
+                color = AppColorPalette.TextPrimary,
             )
         }
 
@@ -108,25 +107,15 @@ fun ProductReadOnlySection(
         Row(
             modifier = Modifier.fillMaxWidth()
         ) {
-            Button(
-                onClick = onEditClick,
-                modifier = Modifier.weight(1f),
-                colors = AppComponentDefaults.primaryButtonColors()
-            ) {
-                Text(strings.text("Edit product"))
-            }
+            Spacer(modifier = Modifier.weight(1f))
 
             Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
 
-            TextButton(
-                onClick = onDeleteClick,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = strings.text("Delete"),
-                    color = AppColorPalette.Error
-                )
-            }
+            StockEditActionButton(onClick = onEditClick)
+
+            Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
+
+            StockDeleteActionButton(onClick = onDeleteClick)
         }
     }
 }
@@ -427,43 +416,16 @@ fun CategoryDropdownField(
     }
 }
 
-@Composable
-fun ReadMoreText(
-    text: String,
-    maxCharacters: Int = 120
-) {
-    var expanded by remember {
-        mutableStateOf(false)
-    }
-
-    val shouldShowReadMore = text.length > maxCharacters
-
-    val displayedText = if (!shouldShowReadMore || expanded) {
-        text
-    } else {
-        text.take(maxCharacters).trimEnd() + "..."
-    }
-
-    Column {
-        Text(
-            text = displayedText,
-            color = AppColorPalette.TextPrimary
-        )
-
-        if (shouldShowReadMore) {
-            TextButton(
-                onClick = {
-                    expanded = !expanded
-                },
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Text(
-                    text = if (expanded) "Show less" else "Read more",
-                    color = AppColorPalette.Primary
-                )
-            }
-        }
-    }
+private fun String.htmlToPlainText(): String {
+    return replace(Regex("<[^>]*>"), " ")
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace(Regex("\\s+"), " ")
+        .trim()
 }
 
 @Composable

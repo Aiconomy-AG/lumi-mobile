@@ -3,7 +3,6 @@ package org.example.project.presentation.orders
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,7 +12,6 @@ import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
-import org.example.project.presentation.theme.AppTextStyles
 
 @Composable
 fun OrdersHeader(
@@ -26,14 +24,6 @@ fun OrdersHeader(
     val strings = LocalAppStrings.current
 
     Column {
-        Text(
-            text = strings.text("Orders"),
-            color = AppColorPalette.TextPrimary,
-            style = AppTextStyles.PageTitle
-        )
-
-        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {

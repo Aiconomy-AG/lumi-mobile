@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.example.project.domain.orders.Order
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
+import org.example.project.presentation.components.PlatformBackHandler
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
 
@@ -32,52 +33,55 @@ fun OrdersScreen(
         mutableStateOf<Int?>(null)
     }
 
-    val filteredOrders = state.filteredOrders
-
     val selectedOrder = selectedOrderId?.let { id ->
         state.orders.firstOrNull { order ->
             order.id == id
         }
     }
 
-    DismissKeyboardOnTapOutside(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(AppColorPalette.Background)
-                .padding(AppDimensions.ScreenPadding),
-        ) {
-        OrdersHeader(
-            orderCount = state.orderCount,
-            searchQuery = state.searchQuery,
-            isLoading = state.isLoading,
-            errorMessage = state.errorMessage,
-            onSearchQueryChanged = viewModel::onSearchQueryChanged
-        )
+    PlatformBackHandler(
+        enabled = selectedOrderId != null,
+        onBack = { selectedOrderId = null },
+    )
 
-        Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
+    Box(modifier = modifier.fillMaxSize()) {
+        DismissKeyboardOnTapOutside(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppColorPalette.Background)
+                    .padding(AppDimensions.ScreenPadding),
+            ) {
+                OrdersHeader(
+                    orderCount = state.orderCount,
+                    searchQuery = state.searchQuery,
+                    isLoading = state.isLoading,
+                    errorMessage = state.errorMessage,
+                    onSearchQueryChanged = viewModel::onSearchQueryChanged
+                )
 
-        if (state.isLoading) {
-            LoadingOrdersContent()
-        } else {
-            OrderTable(
-                orders = filteredOrders,
-                onOrderClick = { order: Order ->
-                    selectedOrderId = order.id
-                },
-                modifier = Modifier.weight(1f),
+                Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
+
+                if (state.isLoading) {
+                    LoadingOrdersContent()
+                } else {
+                    OrderTable(
+                        orders = state.filteredOrders,
+                        onOrderClick = { order: Order ->
+                            selectedOrderId = order.id
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+
+        selectedOrder?.let { order ->
+            OrderDetailsOverlay(
+                order = order,
+                onBackClick = { selectedOrderId = null },
             )
         }
-    }
-    }
-
-    if (selectedOrder != null) {
-        OrderDetailsDialog(
-            order = selectedOrder,
-            onDismiss = {
-                selectedOrderId = null
-            }
-        )
     }
 }
 

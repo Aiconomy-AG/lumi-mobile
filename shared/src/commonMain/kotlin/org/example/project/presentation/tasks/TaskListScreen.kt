@@ -30,6 +30,7 @@ import kotlinx.coroutines.delay
 import org.example.project.presentation.components.AppButton
 import org.example.project.presentation.components.AppPaginationBar
 import org.example.project.presentation.components.AppSearchField
+import org.example.project.presentation.components.AppStatusBadge
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -323,15 +324,9 @@ private fun StatusBadge(status: TaskStatus, modifier: Modifier = Modifier) {
         TaskStatus.COMPLETE -> strings.taskStatus(status) to AppColorPalette.StatusComplete
         TaskStatus.BLOCKED -> strings.taskStatus(status) to AppColorPalette.StatusBlocked
     }
-    Box(
-        modifier = modifier
-            .background(color = statusColor.background, shape = MaterialTheme.shapes.extraSmall),
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            color = statusColor.content,
-            style = MaterialTheme.typography.labelMedium,
-        )
-    }
+    AppStatusBadge(
+        label = label,
+        statusColor = statusColor,
+        modifier = modifier,
+    )
 }

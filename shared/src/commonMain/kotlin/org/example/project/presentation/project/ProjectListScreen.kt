@@ -33,6 +33,7 @@ import org.example.project.domain.project.ProjectStatus
 import org.example.project.presentation.components.AppButton
 import org.example.project.presentation.components.AppPaginationBar
 import org.example.project.presentation.components.AppSearchField
+import org.example.project.presentation.components.AppStatusBadge
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
@@ -193,15 +194,9 @@ fun ProjectStatusBadge(status: ProjectStatus, modifier: Modifier = Modifier) {
         ProjectStatus.COMPLETE -> strings.projectStatus(status) to AppColorPalette.StatusComplete
         ProjectStatus.BLOCKED -> strings.projectStatus(status) to AppColorPalette.StatusBlocked
     }
-    Box(
-        modifier = modifier
-            .background(color = statusColor.background, shape = MaterialTheme.shapes.extraSmall),
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            color = statusColor.content,
-            style = MaterialTheme.typography.labelMedium,
-        )
-    }
+    AppStatusBadge(
+        label = label,
+        statusColor = statusColor,
+        modifier = modifier,
+    )
 }
