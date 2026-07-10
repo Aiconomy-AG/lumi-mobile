@@ -28,6 +28,14 @@ data class Task(
     val dueDate: String,
     @SerialName("project_id")
     val projectId: Int = 0,
+    @SerialName("parent_id")
+    val parentId: Int? = null,
     @SerialName("assignee_ids")
     val assigneeIds: List<Int> = emptyList(),
-)
+    val subtasks: List<Task> = emptyList(),
+) {
+    val isRootTask: Boolean get() = parentId == null
+    val isSubtask: Boolean get() = parentId != null
+}
+
+fun Task.canCreateSubtask(): Boolean = isRootTask

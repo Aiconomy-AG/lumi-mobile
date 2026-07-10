@@ -112,6 +112,11 @@ fun App() {
                             onLanguageSelected = { language ->
                                 selectedLanguage = language
                             },
+                            onPhoneNumberUpdated = { phoneNumber ->
+                                val updatedUser = user.copy(phoneNumber = phoneNumber)
+                                currentUser = updatedUser
+                                SessionStorage.saveSession(updatedUser)
+                            },
                             onLogout = {
                                 val authToken = currentUser?.token
                                 scope.launch {

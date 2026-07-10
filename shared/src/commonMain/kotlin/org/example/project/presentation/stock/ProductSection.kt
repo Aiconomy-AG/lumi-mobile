@@ -27,6 +27,14 @@ import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.SubcomposeAsyncImage
 
 @Composable
 fun ProductReadOnlySection(
@@ -35,6 +43,33 @@ fun ProductReadOnlySection(
     onDeleteClick: () -> Unit
 ) {
     Column {
+        if (!product.imageUrl.isNullOrBlank()) {
+            SubcomposeAsyncImage(
+                model = product.imageUrl,
+                contentDescription = "Image of ${product.name}",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(AppDimensions.TableCornerRadius))
+                    .background(AppColorPalette.Surface),
+                loading = {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = AppColorPalette.Primary)
+                    }
+                },
+                error = {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(AppColorPalette.Border),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No Image", color = AppColorPalette.TextSecondary)
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+        }
+
         Text(
             text = product.name,
             color = AppColorPalette.TextPrimary,

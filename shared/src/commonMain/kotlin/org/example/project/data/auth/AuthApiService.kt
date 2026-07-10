@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -79,6 +80,28 @@ class AuthApiService(
         } catch (exception: Exception) {
             Result.failure(
                 Exception(exception.message ?: "Could not validate session.")
+            )
+        }
+    }
+
+    override suspend fun updatePhoneNumber(token: String, phoneNumber: String): Result<String> {
+        return try {
+            val response = client.put("$baseUrl/auth/phone") {
+                bearerAuth(token)
+                contentType(ContentType.Application.Json)
+                setBody(UpdatePhoneRequest(phoneNumber = phoneNumber))
+            }
+
+            val responseText = response.bodyAsText()
+            if (!response.status.isSuccess()) {
+                return Result.failure(Exception(parseErrorMessage(responseText)))
+            }
+
+            val body = authJson.decodeFromString<UpdatePhoneResponse>(responseText)
+            Result.success(body.phoneNumber)
+        } catch (exception: Exception) {
+            Result.failure(
+                Exception(exception.message ?: "Could not update phone number.")
             )
         }
     }
@@ -201,6 +224,19 @@ private fun AuthUserResponse.toUserSession(token: String): UserSession {
         token = token,
     )
 }
+
+@Serializable
+private data class UpdatePhoneRequest(
+    @SerialName("phone_number")
+    val phoneNumber: String,
+)
+
+@Serializable
+private data class UpdatePhoneResponse(
+    val message: String = "",
+    @SerialName("phone_number")
+    val phoneNumber: String,
+)
 
 @Serializable
 private data class AuthErrorResponse(

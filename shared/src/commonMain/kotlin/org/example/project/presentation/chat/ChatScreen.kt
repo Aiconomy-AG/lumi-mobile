@@ -113,7 +113,7 @@ private fun ConversationListScreen(
                 )
             }
 
-            uiState.filteredContacts.isEmpty() -> {
+            uiState.sortedContacts.isEmpty() -> {
                 Text(
                     text = strings.text("No users found"),
                     color = AppColorPalette.TextSecondary,
@@ -126,7 +126,7 @@ private fun ConversationListScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    items(uiState.filteredContacts, key = { it.user.id }) { contact ->
+                    items(uiState.sortedContacts, key = { it.user.id }) { contact ->
                         ContactRow(
                             contact = contact,
                             onClick = { onContactClick(contact) },
@@ -153,16 +153,30 @@ private fun ContactRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(AppColorPalette.SelectionOverlay, CircleShape),
+            modifier = Modifier.size(44.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = contact.initials,
-                color = AppColorPalette.TextPrimary,
-                fontWeight = FontWeight.Bold,
-            )
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(AppColorPalette.SelectionOverlay, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = contact.initials,
+                    color = AppColorPalette.TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
+            if (contact.hasUnread) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(10.dp)
+                        .background(AppColorPalette.Error, CircleShape),
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
