@@ -15,6 +15,7 @@ import org.example.project.data.auth.SessionStorage
 import org.example.project.data.auth.UserSession
 import org.example.project.data.createHttpClient
 import org.example.project.notifications.PushNotificationCoordinator
+import org.example.project.notifications.PushNotifications
 import org.example.project.notifications.installTokenRefreshHandler
 import org.example.project.presentation.auth.LoginScreen
 import org.example.project.presentation.auth.LoginViewModel
@@ -44,10 +45,12 @@ fun App() {
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
+        PushNotifications.initialize()
         PushNotificationCoordinator.configure(httpClient, ApiConfig.BASE_URL)
         installTokenRefreshHandler { fcmToken ->
             PushNotificationCoordinator.onTokenRefreshed(fcmToken)
         }
+        PushNotifications.requestPermission()
 
         val savedSession = SessionStorage.loadSession()
         if (savedSession == null) {

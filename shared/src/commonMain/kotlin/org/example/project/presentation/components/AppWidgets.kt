@@ -29,6 +29,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.presentation.localization.LocalAppStrings
@@ -37,6 +38,7 @@ import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
 
 private val SearchFieldShape = RoundedCornerShape(AppDimensions.SearchFieldRadius)
+private val TextFieldShape = RoundedCornerShape(AppDimensions.SearchFieldRadius)
 private val ButtonShape = RoundedCornerShape(50)
 
 // ─── Search Field ────────────────────────────────────────────────────────────
@@ -88,6 +90,36 @@ private fun SearchIcon() {
             cap = StrokeCap.Round,
         )
     }
+}
+
+// ─── Text Field ──────────────────────────────────────────────────────────────
+
+@Composable
+fun AppTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    singleLine: Boolean = true,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = {
+            Text(
+                text = placeholder,
+                color = AppColorPalette.TextSecondary,
+            )
+        },
+        modifier = modifier.fillMaxWidth(),
+        singleLine = singleLine,
+        enabled = enabled,
+        shape = TextFieldShape,
+        visualTransformation = visualTransformation,
+        colors = AppComponentDefaults.appSearchFieldColors(),
+    )
 }
 
 // ─── Buttons ─────────────────────────────────────────────────────────────────
