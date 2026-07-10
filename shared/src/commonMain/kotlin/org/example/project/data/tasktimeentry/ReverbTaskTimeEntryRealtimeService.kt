@@ -16,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.SerialName
@@ -41,9 +41,10 @@ class ReverbTaskTimeEntryRealtimeService(
     private val token: String,
 ) : TaskTimeEntryRealtimeApi {
 
-    override fun timeEntryEvents(userId: Int): Flow<TimeEntryRealtimeEvent> = flow {
+    override fun timeEntryEvents(userId: Int): Flow<TimeEntryRealtimeEvent> = channelFlow {
         require(appKey.isNotBlank()) { "Reverb app key is not configured." }
 
+        val producerScope = this
         val channelName = "private-users.$userId"
         val webSocketUrl = buildWebSocketUrl()
 
@@ -81,12 +82,12 @@ class ReverbTaskTimeEntryRealtimeService(
 
                             "time-entry.started", ".time-entry.started" -> {
                                 val payload = envelope.data.decodeNested<TimeEntryPayload>()
-                                emit(TimeEntryRealtimeEvent.Started(payload.toTimeEntry()))
+                                producerScope.send(TimeEntryRealtimeEvent.Started(payload.toTimeEntry()))
                             }
 
                             "time-entry.stopped", ".time-entry.stopped" -> {
                                 val payload = envelope.data.decodeNested<TimeEntryPayload>()
-                                emit(TimeEntryRealtimeEvent.Stopped(entryId = payload.id, taskId = payload.taskId))
+                                producerScope.send(TimeEntryRealtimeEvent.Stopped(entryId = payload.id, taskId = payload.taskId))
                             }
                         }
                     }
