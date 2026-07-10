@@ -44,6 +44,12 @@ import org.example.project.data.chat.ReverbChatRealtimeService
 import org.example.project.data.project.ProjectApiService
 import org.example.project.data.createHttpClient
 import org.example.project.data.stock.StockApiService
+import org.example.project.data.orders.OrdersApiService
+import org.example.project.data.returns.ReturnsApiService
+import org.example.project.presentation.orders.OrdersScreen
+import org.example.project.presentation.orders.OrdersViewModel
+import org.example.project.presentation.returns.ReturnsScreen
+import org.example.project.presentation.returns.ReturnsViewModel
 import org.example.project.notifications.NotificationRouter
 import org.example.project.presentation.dashboard.DashboardScreen
 import org.example.project.presentation.localization.AppLanguage
@@ -84,6 +90,24 @@ fun MainScreen(
                 client = apiHttpClient,
                 baseUrl = ApiConfig.BASE_URL,
                 token = user.token
+            )
+        )
+    }
+    val ordersViewModel = remember(user.token) {
+        OrdersViewModel(
+            OrdersApiService(
+                client = apiHttpClient,
+                baseUrl = ApiConfig.BASE_URL,
+                token = user.token,
+            )
+        )
+    }
+    val returnsViewModel = remember(user.token) {
+        ReturnsViewModel(
+            ReturnsApiService(
+                client = apiHttpClient,
+                baseUrl = ApiConfig.BASE_URL,
+                token = user.token,
             )
         )
     }
@@ -180,6 +204,7 @@ fun MainScreen(
     val availableSections = AppSection.entries.filter {
         !it.adminOnly || user.role == UserRole.ADMIN
     }
+    val bottomBarSections = availableSections.filter { it.showInBottomBar }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -228,7 +253,7 @@ fun MainScreen(
             },
             bottomBar = {
                 AppBottomBar(
-                    sections = availableSections,
+                    sections = bottomBarSections,
                     selectedSection = selectedSection,
                     onSectionSelected = { section ->
                         selectedSection = section
@@ -435,6 +460,20 @@ fun MainScreen(
                             )
                         }
                     }
+                }
+
+                AppSection.ORDERS -> {
+                    OrdersScreen(
+                        viewModel = ordersViewModel,
+                        modifier = Modifier.padding(paddingValues),
+                    )
+                }
+
+                AppSection.RETURNS -> {
+                    ReturnsScreen(
+                        viewModel = returnsViewModel,
+                        modifier = Modifier.padding(paddingValues),
+                    )
                 }
 
                 AppSection.CHAT -> {
