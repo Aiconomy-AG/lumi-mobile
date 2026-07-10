@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.orders.Order
+import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
 
@@ -46,12 +47,13 @@ fun OrdersScreen(
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(AppColorPalette.Background)
-            .padding(AppDimensions.ScreenPadding)
-    ) {
+    DismissKeyboardOnTapOutside(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColorPalette.Background)
+                .padding(AppDimensions.ScreenPadding),
+        ) {
         OrdersHeader(
             orderCount = state.orderCount,
             searchQuery = state.searchQuery,
@@ -127,6 +129,7 @@ fun OrdersScreen(
                 }
             }
         }
+    }
     }
 
     if (selectedOrder != null) {

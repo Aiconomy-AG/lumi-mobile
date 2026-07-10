@@ -108,6 +108,8 @@ fun AppLocalizationProvider(
 private val translations = mapOf(
     AppLanguage.EN to mapOf(
         "Dashboard" to "Dashboard",
+        "Workspace" to "Workspace",
+        "Sales" to "Sales",
         "Tasks" to "Tasks",
         "Projects" to "Projects",
         "Chat" to "Chat",
@@ -259,7 +261,8 @@ private val translations = mapOf(
     ),
     AppLanguage.RO to mapOf(
         "Dashboard" to "Dashboard",
-        "Tasks" to "Taskuri",
+        "Workspace" to "Spațiu de lucru",
+        "Sales" to "Vânzări",
         "Projects" to "Proiecte",
         "Chat" to "Chat",
         "Stock" to "Stoc",
@@ -409,7 +412,8 @@ private val translations = mapOf(
     ),
     AppLanguage.DE to mapOf(
         "Dashboard" to "Dashboard",
-        "Tasks" to "Aufgaben",
+        "Workspace" to "Arbeitsbereich",
+        "Sales" to "Vertrieb",
         "Projects" to "Projekte",
         "Chat" to "Chat",
         "Stock" to "Lager",

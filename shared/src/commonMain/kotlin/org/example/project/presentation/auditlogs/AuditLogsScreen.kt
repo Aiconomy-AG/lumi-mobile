@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.auditlogs.AuditLog
+import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.stock.StockPagination
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
@@ -47,12 +48,13 @@ fun AuditLogsScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(AppColorPalette.Background)
-            .padding(AppDimensions.ScreenPadding)
-    ) {
+    DismissKeyboardOnTapOutside(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColorPalette.Background)
+                .padding(AppDimensions.ScreenPadding),
+        ) {
         Text(
             text = "Audit Logs",
             color = AppColorPalette.TextPrimary,
@@ -142,6 +144,7 @@ fun AuditLogsScreen(
                 onNextClick = { viewModel.onPageChanges(state.currentPage + 1) }
             )
         }
+    }
     }
 }
 

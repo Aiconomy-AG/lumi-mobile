@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.Category
 import org.example.project.domain.stock.Product
 import org.example.project.domain.stock.ProductVariant
+import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
@@ -63,12 +64,13 @@ fun StockScreen(
     }
 
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AppColorPalette.Background)
-            .padding(AppDimensions.ScreenPadding)
-    ) {
+    DismissKeyboardOnTapOutside(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColorPalette.Background)
+                .padding(AppDimensions.ScreenPadding),
+        ) {
         StockHeader(
             productCount = state.productCount,
             variantCount = state.variantCount,
@@ -148,6 +150,7 @@ fun StockScreen(
                 }
             }
         }
+    }
     }
 
     if (selectedProduct != null) {
