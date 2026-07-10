@@ -176,6 +176,56 @@ fun AppSectionIcon(
                 )
             }
 
+            AppSection.ORDERS -> {
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.2f, h * 0.16f),
+                    size = Size(w * 0.6f, h * 0.68f),
+                    cornerRadius = CornerRadius(w * 0.08f),
+                    style = stroke
+                )
+                listOf(0.34f, 0.5f, 0.66f).forEach { y ->
+                    drawLine(
+                        color = tint.copy(alpha = 0.68f),
+                        start = Offset(w * 0.32f, h * y),
+                        end = Offset(w * 0.68f, h * y),
+                        strokeWidth = thinStroke.width,
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+
+            AppSection.RETURNS -> {
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.62f, h * 0.24f),
+                    end = Offset(w * 0.38f, h * 0.24f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.38f, h * 0.24f),
+                    end = Offset(w * 0.38f, h * 0.34f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.38f, h * 0.34f),
+                    end = Offset(w * 0.28f, h * 0.24f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.2f, h * 0.42f),
+                    size = Size(w * 0.6f, h * 0.38f),
+                    cornerRadius = CornerRadius(w * 0.08f),
+                    style = stroke
+                )
+            }
+
             AppSection.ADMIN -> {
                 drawCircle(
                     color = tint,
