@@ -20,6 +20,7 @@ import org.example.project.presentation.tasks.TaskDetailScreen
 import org.example.project.presentation.tasks.TaskDetailViewModel
 import feature.stock.presentation.AddProductScreen
 import org.example.project.data.ApiConfig
+import org.example.project.data.auth.AuthApiService
 import org.example.project.presentation.accounts.AddUserScreen
 import org.example.project.presentation.accounts.AdminScreen
 import org.example.project.presentation.accounts.AdminViewModel
@@ -53,6 +54,7 @@ fun MainScreen(
     user: UserSession,
     selectedLanguage: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit,
+    onPhoneNumberUpdated: (String) -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
@@ -116,6 +118,9 @@ fun MainScreen(
             chatApi = chatApi,
             chatRealtimeApi = chatRealtimeApi,
         )
+    }
+    val authRepository = remember(apiHttpClient) {
+        AuthApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL)
     }
 
     val strings = LocalAppStrings.current
@@ -478,7 +483,9 @@ fun MainScreen(
                 UserDetailDialog(
                     user = user,
                     selectedLanguage = selectedLanguage,
+                    authRepository = authRepository,
                     onLanguageSelected = onLanguageSelected,
+                    onPhoneNumberUpdated = onPhoneNumberUpdated,
                     onDismiss = { showUserDetail = false },
                     onLogout = onLogout,
                 )
