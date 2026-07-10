@@ -1,4 +1,4 @@
-package org.example.project.data.chat
+package org.example.project.data.tasktimeentry
 
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.webSocket
@@ -26,10 +26,12 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
-import org.example.project.domain.chat.ChatNotificationEvent
-import org.example.project.domain.chat.ChatRealtimeApi
+import org.example.project.domain.tasktimeentry.TaskTimeEntry
+import org.example.project.domain.tasktimeentry.TaskTimeEntryRealtimeApi
+import org.example.project.domain.tasktimeentry.TimeEntryRealtimeEvent
+import kotlin.time.Instant
 
-class ReverbChatRealtimeService(
+class ReverbTaskTimeEntryRealtimeService(
     private val client: HttpClient,
     private val baseUrl: String,
     private val appKey: String,
@@ -37,9 +39,9 @@ class ReverbChatRealtimeService(
     private val port: Int,
     private val scheme: String,
     private val token: String,
-) : ChatRealtimeApi {
+) : TaskTimeEntryRealtimeApi {
 
-    override fun notificationEvents(userId: Int): Flow<ChatNotificationEvent> = flow {
+    override fun timeEntryEvents(userId: Int): Flow<TimeEntryRealtimeEvent> = flow {
         require(appKey.isNotBlank()) { "Reverb app key is not configured." }
 
         val channelName = "private-users.$userId"
@@ -76,8 +78,15 @@ class ReverbChatRealtimeService(
                                     PusherEventEnvelope(event = "pusher:pong"),
                                 )
                             )
-                            "notification.delivered", ".notification.delivered" -> {
-                                emit(envelope.toNotificationEvent() ?: continue)
+
+                            "time-entry.started", ".time-entry.started" -> {
+                                val payload = envelope.data.decodeNested<TimeEntryPayload>()
+                                emit(TimeEntryRealtimeEvent.Started(payload.toTimeEntry()))
+                            }
+
+                            "time-entry.stopped", ".time-entry.stopped" -> {
+                                val payload = envelope.data.decodeNested<TimeEntryPayload>()
+                                emit(TimeEntryRealtimeEvent.Stopped(entryId = payload.id, taskId = payload.taskId))
                             }
                         }
                     }
@@ -104,7 +113,7 @@ class ReverbChatRealtimeService(
 
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) {
-            throw IllegalStateException("Could not authenticate real-time chat channel.")
+            throw IllegalStateException("Could not authenticate real-time time-entry channel.")
         }
 
         return realtimeJson.decodeFromString(text)
@@ -133,10 +142,6 @@ class ReverbChatRealtimeService(
         return "$webSocketScheme://$resolvedHost$portSuffix/app/$appKey?protocol=7&client=lumi-mobile&version=1.0&flash=false"
     }
 
-    private fun broadcastBaseUrl(): String {
-        return baseUrl.trimEnd('/').replace(VersionSuffixPattern, "")
-    }
-
     private fun parseBaseUrl(value: String): BaseUrlParts {
         val match = UrlPattern.find(value.trim())
             ?: return BaseUrlParts(scheme = "https", host = "", port = 0)
@@ -144,18 +149,6 @@ class ReverbChatRealtimeService(
         val host = match.groupValues[2]
         val port = match.groupValues.getOrNull(3)?.toIntOrNull() ?: 0
         return BaseUrlParts(scheme = scheme, host = host, port = port)
-    }
-
-    private fun PusherEnvelope.toNotificationEvent(): ChatNotificationEvent? {
-        val delivery = data.decodeNested<NotificationDeliveryData>()
-
-        return ChatNotificationEvent(
-            id = delivery.id,
-            type = delivery.event.type,
-            conversationId = delivery.event.conversationId,
-            messageId = delivery.event.messageId,
-            actorUserId = delivery.event.actorUserId,
-        )
     }
 
     private inline fun <reified T> JsonElement?.decodeNested(): T {
@@ -175,7 +168,6 @@ class ReverbChatRealtimeService(
     private companion object {
         const val RECONNECT_DELAY_MS = 3_000L
         val UrlPattern = Regex("""^(https?)://([^/:]+)(?::(\d+))?""")
-        val VersionSuffixPattern = Regex("""/v\d+$""")
     }
 }
 
@@ -219,21 +211,28 @@ private data class BroadcastAuthResponse(
 )
 
 @Serializable
-private data class NotificationDeliveryData(
+private data class TimeEntryPayload(
     val id: Int,
-    val event: NotificationEventData,
-)
-
-@Serializable
-private data class NotificationEventData(
-    val type: String,
-    @SerialName("actor_user_id")
-    val actorUserId: Int? = null,
-    @SerialName("conversation_id")
-    val conversationId: Int? = null,
-    @SerialName("message_id")
-    val messageId: Int? = null,
-)
+    @SerialName("task_id")
+    val taskId: Int,
+    @SerialName("employee_id")
+    val employeeId: Int,
+    @SerialName("started_at")
+    val startedAt: String? = null,
+    @SerialName("stopped_at")
+    val stoppedAt: String? = null,
+    @SerialName("duration_seconds")
+    val durationSeconds: Int? = null,
+) {
+    fun toTimeEntry(): TaskTimeEntry = TaskTimeEntry(
+        id = id,
+        taskId = taskId,
+        employeeId = employeeId,
+        startedAt = Instant.parse(startedAt ?: throw IllegalArgumentException("Missing started_at")),
+        stoppedAt = stoppedAt?.let { Instant.parse(it) },
+        durationSeconds = durationSeconds,
+    )
+}
 
 private val realtimeJson = Json {
     ignoreUnknownKeys = true

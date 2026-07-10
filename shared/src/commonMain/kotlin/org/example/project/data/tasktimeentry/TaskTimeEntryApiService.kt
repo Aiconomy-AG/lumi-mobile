@@ -28,6 +28,13 @@ class TaskTimeEntryApiService(
         return timeEntryJson.decodeFromString<TimeEntryListResponse>(text).data.map { it.toTimeEntry() }
     }
 
+    override suspend fun getActiveTimer(): TaskTimeEntry? {
+        val response = client.get("$baseUrl/workspace/me/active-time-entry") { bearerAuth() }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
+        return timeEntryJson.decodeFromString<NullableTimeEntryResponse>(text).data?.toTimeEntry()
+    }
+
     override suspend fun startTimer(taskId: Int): TaskTimeEntry {
         val response = client.post("$baseUrl/workspace/tasks/$taskId/time-entries/start") { bearerAuth() }
         val text = response.bodyAsText()
@@ -64,6 +71,11 @@ private data class TimeEntryListResponse(
 @Serializable
 private data class TimeEntryResponse(
     val data: TimeEntryDto,
+)
+
+@Serializable
+private data class NullableTimeEntryResponse(
+    val data: TimeEntryDto? = null,
 )
 
 @Serializable
