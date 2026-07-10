@@ -148,7 +148,7 @@ private fun OrderTableRow(
         )
 
         TableCell(
-            text = "${order.totalAmount} lei",
+            text = formatOrderPrice(order.totalAmount),
             width = 120,
             color = AppColorPalette.TextPrimary
         )

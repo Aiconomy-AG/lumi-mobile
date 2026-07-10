@@ -49,9 +49,9 @@ fun OrderDetailsDialog(
                 DetailRow("Payment method", order.paymentMethod ?: "-")
                 DetailRow("Payment status", order.paymentStatus ?: "-")
                 DetailRow("Shipping address", order.shippingAddress ?: "-")
-                DetailRow("Subtotal", "${order.subtotal} lei")
-                DetailRow("Shipping cost", "${order.shippingCost} lei")
-                DetailRow("Total", "${order.totalAmount} lei")
+                DetailRow("Subtotal", formatOrderPrice(order.subtotal))
+                DetailRow("Shipping cost", formatOrderPrice(order.shippingCost))
+                DetailRow("Total", formatOrderPrice(order.totalAmount))
 
                 Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
