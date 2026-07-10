@@ -71,8 +71,8 @@ fun OrdersScreen(
             BoxWithConstraints(
                 modifier = Modifier.weight(1f)
             ) {
-                val tableHeaderHeight = 36.dp
-                val rowHeight = 54.dp
+                val tableHeaderHeight = 0.dp
+                val rowHeight = 92.dp
                 val paginationHeight = 56.dp
                 val spacing = AppDimensions.SmallSpacing
 
