@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import org.example.project.presentation.components.AppBackButton
 import org.example.project.presentation.components.AppSearchField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -241,20 +242,9 @@ private fun ConversationDetailScreen(
                 .padding(horizontal = 8.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onBackClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "<",
-                    color = AppColorPalette.Primary,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
+            AppBackButton(onClick = onBackClick)
+
+            Spacer(modifier = Modifier.width(4.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(

@@ -92,6 +92,50 @@ private fun SearchIcon() {
     }
 }
 
+// ─── Back Button ─────────────────────────────────────────────────────────────
+
+@Composable
+fun AppBackButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        BackChevronIcon(color = AppColorPalette.TextPrimary)
+    }
+}
+
+@Composable
+private fun BackChevronIcon(color: Color) {
+    Canvas(modifier = Modifier.size(20.dp)) {
+        val strokeWidth = 2.dp.toPx()
+        val centerY = size.height / 2f
+        val tipX = size.width * 0.32f
+        val tailX = size.width * 0.68f
+        val armY = size.height * 0.28f
+
+        drawLine(
+            color = color,
+            start = Offset(tailX, centerY - armY),
+            end = Offset(tipX, centerY),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(tipX, centerY),
+            end = Offset(tailX, centerY + armY),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
 // ─── Text Field ──────────────────────────────────────────────────────────────
 
 @Composable

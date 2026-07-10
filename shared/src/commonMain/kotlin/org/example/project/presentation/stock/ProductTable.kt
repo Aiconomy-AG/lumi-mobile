@@ -7,10 +7,13 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -20,10 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.Product
 import org.example.project.presentation.localization.LocalAppStrings
-import org.example.project.presentation.stock.EmptyFixedTableRow
-import org.example.project.presentation.stock.EmptyProductTableRow
-import org.example.project.presentation.stock.ProductTableHeader
-import org.example.project.presentation.stock.ProductTableRow
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
@@ -33,17 +32,14 @@ import org.example.project.presentation.theme.formatChfRange
 @Composable
 fun ProductTable(
     products: List<Product>,
-    onProductClick: (Product) -> Unit
+    onProductClick: (Product) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val horizontalScrollState = rememberScrollState()
-    val rowHeight = 54.dp
-    val headerHeight = 36.dp
-    val verticalPadding = 24.dp
-    val tableHeight = headerHeight + rowHeight * 7 + verticalPadding
+
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .height(tableHeight)
             .border(
                 width = 1.dp,
                 color = AppColorPalette.Border,
@@ -56,34 +52,33 @@ fun ProductTable(
     ) {
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .horizontalScroll(horizontalScrollState)
-                .padding(
-                    start = 12.dp,
-                    top = 12.dp,
-                    end = 12.dp,
-                    bottom = 12.dp
-                )
+                .padding(12.dp)
                 .width(790.dp)
         ) {
             ProductTableHeader()
 
-            products.forEach { product ->
-                ProductTableRow(
-                    product = product,
-                    onClick = {
-                        onProductClick(product)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(
+                    items = products,
+                    key = { product -> product.id },
+                ) { product ->
+                    ProductTableRow(
+                        product = product,
+                        onClick = {
+                            onProductClick(product)
+                        }
+                    )
+                }
+
+                if (products.isEmpty()) {
+                    item {
+                        EmptyProductTableRow()
                     }
-                )
-            }
-
-            val emptyRows = 7 - products.size
-
-            repeat(emptyRows.coerceAtLeast(0)) {
-                EmptyFixedTableRow()
-            }
-
-            if (products.isEmpty()) {
-                EmptyProductTableRow()
+                }
             }
         }
     }
@@ -181,18 +176,6 @@ private fun TableCell(
         color = color,
         modifier = Modifier.width(width.dp)
     )
-}
-
-@Composable
-private fun EmptyFixedTableRow() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(54.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-    }
 }
 
 @Composable

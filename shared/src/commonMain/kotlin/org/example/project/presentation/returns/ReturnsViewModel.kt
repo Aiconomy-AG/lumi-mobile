@@ -54,6 +54,7 @@ class ReturnsViewModel(
                 selectedReturn = currentReturn,
                 isLoading = currentReturn == null,
                 errorMessage = null,
+                dialogErrorMessage = null,
             )
 
             api.getReturn(returnId)
@@ -76,7 +77,10 @@ class ReturnsViewModel(
     }
 
     fun closeReturn() {
-        _state.value = _state.value.copy(selectedReturn = null)
+        _state.value = _state.value.copy(
+            selectedReturn = null,
+            dialogErrorMessage = null,
+        )
     }
 
     fun updateReturn(
@@ -87,7 +91,7 @@ class ReturnsViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(
                 isSaving = true,
-                errorMessage = null,
+                dialogErrorMessage = null,
             )
 
             api.updateReturn(
@@ -100,14 +104,15 @@ class ReturnsViewModel(
                         returns = _state.value.returns.map { existing ->
                             if (existing.id == updatedReturn.id) updatedReturn else existing
                         },
-                        selectedReturn = updatedReturn,
+                        selectedReturn = null,
                         isSaving = false,
+                        dialogErrorMessage = null,
                     )
                 }
                 .onFailure { exception ->
                     _state.value = _state.value.copy(
                         isSaving = false,
-                        errorMessage = exception.message ?: "Could not update return.",
+                        dialogErrorMessage = exception.message ?: "Could not update return.",
                     )
                 }
         }

@@ -7,9 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -27,10 +30,11 @@ import org.example.project.presentation.theme.AppTextStyles
 @Composable
 fun OrderTable(
     orders: List<Order>,
-    onOrderClick: (Order) -> Unit
+    onOrderClick: (Order) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .border(
                 width = 1.dp,
@@ -42,12 +46,15 @@ fun OrderTable(
                 shape = RoundedCornerShape(AppDimensions.TableCornerRadius)
             )
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(12.dp)
         ) {
-            orders.forEachIndexed { index, order ->
+            itemsIndexed(
+                items = orders,
+                key = { _, order -> order.id },
+            ) { index, order ->
                 OrderTableRow(
                     order = order,
                     onClick = {
@@ -60,7 +67,9 @@ fun OrderTable(
             }
 
             if (orders.isEmpty()) {
-                EmptyOrderTableRow()
+                item {
+                    EmptyOrderTableRow()
+                }
             }
         }
     }

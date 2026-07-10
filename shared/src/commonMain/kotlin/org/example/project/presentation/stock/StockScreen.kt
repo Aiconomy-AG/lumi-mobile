@@ -1,28 +1,24 @@
 package org.example.project.presentation.stock
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import org.example.project.domain.stock.Category
-import org.example.project.domain.stock.Product
-import org.example.project.domain.stock.ProductVariant
-import org.example.project.presentation.components.AppPaginationBar
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.theme.AppColorPalette
-import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
-import org.example.project.presentation.theme.AppTextStyles
 
 @Composable
 fun StockScreen(
@@ -35,28 +31,7 @@ fun StockScreen(
         mutableStateOf<Int?>(null)
     }
 
-    var currentPage by remember {
-        mutableStateOf(0)
-    }
-    val pageSize = 7
-
     val filteredProducts = state.filteredProducts
-
-    val totalPages = maxOf(
-        1,
-        (filteredProducts.size + pageSize - 1) / pageSize
-    )
-
-    val pagedProducts = filteredProducts
-        .drop(currentPage * pageSize)
-        .take(pageSize)
-
-    LaunchedEffect(filteredProducts.size) {
-        if (currentPage > totalPages - 1) {
-            currentPage = totalPages - 1
-        }
-    }
-
 
     val selectedProduct = selectedProductId?.let { id ->
         state.products.firstOrNull { product ->
@@ -89,59 +64,13 @@ fun StockScreen(
         if (state.isLoading) {
             LoadingStockContent()
         } else {
-            BoxWithConstraints(
-                modifier = Modifier.weight(1f)
-            ) {
-                val tableHeaderHeight = 36.dp
-                val rowHeight = 54.dp
-                val paginationHeight = 56.dp
-                val spacing = AppDimensions.SmallSpacing
-
-                val availableForRows = maxHeight -
-                        tableHeaderHeight -
-                        paginationHeight -
-                        spacing
-
-                val pageSize = maxOf(
-                    1,
-                    (availableForRows.value / rowHeight.value).toInt()
-                )
-
-                val totalPages = maxOf(
-                    1,
-                    (filteredProducts.size + pageSize - 1) / pageSize
-                )
-
-                val pagedProducts = filteredProducts
-                    .drop(currentPage * pageSize)
-                    .take(pageSize)
-
-                LaunchedEffect(filteredProducts.size, pageSize) {
-                    if (currentPage > totalPages - 1) {
-                        currentPage = totalPages - 1
-                    }
-                }
-
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    ProductTable(
-                        products = pagedProducts,
-                        onProductClick = { product ->
-                            selectedProductId = product.id
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-
-                    AppPaginationBar(
-                        currentPage = currentPage,
-                        totalPages = totalPages,
-                        onPreviousClick = { if (currentPage > 0) currentPage-- },
-                        onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
-                    )
-                }
-            }
+            ProductTable(
+                products = filteredProducts,
+                onProductClick = { product ->
+                    selectedProductId = product.id
+                },
+                modifier = Modifier.weight(1f),
+            )
         }
     }
     }
