@@ -26,6 +26,9 @@ import org.example.project.presentation.accounts.AdminScreen
 import org.example.project.presentation.accounts.AdminViewModel
 import org.example.project.presentation.stock.StockScreen
 import org.example.project.presentation.stock.StockViewModel
+import org.example.project.presentation.auditlogs.AuditLogsScreen
+import org.example.project.presentation.auditlogs.AuditLogsViewModel
+import org.example.project.data.auditlogs.AuditLogApiService
 import org.example.project.presentation.tasks.TaskListScreen
 import org.example.project.presentation.tasks.TaskListViewModel
 import org.example.project.domain.project.Project
@@ -87,6 +90,17 @@ fun MainScreen(
             )
         )
     }
+
+    val auditLogsViewModel = remember(user.token) {
+        AuditLogsViewModel(
+            AuditLogApiService(
+                client = apiHttpClient,
+                baseUrl = ApiConfig.BASE_URL,
+                token = user.token
+            )
+        )
+    }
+
     var showAddProductScreen by remember { mutableStateOf(false) }
     var showAddUserScreen by remember { mutableStateOf(false) }
     var showUserDetail by remember { mutableStateOf(false) }
@@ -180,6 +194,7 @@ fun MainScreen(
     val availableSections = AppSection.entries.filter {
         !it.adminOnly || user.role == UserRole.ADMIN
     }
+    val bottomBarSections = availableSections.filter { it.showInBottomBar }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -228,7 +243,7 @@ fun MainScreen(
             },
             bottomBar = {
                 AppBottomBar(
-                    sections = availableSections,
+                    sections = bottomBarSections,
                     selectedSection = selectedSection,
                     onSectionSelected = { section ->
                         selectedSection = section
@@ -442,6 +457,13 @@ fun MainScreen(
                         viewModel = chatViewModel,
                         currentEmployeeId = user.id,
                         modifier = Modifier.padding(paddingValues),
+                    )
+                }
+
+                AppSection.AUDIT_LOGS -> {
+                    AuditLogsScreen(
+                        viewModel = auditLogsViewModel,
+                        modifier = Modifier.padding(paddingValues)
                     )
                 }
 
