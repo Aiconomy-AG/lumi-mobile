@@ -43,7 +43,7 @@ class ReturnsApiService(
             var lastPage = 1
 
             do {
-                val response = client.get("$baseUrl/admin/returns") {
+                val response = client.get("$baseUrl/workspace/returns") {
                     bearerAuth()
                     parameter("page", page)
                     parameter("per_page", 100)
@@ -69,7 +69,7 @@ class ReturnsApiService(
 
     override suspend fun getReturn(id: Int): Result<ReturnRequest> {
         return try {
-            val response = client.get("$baseUrl/admin/returns/$id") {
+            val response = client.get("$baseUrl/workspace/returns/$id") {
                 bearerAuth()
             }
 
@@ -92,7 +92,7 @@ class ReturnsApiService(
         notes: String?,
     ): Result<ReturnRequest> {
         return try {
-            val response = client.patch("$baseUrl/admin/returns/$id") {
+            val response = client.patch("$baseUrl/workspace/returns/$id") {
                 bearerAuth()
                 contentType(ContentType.Application.Json)
                 setBody(UpdateReturnRequest(status = status.value, notes = notes?.ifBlank { null }))
