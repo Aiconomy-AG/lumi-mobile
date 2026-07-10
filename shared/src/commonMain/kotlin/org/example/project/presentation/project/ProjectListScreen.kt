@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.project.Project
 import org.example.project.domain.project.ProjectStatus
+import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.components.PaginationBar
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
@@ -60,12 +61,13 @@ fun ProjectListScreen(
         if (currentPage > totalPages - 1) currentPage = totalPages - 1
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .padding(16.dp),
-    ) {
+    DismissKeyboardOnTapOutside(modifier = modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colors.background)
+                .padding(16.dp),
+        ) {
         when {
             uiState.isLoading && uiState.projects.isEmpty() -> {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -126,6 +128,7 @@ fun ProjectListScreen(
                 }
             }
         }
+    }
     }
 }
 

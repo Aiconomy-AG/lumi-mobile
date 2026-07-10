@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.example.project.data.chat.chatClockTimeLabel
 import org.example.project.domain.chat.ChatMessage
+import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 
@@ -57,11 +58,13 @@ fun ChatScreen(
             .background(AppColorPalette.Background),
     ) {
         if (uiState.selectedConversation == null) {
-            ConversationListScreen(
-                uiState = uiState,
-                onSearchQueryChanged = viewModel::onSearchQueryChanged,
-                onContactClick = viewModel::selectContact,
-            )
+            DismissKeyboardOnTapOutside(modifier = Modifier.fillMaxSize()) {
+                ConversationListScreen(
+                    uiState = uiState,
+                    onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                    onContactClick = viewModel::selectContact,
+                )
+            }
         } else {
             ConversationDetailScreen(
                 uiState = uiState,

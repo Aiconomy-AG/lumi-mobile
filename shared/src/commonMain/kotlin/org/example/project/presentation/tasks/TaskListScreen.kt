@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.localization.LocalAppStrings
+import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.theme.AppColorPalette
 
 private const val TASK_LIST_REFRESH_INTERVAL_MS = 5_000L
@@ -72,12 +73,15 @@ fun TaskListScreen(
         }
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .padding(16.dp),
+    DismissKeyboardOnTapOutside(
+        modifier = modifier.fillMaxSize(),
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colors.background)
+                .padding(16.dp),
+        ) {
         when {
             uiState.isLoading && uiState.tasks.isEmpty() -> {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -116,6 +120,7 @@ fun TaskListScreen(
                 }
             }
         }
+    }
     }
 }
 

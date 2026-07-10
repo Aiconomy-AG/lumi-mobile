@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.returns.ReturnDisplayItem
 import org.example.project.domain.returns.ReturnRequest
 import org.example.project.domain.returns.ReturnStatus
+import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.components.PaginationBar
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
@@ -73,12 +74,13 @@ fun ReturnsScreen(
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(AppColorPalette.Background)
-            .padding(AppDimensions.ScreenPadding),
-    ) {
+    DismissKeyboardOnTapOutside(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColorPalette.Background)
+                .padding(AppDimensions.ScreenPadding),
+        ) {
         ReturnsHeader(
             returnCount = state.returns.size,
             requestedCount = state.requestedCount,
@@ -139,6 +141,7 @@ fun ReturnsScreen(
                 )
             }
         }
+    }
     }
 
     state.selectedReturn?.let { returnRequest ->

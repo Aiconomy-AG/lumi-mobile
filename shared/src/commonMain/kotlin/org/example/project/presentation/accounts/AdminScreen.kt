@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import org.example.project.data.accounts.User
 import org.example.project.domain.accounts.AccountRole
+import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.components.PaginationBar
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
@@ -55,12 +56,13 @@ fun AdminScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AppColorPalette.Background)
-            .padding(AppDimensions.ScreenPadding)
-    ) {
+    DismissKeyboardOnTapOutside(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColorPalette.Background)
+                .padding(AppDimensions.ScreenPadding),
+        ) {
         AdminHeader(
             userCount = state.users.size,
             searchQuery = state.searchQuery,
@@ -93,6 +95,7 @@ fun AdminScreen(
             onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
 
             )
+        }
     }
 }
 
