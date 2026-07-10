@@ -1,12 +1,16 @@
 package org.example.project.data.auth
 
 import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -51,6 +55,86 @@ class AuthApiService(
                 Exception(exception.message ?: "Could not connect to backend.")
             )
         }
+    }
+
+    override suspend fun validateSession(session: UserSession): Result<UserSession> {
+        return try {
+            val meResponse = client.get("$baseUrl/auth/me") {
+                bearerAuth(session.token)
+            }
+
+            val meResponseText = meResponse.bodyAsText()
+
+            if (meResponse.status == HttpStatusCode.Unauthorized ||
+                meResponse.status == HttpStatusCode.Forbidden
+            ) {
+                return Result.failure(Exception("Session expired."))
+            }
+
+            if (meResponse.status.isSuccess()) {
+                parseMeResponse(meResponseText, session)?.let { return Result.success(it) }
+            }
+
+            validateWithTasksEndpoint(session)
+        } catch (exception: Exception) {
+            Result.failure(
+                Exception(exception.message ?: "Could not validate session.")
+            )
+        }
+    }
+
+    private suspend fun validateWithTasksEndpoint(session: UserSession): Result<UserSession> {
+        val response = client.get("$baseUrl/workspace/tasks") {
+            bearerAuth(session.token)
+        }
+
+        if (response.status == HttpStatusCode.Unauthorized ||
+            response.status == HttpStatusCode.Forbidden
+        ) {
+            return Result.failure(Exception("Session expired."))
+        }
+
+        return if (response.status.isSuccess()) {
+            Result.success(session)
+        } else {
+            Result.failure(Exception("Session validation failed."))
+        }
+    }
+
+    private fun parseMeResponse(responseText: String, session: UserSession): UserSession? {
+        return try {
+            val wrapped = authJson.decodeFromString<MeWrappedResponse>(responseText)
+            wrapped.data?.toUserSession(session.token)
+                ?: wrapped.user?.toUserSession(session.token)
+        } catch (_: Exception) {
+            try {
+                authJson.decodeFromString<LoginResponse>(responseText)
+                    .let { loginResponse ->
+                        UserSession(
+                            id = loginResponse.user.id,
+                            name = loginResponse.user.name,
+                            email = loginResponse.user.email,
+                            role = loginResponse.user.role.toUserRole(),
+                            phoneNumber = loginResponse.user.resolvedPhoneNumber(),
+                            status = loginResponse.user.status ?: "",
+                            languageFlag = loginResponse.user.languageFlag ?: "en",
+                            token = loginResponse.token.ifBlank { session.token },
+                        )
+                    }
+            } catch (_: Exception) {
+                try {
+                    authJson.decodeFromString<AuthUserResponse>(responseText)
+                        .toUserSession(session.token)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
+    private fun io.ktor.client.request.HttpRequestBuilder.bearerAuth(token: String) {
+        header(HttpHeaders.Authorization, "Bearer $token")
+        header(HttpHeaders.Accept, "application/json")
     }
 
     private fun parseErrorMessage(responseText: String): String {
@@ -98,6 +182,25 @@ private fun AuthUserResponse.resolvedPhoneNumber(): String =
     listOf(phoneNumber, phoneNumberCamel, phone, mobile, telephone)
         .firstOrNull { !it.isNullOrBlank() }
         ?: ""
+
+@Serializable
+private data class MeWrappedResponse(
+    val data: AuthUserResponse? = null,
+    val user: AuthUserResponse? = null,
+)
+
+private fun AuthUserResponse.toUserSession(token: String): UserSession {
+    return UserSession(
+        id = id,
+        name = name,
+        email = email,
+        role = role.toUserRole(),
+        phoneNumber = resolvedPhoneNumber(),
+        status = status ?: "",
+        languageFlag = languageFlag ?: "en",
+        token = token,
+    )
+}
 
 @Serializable
 private data class AuthErrorResponse(
