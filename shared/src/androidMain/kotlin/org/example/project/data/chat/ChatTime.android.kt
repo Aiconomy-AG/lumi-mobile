@@ -31,6 +31,31 @@ actual fun chatClockTimeLabel(value: String): String {
     return SimpleDateFormat("HH:mm", Locale.getDefault()).format(parsedDate)
 }
 
+actual fun currentActivitySortKey(): Long = System.currentTimeMillis()
+
+actual fun chatActivitySortKey(value: String): Long {
+    val trimmed = value.trim()
+    if (trimmed.isEmpty()) return 0L
+    if (trimmed.length >= 5 && trimmed[2] == ':') return currentActivitySortKey()
+
+    val normalized = normalizeFractionalSeconds(trimmed)
+    val parsedDate = listOf(
+        "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+        "yyyy-MM-dd'T'HH:mm:ssX",
+        "yyyy-MM-dd HH:mm:ss",
+    ).firstNotNullOfOrNull { pattern ->
+        runCatching {
+            SimpleDateFormat(pattern, Locale.US).apply {
+                if (pattern.contains("'T'")) {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+            }.parse(normalized)
+        }.getOrNull()
+    } ?: return 0L
+
+    return parsedDate.time
+}
+
 private fun normalizeFractionalSeconds(value: String): String {
     return value.replace(Regex("""\.(\d{3})\d+(Z|[+-]\d{2}:?\d{2})$""")) {
         ".${it.groupValues[1]}${it.groupValues[2]}"
