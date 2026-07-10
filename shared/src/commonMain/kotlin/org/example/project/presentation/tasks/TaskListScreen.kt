@@ -15,13 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +27,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
-import org.example.project.presentation.components.PaginationBar
+import org.example.project.presentation.components.AppButton
+import org.example.project.presentation.components.AppPaginationBar
+import org.example.project.presentation.components.AppSearchField
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -111,7 +109,7 @@ fun TaskListScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    PaginationBar(
+                    AppPaginationBar(
                         currentPage = currentPage,
                         totalPages = totalPages,
                         onPreviousClick = { if (currentPage > 0) currentPage-- },
@@ -138,23 +136,10 @@ private fun TaskListToolbar(
     val strings = LocalAppStrings.current
 
     Column {
-        OutlinedTextField(
+        AppSearchField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
-            placeholder = {
-                Text(strings.text("Search tasks..."), color = colors.onSurfaceVariant)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = colors.onBackground,
-                unfocusedTextColor = colors.onBackground,
-                cursorColor = colors.primary,
-                focusedBorderColor = colors.primary,
-                unfocusedBorderColor = colors.outline,
-                focusedLabelColor = colors.primary,
-                unfocusedLabelColor = colors.onSurfaceVariant,
-            )
+            placeholder = strings.text("Search tasks..."),
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -173,13 +158,9 @@ private fun TaskListToolbar(
                 onToggle = onToggleOnlyMine,
             )
 
-            Button(
+            AppButton(
                 onClick = onAddTaskClick,
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colors.primary,
-                    contentColor = colors.onPrimary,
-                )
             ) {
                 Text(strings.text("+ Add task"))
             }

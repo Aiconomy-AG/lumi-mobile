@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.Category
 import org.example.project.domain.stock.Product
 import org.example.project.domain.stock.ProductVariant
+import org.example.project.presentation.components.AppPaginationBar
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
@@ -133,19 +134,11 @@ fun StockScreen(
 
                     Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-                    StockPagination(
+                    AppPaginationBar(
                         currentPage = currentPage,
                         totalPages = totalPages,
-                        onPreviousClick = {
-                            if (currentPage > 0) {
-                                currentPage--
-                            }
-                        },
-                        onNextClick = {
-                            if (currentPage < totalPages - 1) {
-                                currentPage++
-                            }
-                        }
+                        onPreviousClick = { if (currentPage > 0) currentPage-- },
+                        onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
                     )
                 }
             }

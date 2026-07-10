@@ -34,8 +34,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.auditlogs.AuditLog
+import org.example.project.presentation.components.AppPaginationBar
+import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
-import org.example.project.presentation.stock.StockPagination
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
@@ -47,6 +49,7 @@ fun AuditLogsScreen(
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
+    val strings = LocalAppStrings.current
 
     DismissKeyboardOnTapOutside(modifier = modifier.fillMaxSize()) {
         Column(
@@ -56,7 +59,7 @@ fun AuditLogsScreen(
                 .padding(AppDimensions.ScreenPadding),
         ) {
         Text(
-            text = "Audit Logs",
+            text = strings.text("Audit Logs"),
             color = AppColorPalette.TextPrimary,
             style = AppTextStyles.PageTitle
         )
@@ -67,26 +70,26 @@ fun AuditLogsScreen(
             searchQuery = state.moduleFilter,
             availableModules = state.logs.map { it.module }.distinct().sorted(),
             onSearchQueryChanged = viewModel::onModuleFilterChanged,
-            onModuleSelected = viewModel::onModuleFilterChanged
+            onModuleSelected = viewModel::onModuleFilterChanged,
         )
 
         Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
 
         Row(modifier = Modifier.fillMaxWidth()) {
             AuditDateField(
-                label = "From",
+                label = strings.text("From"),
                 value = state.fromFilter,
                 onDateSelected = viewModel::onFromFilterChanged,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
 
             Spacer(modifier = Modifier.width(AppDimensions.TinySpacing))
 
             AuditDateField(
-                label = "To",
+                label = strings.text("To"),
                 value = state.toFilter,
                 onDateSelected = viewModel::onToFilterChanged,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
 
@@ -110,7 +113,10 @@ fun AuditLogsScreen(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "No audit logs found.", color = AppColorPalette.TextSecondary)
+                    Text(
+                        text = strings.text("No audit logs found."),
+                        color = AppColorPalette.TextSecondary,
+                    )
                 }
             } else {
                 LazyColumn(
@@ -131,17 +137,21 @@ fun AuditLogsScreen(
 
             if (state.total != null) {
                 Text(
-                    text = "Page ${state.currentPage} of ${state.lastPage} • ${state.total} total",
-                    color = AppColorPalette.TextSecondary
+                    text = strings.format(
+                        "Page {page} of {total}",
+                        "page" to state.currentPage.toString(),
+                        "total" to state.lastPage.toString(),
+                    ) + " • ${state.total}",
+                    color = AppColorPalette.TextSecondary,
                 )
                 Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
             }
 
-            StockPagination(
+            AppPaginationBar(
                 currentPage = state.currentPage - 1,
                 totalPages = state.lastPage,
                 onPreviousClick = { viewModel.onPageChanges(state.currentPage - 1) },
-                onNextClick = { viewModel.onPageChanges(state.currentPage + 1) }
+                onNextClick = { viewModel.onPageChanges(state.currentPage + 1) },
             )
         }
     }
@@ -156,18 +166,17 @@ private fun AuditLogsSearchRow(
     onModuleSelected: (String) -> Unit
 ) {
     var moduleMenuExpanded by remember { mutableStateOf(false) }
+    val strings = LocalAppStrings.current
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        OutlinedTextField(
+        AppSearchField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
-            placeholder = { Text("Search by module...", color = AppColorPalette.TextSecondary) },
+            placeholder = strings.text("Search by module..."),
             modifier = Modifier.weight(1f),
-            singleLine = true,
-            colors = AppComponentDefaults.appTextFieldColors()
         )
 
         Spacer(modifier = Modifier.width(AppDimensions.TinySpacing))
@@ -194,7 +203,7 @@ private fun AuditLogsSearchRow(
                 onDismissRequest = { moduleMenuExpanded = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("All modules") },
+                    text = { Text(strings.text("All modules")) },
                     onClick = {
                         onModuleSelected("")
                         moduleMenuExpanded = false
@@ -224,6 +233,7 @@ private fun AuditDateField(
     modifier: Modifier = Modifier
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    val strings = LocalAppStrings.current
 
     Box(modifier = modifier) {
         OutlinedTextField(
@@ -263,7 +273,7 @@ private fun AuditDateField(
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("Cancel")
+                    Text(strings.text("Cancel"))
                 }
             }
         ) {

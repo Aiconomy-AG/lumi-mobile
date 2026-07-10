@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.orders.Order
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
@@ -24,12 +25,14 @@ fun OrderDetailsDialog(
     order: Order,
     onDismiss: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = AppColorPalette.Surface,
         title = {
             Text(
-                text = "Order #${order.id}",
+                text = strings.format("Order #{id}", "id" to order.id.toString()),
                 color = AppColorPalette.TextPrimary,
                 style = AppTextStyles.PageTitle
             )
@@ -45,18 +48,18 @@ fun OrderDetailsDialog(
 
                 Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-                DetailRow("Customer", order.customer?.email ?: order.customer?.username ?: "-")
-                DetailRow("Payment method", order.paymentMethod ?: "-")
-                DetailRow("Payment status", order.paymentStatus ?: "-")
-                DetailRow("Shipping address", order.shippingAddress ?: "-")
-                DetailRow("Subtotal", formatOrderPrice(order.subtotal))
-                DetailRow("Shipping cost", formatOrderPrice(order.shippingCost))
-                DetailRow("Total", formatOrderPrice(order.totalAmount))
+                DetailRow(strings.text("Customer"), order.customer?.email ?: order.customer?.username ?: "-")
+                DetailRow(strings.text("Payment method"), order.paymentMethod ?: "-")
+                DetailRow(strings.text("Payment status"), order.paymentStatus ?: "-")
+                DetailRow(strings.text("Shipping address"), order.shippingAddress ?: "-")
+                DetailRow(strings.text("Subtotal"), formatOrderPrice(order.subtotal))
+                DetailRow(strings.text("Shipping cost"), formatOrderPrice(order.shippingCost))
+                DetailRow(strings.text("Total"), formatOrderPrice(order.totalAmount))
 
                 Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
                 Text(
-                    text = "Items",
+                    text = strings.text("Items"),
                     color = AppColorPalette.TextPrimary,
                     style = AppTextStyles.Emphasis
                 )
@@ -65,14 +68,16 @@ fun OrderDetailsDialog(
 
                 if (order.items.isEmpty()) {
                     Text(
-                        text = "No items.",
+                        text = strings.text("No items."),
                         color = AppColorPalette.TextSecondary
                     )
                 } else {
                     order.items.forEach { item ->
                         Row(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = item.productId?.let { "Product #$it" } ?: "Product",
+                                text = item.productId?.let {
+                                    strings.format("Product #{id}", "id" to it.toString())
+                                } ?: strings.text("Product"),
                                 color = AppColorPalette.TextSecondary,
                                 modifier = Modifier.weight(1f)
                             )
@@ -88,7 +93,7 @@ fun OrderDetailsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = AppColorPalette.Primary)
+                Text(strings.text("Close"), color = AppColorPalette.Primary)
             }
         }
     )

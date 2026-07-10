@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.Product
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.stock.EmptyFixedTableRow
 import org.example.project.presentation.stock.EmptyProductTableRow
 import org.example.project.presentation.stock.ProductTableHeader
@@ -26,6 +27,8 @@ import org.example.project.presentation.stock.ProductTableRow
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
+import org.example.project.presentation.theme.formatChf
+import org.example.project.presentation.theme.formatChfRange
 
 @Composable
 fun ProductTable(
@@ -100,15 +103,17 @@ private fun TableHeaderCell(
 }
 
 @Composable
-private fun ProductTableHeader(){
+private fun ProductTableHeader() {
+    val strings = LocalAppStrings.current
+
     Row(
         modifier = Modifier.fillMaxWidth()
     ) {
-        TableHeaderCell("Product", 220)
-        TableHeaderCell("SKU", 150)
-        TableHeaderCell("Category", 150)
-        TableHeaderCell("Stock", 120)
-        TableHeaderCell("Price", 150)
+        TableHeaderCell(strings.text("Product"), 220)
+        TableHeaderCell(strings.text("SKU"), 150)
+        TableHeaderCell(strings.text("Category"), 150)
+        TableHeaderCell(strings.text("Stock"), 120)
+        TableHeaderCell(strings.text("Price"), 150)
     }
 }
 
@@ -192,6 +197,8 @@ private fun EmptyFixedTableRow() {
 
 @Composable
 private fun EmptyProductTableRow() {
+    val strings = LocalAppStrings.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -199,7 +206,7 @@ private fun EmptyProductTableRow() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "No products found.",
+            text = strings.text("No products found."),
             color = AppColorPalette.TextSecondary
         )
     }
@@ -217,7 +224,7 @@ private fun productTotalStock(product: Product): Int {
 
 private fun productDisplayPrice(product: Product): String {
     if (product.variants.isEmpty()) {
-        return "${product.price} lei"
+        return formatChf(product.price)
     }
 
     val prices = product.variants.map { variant ->
@@ -227,9 +234,5 @@ private fun productDisplayPrice(product: Product): String {
     val min = prices.minOrNull() ?: product.price
     val max = prices.maxOrNull() ?: product.price
 
-    return if (min == max) {
-        "$min lei"
-    } else {
-        "$min - $max lei"
-    }
+    return formatChfRange(min, max)
 }

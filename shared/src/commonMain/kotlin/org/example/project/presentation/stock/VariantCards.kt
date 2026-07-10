@@ -20,10 +20,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.ProductVariant
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
+import org.example.project.presentation.theme.formatChf
 
 @Composable
 fun VariantInfoCard(
@@ -31,6 +33,8 @@ fun VariantInfoCard(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -51,30 +55,33 @@ fun VariantInfoCard(
         Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
 
         Text(
-            text = "SKU: ${variant.sku}",
+            text = strings.format("SKU: {value}", "value" to (variant.sku ?: "-")),
             color = AppColorPalette.TextSecondary
         )
 
         Text(
-            text = "Stock: ${variant.stockQuantity}",
+            text = strings.format("Stock: {count}", "count" to variant.stockQuantity.toString()),
             color = AppColorPalette.TextSecondary
         )
 
         Text(
-            text = "Price: ${variant.price} lei",
+            text = "${strings.text("Price")}: ${formatChf(variant.price)}",
             color = AppColorPalette.TextSecondary
         )
 
         if (!variant.colour.isNullOrBlank()) {
             Text(
-                text = "Colour: ${variant.colour}",
+                text = strings.format("Colour: {value}", "value" to variant.colour),
                 color = AppColorPalette.TextSecondary
             )
         }
 
         if (variant.weight != null && variant.weight > 0) {
             Text(
-                text = "Weight: ${variant.weight}${variant.weightUnit.orEmpty()}",
+                text = strings.format(
+                    "Weight: {value}",
+                    "value" to "${variant.weight}${variant.weightUnit.orEmpty()}",
+                ),
                 color = AppColorPalette.TextSecondary
             )
         }
@@ -87,7 +94,7 @@ fun VariantInfoCard(
                 modifier = Modifier.weight(1f),
                 colors = AppComponentDefaults.paginationButtonColors()
             ) {
-                Text("Edit")
+                Text(strings.text("Edit"))
             }
 
             Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
@@ -97,7 +104,7 @@ fun VariantInfoCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "Delete",
+                    text = strings.text("Delete"),
                     color = AppColorPalette.Error
                 )
             }

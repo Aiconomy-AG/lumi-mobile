@@ -9,8 +9,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,12 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import org.example.project.data.accounts.User
 import org.example.project.domain.accounts.AccountRole
+import org.example.project.presentation.components.AppButton
+import org.example.project.presentation.components.AppPaginationBar
+import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
-import org.example.project.presentation.components.PaginationBar
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
@@ -88,13 +87,12 @@ fun AdminScreen(
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        PaginationBar(
+        AppPaginationBar(
             currentPage = currentPage,
             totalPages = totalPages,
             onPreviousClick = { if (currentPage > 0) currentPage-- },
             onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
-
-            )
+        )
         }
     }
 }
@@ -125,23 +123,17 @@ private fun AdminHeader(
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        OutlinedTextField(
+        AppSearchField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
-            placeholder = {
-                Text(strings.text("Search users..."), color = AppColorPalette.TextSecondary)
-            },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            colors = AppComponentDefaults.appTextFieldColors()
+            placeholder = strings.text("Search users..."),
         )
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        Button(
+        AppButton(
             onClick = onAddUserClick,
             modifier = Modifier.fillMaxWidth(),
-            colors = AppComponentDefaults.primaryButtonColors()
         ) {
             Text(strings.text("+ Add user"))
         }
@@ -153,9 +145,6 @@ private fun UsersTable(
     users: List<User>,
     onSetUserActive: (Int, Boolean) -> Unit
 ) {
-    val verticalScrollState = rememberScrollState()
-    val horizontalScrollState = rememberScrollState()
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -172,9 +161,9 @@ private fun UsersTable(
     ) {
         Column(
             modifier = Modifier
-                .verticalScroll(verticalScrollState)
-                .horizontalScroll(horizontalScrollState)
-                .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 26.dp)
+                .verticalScroll(rememberScrollState())
+                .horizontalScroll(rememberScrollState())
+                .padding(12.dp)
                 .width(1180.dp)
         ) {
             UsersTableHeader()
@@ -188,14 +177,6 @@ private fun UsersTable(
                 )
             }
         }
-
-        AdminHorizontalScrollBar(
-            scrollValue = horizontalScrollState.value,
-            maxScrollValue = horizontalScrollState.maxValue,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 14.dp, vertical = 8.dp)
-        )
     }
 }
 
@@ -265,13 +246,9 @@ private fun UserTableRow(
             modifier = Modifier.width(120.dp)
         )
 
-        Button(
-            onClick = {
-                showActiveDialog = true
-            },
+        AppButton(
+            onClick = { showActiveDialog = true },
             modifier = Modifier.width(120.dp),
-            colors = AppComponentDefaults.primaryButtonColors(),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
         ) {
             Text(if (user.isActive) strings.text("Deactivate") else strings.text("Reactivate"))
         }
@@ -326,44 +303,6 @@ private fun UserTableRow(
     }
 }
 
-@Composable
-private fun AdminHorizontalScrollBar(
-    scrollValue: Int,
-    maxScrollValue: Int,
-    modifier: Modifier = Modifier
-) {
-    if (maxScrollValue <= 0) return
-
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(AppDimensions.ScrollBarHeight)
-            .background(
-                color = AppColorPalette.Border,
-                shape = RoundedCornerShape(AppDimensions.ScrollBarHeight)
-            )
-    ) {
-        val density = LocalDensity.current
-        val trackWidth = maxWidth
-        val trackWidthPx = with(density) { trackWidth.toPx() }
-        val contentWidthPx = trackWidthPx + maxScrollValue
-        val thumbWidth = (trackWidth * (trackWidthPx / contentWidthPx)).coerceAtLeast(40.dp)
-        val maxThumbOffset = trackWidth - thumbWidth
-        val scrollProgress = scrollValue.toFloat() / maxScrollValue.toFloat()
-        val thumbOffset = maxThumbOffset * scrollProgress
-
-        Box(
-            modifier = Modifier
-                .offset(x = thumbOffset)
-                .width(thumbWidth)
-                .fillMaxHeight()
-                .background(
-                    color = AppColorPalette.Primary,
-                    shape = RoundedCornerShape(AppDimensions.ScrollBarHeight)
-                )
-        )
-    }
-}
 
 @Composable
 private fun UserAvatar(

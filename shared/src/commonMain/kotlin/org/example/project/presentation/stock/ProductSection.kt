@@ -23,10 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.Category
 import org.example.project.domain.stock.Product
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
+import org.example.project.presentation.theme.formatChf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +44,8 @@ fun ProductReadOnlySection(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Column {
         if (!product.imageUrl.isNullOrBlank()) {
             SubcomposeAsyncImage(
@@ -78,16 +82,16 @@ fun ProductReadOnlySection(
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        ProductInfoLine("SKU", product.sku ?: "-")
-        ProductInfoLine("Category", product.categoryName ?: "-")
-        ProductInfoLine("Price", "${product.price} lei")
-        ProductInfoLine("Stock", product.stockQuantity.toString())
+        ProductInfoLine(strings.text("SKU"), product.sku ?: "-")
+        ProductInfoLine(strings.text("Category"), product.categoryName ?: "-")
+        ProductInfoLine(strings.text("Price"), formatChf(product.price))
+        ProductInfoLine(strings.text("Stock"), product.stockQuantity.toString())
 
         if (!product.description.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
             Text(
-                text = "Description:",
+                text = strings.text("Description:"),
                 color = AppColorPalette.TextSecondary
             )
 
@@ -109,7 +113,7 @@ fun ProductReadOnlySection(
                 modifier = Modifier.weight(1f),
                 colors = AppComponentDefaults.primaryButtonColors()
             ) {
-                Text("Edit product")
+                Text(strings.text("Edit product"))
             }
 
             Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
@@ -119,7 +123,7 @@ fun ProductReadOnlySection(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "Delete",
+                    text = strings.text("Delete"),
                     color = AppColorPalette.Error
                 )
             }

@@ -13,6 +13,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -31,10 +32,10 @@ private val AppDarkColorScheme = darkColorScheme(
 )
 
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(6.dp),
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(18.dp),
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(24.dp),
 )
 
 object AppTextStyles {
@@ -61,7 +62,7 @@ object AppDimensions {
     val TableMaxHeight = 390.dp
     val TableCornerRadius = 16.dp
     val ControlCornerRadius = 12.dp
-    val ScrollBarHeight = 6.dp
+    val SearchFieldRadius: Dp = 50.dp
     val ActionButtonSize = 36.dp
     val ActionIconSize = 18.dp
 }
@@ -83,8 +84,8 @@ object AppComponentDefaults {
 
     @Composable
     fun paginationButtonColors(): ButtonColors = ButtonDefaults.buttonColors(
-        containerColor = AppColorPalette.Primary,
-        contentColor = AppColorPalette.OnPrimary,
+        containerColor = AppColorPalette.SurfaceVariant,
+        contentColor = AppColorPalette.TextPrimary,
         disabledContainerColor = AppColorPalette.Border,
         disabledContentColor = AppColorPalette.TextSecondary,
     )
@@ -96,6 +97,19 @@ object AppComponentDefaults {
         cursorColor = AppColorPalette.Primary,
         focusedBorderColor = AppColorPalette.Primary,
         unfocusedBorderColor = AppColorPalette.Border,
+        focusedLabelColor = AppColorPalette.Primary,
+        unfocusedLabelColor = AppColorPalette.TextSecondary,
+    )
+
+    @Composable
+    fun appSearchFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = AppColorPalette.TextPrimary,
+        unfocusedTextColor = AppColorPalette.TextPrimary,
+        cursorColor = AppColorPalette.Primary,
+        focusedBorderColor = AppColorPalette.Primary,
+        unfocusedBorderColor = AppColorPalette.SubtleBorder,
+        focusedContainerColor = AppColorPalette.SurfaceVariant,
+        unfocusedContainerColor = AppColorPalette.SurfaceVariant,
         focusedLabelColor = AppColorPalette.Primary,
         unfocusedLabelColor = AppColorPalette.TextSecondary,
     )

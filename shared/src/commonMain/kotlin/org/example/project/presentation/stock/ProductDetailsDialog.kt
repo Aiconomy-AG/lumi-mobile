@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.stock.Category
 import org.example.project.domain.stock.Product
 import org.example.project.domain.stock.ProductVariant
+import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
@@ -69,6 +70,8 @@ fun ProductDetailsDialog(
     ) -> Unit,
     onDeleteProduct: (productId: Int) -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     var name by remember(product.id, product.name) {
         mutableStateOf(product.name)
     }
@@ -201,14 +204,14 @@ fun ProductDetailsDialog(
                         modifier = Modifier.fillMaxWidth(),
                         colors = AppComponentDefaults.primaryButtonColors()
                     ) {
-                        Text("+ Add variant")
+                        Text(strings.text("Add variant"))
                     }
 
                     Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
                 }
 
                 Text(
-                    text = "Variants",
+                    text = strings.text("Variants"),
                     color = AppColorPalette.TextPrimary,
                     style = AppTextStyles.TableHeader
                 )
@@ -217,7 +220,7 @@ fun ProductDetailsDialog(
 
                 if (product.variants.isEmpty()) {
                     Text(
-                        text = "No variants.",
+                        text = strings.text("No variants."),
                         color = AppColorPalette.TextSecondary
                     )
                 } else {
@@ -270,13 +273,16 @@ fun ProductDetailsDialog(
                         containerColor = AppColorPalette.Surface,
                         title = {
                             Text(
-                                text = "Delete variant?",
+                                text = strings.text("Delete variant?"),
                                 color = AppColorPalette.TextPrimary
                             )
                         },
                         text = {
                             Text(
-                                text = "Are you sure you want to delete variant ${selectedVariantToDelete.sku}?",
+                                text = strings.format(
+                                    "Are you sure you want to delete variant {sku}?",
+                                    "sku" to (selectedVariantToDelete.sku ?: "-"),
+                                ),
                                 color = AppColorPalette.TextSecondary
                             )
                         },
@@ -298,7 +304,7 @@ fun ProductDetailsDialog(
                                 colors = AppComponentDefaults.primaryButtonColors()
                             ) {
                                 Text(
-                                    text = if (isSaving) "Deleting..." else "Delete"
+                                    text = strings.text("Delete"),
                                 )
                             }
                         },
@@ -309,7 +315,7 @@ fun ProductDetailsDialog(
                                 }
                             ) {
                                 Text(
-                                    text = "Cancel",
+                                    text = strings.text("Cancel"),
                                     color = AppColorPalette.Primary
                                 )
                             }
@@ -324,13 +330,16 @@ fun ProductDetailsDialog(
                         containerColor = AppColorPalette.Surface,
                         title = {
                             Text(
-                                text = "Delete product?",
+                                text = strings.text("Delete product?"),
                                 color = AppColorPalette.TextPrimary
                             )
                         },
                         text = {
                             Text(
-                                text = "Are you sure you want to delete ${product.name}? This will also delete its variants.",
+                                text = strings.format(
+                                    "Are you sure you want to delete {name}? This will also delete its variants.",
+                                    "name" to product.name,
+                                ),
                                 color = AppColorPalette.TextSecondary
                             )
                         },
@@ -344,7 +353,7 @@ fun ProductDetailsDialog(
                                 colors = AppComponentDefaults.primaryButtonColors()
                             ) {
                                 Text(
-                                    text = if (isSaving) "Deleting..." else "Delete"
+                                    text = strings.text("Delete"),
                                 )
                             }
                         },
@@ -355,7 +364,7 @@ fun ProductDetailsDialog(
                                 }
                             ) {
                                 Text(
-                                    text = "Cancel",
+                                    text = strings.text("Cancel"),
                                     color = AppColorPalette.Primary
                                 )
                             }
@@ -369,7 +378,7 @@ fun ProductDetailsDialog(
                 onClick = onDismiss
             ) {
                 Text(
-                    text = "Close",
+                    text = strings.text("Close"),
                     color = AppColorPalette.Primary
                 )
             }

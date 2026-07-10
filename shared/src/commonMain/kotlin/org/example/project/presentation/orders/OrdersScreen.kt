@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.example.project.domain.orders.Order
+import org.example.project.presentation.components.AppPaginationBar
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
@@ -112,19 +113,11 @@ fun OrdersScreen(
 
                     Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-                    OrdersPagination(
+                    AppPaginationBar(
                         currentPage = currentPage,
                         totalPages = totalPages,
-                        onPreviousClick = {
-                            if (currentPage > 0) {
-                                currentPage--
-                            }
-                        },
-                        onNextClick = {
-                            if (currentPage < totalPages - 1) {
-                                currentPage++
-                            }
-                        }
+                        onPreviousClick = { if (currentPage > 0) currentPage-- },
+                        onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
                     )
                 }
             }

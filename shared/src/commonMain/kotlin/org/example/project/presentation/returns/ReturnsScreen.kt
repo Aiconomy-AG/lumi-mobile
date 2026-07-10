@@ -43,14 +43,16 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.returns.ReturnDisplayItem
 import org.example.project.domain.returns.ReturnRequest
 import org.example.project.domain.returns.ReturnStatus
+import org.example.project.presentation.components.AppPaginationBar
+import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
-import org.example.project.presentation.components.PaginationBar
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
 import org.example.project.presentation.theme.AppDimensions
 import org.example.project.presentation.theme.AppTextStyles
 import org.example.project.presentation.theme.StatusColor
+import org.example.project.presentation.theme.formatChf
 
 private const val RETURNS_PAGE_SIZE = 6
 
@@ -133,7 +135,7 @@ fun ReturnsScreen(
 
                 Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-                PaginationBar(
+                AppPaginationBar(
                     currentPage = currentPage,
                     totalPages = totalPages,
                     onPreviousClick = { if (currentPage > 0) currentPage-- },
@@ -196,15 +198,10 @@ private fun ReturnsHeader(
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        OutlinedTextField(
+        AppSearchField(
             value = searchQuery,
             onValueChange = onSearchQueryChanged,
-            placeholder = {
-                Text(strings.text("Search returns..."), color = AppColorPalette.TextSecondary)
-            },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            colors = AppComponentDefaults.appTextFieldColors(),
+            placeholder = strings.text("Search returns..."),
         )
     }
 }
@@ -539,7 +536,7 @@ private fun ReturnRequest.orderLabel(): String {
 }
 
 private fun ReturnRequest.refundLabel(): String {
-    return refundAmount?.let { "${it} CHF" } ?: "—"
+    return refundAmount?.let { formatChf(it) } ?: "—"
 }
 
 private fun String?.dateLabel(): String {
