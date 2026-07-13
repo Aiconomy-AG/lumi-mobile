@@ -7,5 +7,4 @@ actual fun PlatformBackHandler(
     enabled: Boolean,
     onBack: () -> Unit,
 ) {
-    // iOS back gesture not wired yet.
 }
