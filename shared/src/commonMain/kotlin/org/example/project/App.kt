@@ -23,6 +23,7 @@ import org.example.project.presentation.localization.AppLanguage
 import org.example.project.presentation.localization.AppLocalizationProvider
 import org.example.project.presentation.theme.AppTheme
 
+
 private enum class AppAuthState {
     Loading,
     LoggedOut,

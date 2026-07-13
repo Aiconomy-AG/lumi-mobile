@@ -17,6 +17,11 @@ class TaskTimeEntryMockApiService(
         return entriesByTask[taskId].orEmpty()
     }
 
+    override suspend fun getActiveTimer(): TaskTimeEntry? {
+        delay(200)
+        return entriesByTask.values.flatten().firstOrNull { it.stoppedAt == null }
+    }
+
     override suspend fun startTimer(taskId: Int): TaskTimeEntry {
         delay(300)
         val entry = TaskTimeEntry(

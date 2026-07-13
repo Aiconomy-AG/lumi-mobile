@@ -32,6 +32,7 @@ import org.example.project.data.project.ProjectApiService
 import org.example.project.data.returns.ReturnsApiService
 import org.example.project.data.stock.StockApiService
 import org.example.project.data.task.TaskApiService
+import org.example.project.data.tasktimeentry.ReverbTaskTimeEntryRealtimeService
 import org.example.project.data.tasktimeentry.TaskTimeEntryApiService
 import org.example.project.domain.auth.UserRole
 import org.example.project.domain.project.Project
@@ -144,7 +145,25 @@ fun MainScreen(
     val taskTimeEntryApi = remember(user.token) {
         TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
     }
-    val activeTimerViewModel = remember { ActiveTimerViewModel(timeEntryApi = taskTimeEntryApi) }
+    val taskTimeEntryRealtimeApi = remember(user.token) {
+        ReverbTaskTimeEntryRealtimeService(
+            client = apiHttpClient,
+            baseUrl = ApiConfig.BASE_URL,
+            appKey = ApiConfig.REVERB_APP_KEY,
+            host = ApiConfig.REVERB_HOST,
+            port = ApiConfig.REVERB_PORT,
+            scheme = ApiConfig.REVERB_SCHEME,
+            token = user.token,
+        )
+    }
+    val activeTimerViewModel = remember(user.id, user.token) {
+        ActiveTimerViewModel(
+            timeEntryApi = taskTimeEntryApi,
+            taskApi = taskApi,
+            realtimeApi = taskTimeEntryRealtimeApi,
+            currentUserId = user.id,
+        )
+    }
     val chatApi = remember(user.token) {
         ChatApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
     }
