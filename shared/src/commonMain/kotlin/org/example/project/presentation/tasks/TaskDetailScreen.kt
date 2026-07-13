@@ -131,6 +131,7 @@ fun TaskDetailScreen(
             elapsedSeconds = uiState.elapsedSeconds,
             taskTotalSeconds = uiState.taskTotalSeconds,
             isRunning = uiState.isTimerRunning,
+            isAssigned = uiState.isCurrentUserAssigned,
             onToggle = viewModel::toggleTimer,
         )
 
@@ -338,6 +339,7 @@ private fun TimeTrackingCard(
     elapsedSeconds: Int,
     taskTotalSeconds: Int,
     isRunning: Boolean,
+    isAssigned: Boolean,
     onToggle: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -369,13 +371,19 @@ private fun TimeTrackingCard(
         Box(
             modifier = Modifier
                 .size(52.dp)
-                .background(color = colors.primary, shape = CircleShape)
-                .clickable(onClick = onToggle),
+                .background(
+                    color = if (isAssigned || isRunning) colors.primary else colors.surfaceVariant,
+                    shape = CircleShape
+                )
+                .clickable(
+                    enabled = isAssigned || isRunning,
+                    onClick = onToggle
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = if (isRunning) "■" else "▶",
-                color = colors.onPrimary,
+                color = if (isAssigned || isRunning) colors.onPrimary else colors.onSurfaceVariant.copy(alpha = 0.5f),
                 fontSize = 24.sp,
                 textAlign = TextAlign.Center
             )

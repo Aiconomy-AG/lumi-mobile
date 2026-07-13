@@ -37,6 +37,7 @@ data class TaskDetailUiState(
     val isSubtasksLoading: Boolean = false,
     val isCreatingSubtask: Boolean = false,
     val error: String? = null,
+    val isCurrentUserAssigned: Boolean = false,
 ) {
     val isRootTask: Boolean get() = task.isRootTask
 }
@@ -85,6 +86,7 @@ class TaskDetailViewModel(
         combine(historicalState, activeTimerViewModel.uiState, currentTaskState, savingState, referenceAndSubtasksState) { historical, active, currentTask, saving, referenceAndSubtasks ->
             val (reference, subtasks) = referenceAndSubtasks
             val isMine = active.activeTask?.id == task.id
+            val isAssigned = currentTask.assigneeIds.contains(employeeId)
             TaskDetailUiState(
                 task = currentTask,
                 isLoading = historical.isLoading,
@@ -101,6 +103,7 @@ class TaskDetailViewModel(
                 isSubtasksLoading = subtasks.isLoading,
                 isCreatingSubtask = subtasks.isCreating,
                 error = historical.error ?: active.error ?: saving.second ?: subtasks.error,
+                isCurrentUserAssigned = isAssigned,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TaskDetailUiState(task = task, isLoading = true))
 
