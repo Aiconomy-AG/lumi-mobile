@@ -68,7 +68,6 @@ class ActiveTimerViewModel(
         }
     }
 
-    // ask the server on launch whether a timer is already running (possibly started on another device)
     private fun hydrate() {
         viewModelScope.launch {
             try {
@@ -77,16 +76,14 @@ class ActiveTimerViewModel(
                     applyRemoteEntry(entry)
                 }
             } catch (_: Exception) {
-                // best-effort hydration; realtime will still keep things in sync
             }
         }
     }
 
-    // mirror start/stop coming from any device on the user's private channel
     private fun observeRealtime() {
         viewModelScope.launch {
             realtimeApi.timeEntryEvents(currentUserId)
-                .catch { /* swallow: the service already reconnects internally */ }
+                .catch { }
                 .collect { event ->
                     when (event) {
                         is TimeEntryRealtimeEvent.Started -> applyRemoteEntry(event.entry)

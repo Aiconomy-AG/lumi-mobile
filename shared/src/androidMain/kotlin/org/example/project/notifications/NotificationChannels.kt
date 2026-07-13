@@ -11,7 +11,6 @@ object NotificationChannels {
     private const val DEFAULT_CHANNEL_NAME = "General"
     private const val DEFAULT_CHANNEL_DESCRIPTION = "Task and app notifications"
 
-    // channel id
     fun create(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
 
