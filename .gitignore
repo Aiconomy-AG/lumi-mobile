@@ -5,6 +5,8 @@
 build/
 */build/
 */*/build/
+site/
+.venv-docs/
 .idea/
 local.properties
 .DS_Store

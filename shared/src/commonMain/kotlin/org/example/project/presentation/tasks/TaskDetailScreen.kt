@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import org.example.project.data.accounts.User
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.components.AppBackButton
 import org.example.project.presentation.localization.LocalAppStrings
 
 
@@ -80,28 +81,28 @@ fun TaskDetailScreen(
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = strings.text("Tasks"),
-                color = colors.onSurfaceVariant,
-                modifier = Modifier.clickable(onClick = onBack),
-            )
-            Text(text = " / ", color = colors.onSurfaceVariant)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppBackButton(onClick = onBack)
+
+            Spacer(modifier = Modifier.width(8.dp))
+
             Text(
                 text = task.title,
                 color = colors.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
+
             Text(
                 text = strings.text("Edit"),
                 color = colors.primary,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clickable(onClick = onEditClick),
             )
-            Spacer(modifier = Modifier.width(10.dp))
-
-
-
         }
 
         Spacer(modifier = Modifier.height(24.dp))

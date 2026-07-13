@@ -40,6 +40,7 @@ import org.example.project.data.accounts.User
 import org.example.project.domain.project.Project
 import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
+import org.example.project.presentation.components.AppStatusBadge
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.tasks.TaskListViewModel
 import org.example.project.presentation.theme.AppColorPalette
@@ -290,21 +291,10 @@ private fun DashboardStatusBadge(status: TaskStatus) {
         TaskStatus.BLOCKED -> strings.taskStatus(status) to AppColorPalette.StatusBlocked
     }
 
-    Box(
-        modifier = Modifier.background(
-            color = statusColor.background,
-            shape = MaterialTheme.shapes.extraSmall,
-        ),
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            color = statusColor.content,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            lineHeight = 16.sp,
-        )
-    }
+    AppStatusBadge(
+        label = label,
+        statusColor = statusColor,
+    )
 }
 
 @Composable

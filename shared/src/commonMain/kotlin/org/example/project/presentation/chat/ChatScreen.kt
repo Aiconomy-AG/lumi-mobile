@@ -1,6 +1,7 @@
 package org.example.project.presentation.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,24 +11,30 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import org.example.project.presentation.components.AppBackButton
-import org.example.project.presentation.components.AppSearchField
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,12 +46,18 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import org.example.project.data.accounts.User
 import org.example.project.data.chat.chatClockTimeLabel
 import org.example.project.domain.chat.ChatMessage
+import org.example.project.domain.chat.ChatParticipant
+import org.example.project.presentation.components.AppBackButton
+import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
-
+import org.example.project.presentation.theme.AppDimensions
 
 @Composable
 fun ChatScreen(
@@ -63,8 +76,11 @@ fun ChatScreen(
             DismissKeyboardOnTapOutside(modifier = Modifier.fillMaxSize()) {
                 ConversationListScreen(
                     uiState = uiState,
+                    currentEmployeeId = currentEmployeeId,
                     onSearchQueryChanged = viewModel::onSearchQueryChanged,
-                    onContactClick = viewModel::selectContact,
+                    onConversationClick = viewModel::selectConversation,
+                    onNewGroupClick = viewModel::showCreateGroupDialog,
+                    onStartDirectMessage = viewModel::startDirectMessage,
                 )
             }
         } else {
@@ -74,6 +90,33 @@ fun ChatScreen(
                 onBackClick = viewModel::backToConversationList,
                 onMessageDraftChanged = viewModel::onMessageDraftChanged,
                 onSendClick = viewModel::sendMessage,
+                onGroupSettingsClick = viewModel::openGroupSettings,
+            )
+        }
+
+        if (uiState.showCreateGroupDialog) {
+            CreateGroupDialog(
+                uiState = uiState,
+                currentEmployeeId = currentEmployeeId,
+                onDismiss = viewModel::dismissCreateGroupDialog,
+                onNameChanged = viewModel::onCreateGroupNameChanged,
+                onMemberSearchChanged = viewModel::onCreateGroupMemberSearchChanged,
+                onToggleMember = viewModel::toggleCreateGroupMember,
+                onCreate = viewModel::createGroup,
+            )
+        }
+
+        uiState.groupSettings?.let { settings ->
+            EditGroupDialog(
+                settings = settings,
+                currentEmployeeId = currentEmployeeId,
+                allUsers = uiState.allUsers,
+                onDismiss = viewModel::dismissGroupSettings,
+                onNameChanged = viewModel::onGroupSettingsNameChanged,
+                onMemberSearchChanged = viewModel::onGroupSettingsMemberSearchChanged,
+                onToggleAddMember = viewModel::toggleGroupSettingsAddMember,
+                onToggleRemoveMember = viewModel::toggleGroupSettingsRemoveMember,
+                onSave = viewModel::saveGroupSettings,
             )
         }
     }
@@ -82,32 +125,55 @@ fun ChatScreen(
 @Composable
 private fun ConversationListScreen(
     uiState: ChatUiState,
+    currentEmployeeId: Int,
     onSearchQueryChanged: (String) -> Unit,
-    onContactClick: (ChatContactItem) -> Unit,
+    onConversationClick: (ChatConversationItem) -> Unit,
+    onNewGroupClick: () -> Unit,
+    onStartDirectMessage: (User) -> Unit,
 ) {
     val strings = LocalAppStrings.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(AppDimensions.ScreenPadding),
     ) {
-        AppSearchField(
-            value = uiState.searchQuery,
-            onValueChange = onSearchQueryChanged,
-            placeholder = strings.text("Search chat or person..."),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppSearchField(
+                value = uiState.searchQuery,
+                onValueChange = onSearchQueryChanged,
+                placeholder = strings.text("Search chat or person..."),
+                modifier = Modifier.weight(1f),
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Button(
+                onClick = onNewGroupClick,
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppColorPalette.Primary,
+                    contentColor = AppColorPalette.OnPrimary,
+                ),
+                modifier = Modifier.height(44.dp),
+            ) {
+                Text(strings.text("New group"), fontSize = 13.sp)
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         when {
-            uiState.isLoading && uiState.contacts.isEmpty() -> {
+            uiState.isLoading && uiState.conversations.isEmpty() -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = AppColorPalette.Primary)
                 }
             }
 
-            uiState.error != null -> {
+            uiState.error != null && uiState.conversations.isEmpty() -> {
                 Text(
                     text = uiState.error,
                     color = AppColorPalette.Error,
@@ -115,9 +181,9 @@ private fun ConversationListScreen(
                 )
             }
 
-            uiState.sortedContacts.isEmpty() -> {
+            uiState.sortedConversations.isEmpty() && uiState.usersForNewMessage.isEmpty() -> {
                 Text(
-                    text = strings.text("No users found"),
+                    text = strings.text("No chats found."),
                     color = AppColorPalette.TextSecondary,
                     modifier = Modifier.padding(16.dp),
                 )
@@ -128,10 +194,18 @@ private fun ConversationListScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    items(uiState.sortedContacts, key = { it.user.id }) { contact ->
-                        ContactRow(
-                            contact = contact,
-                            onClick = { onContactClick(contact) },
+                    items(uiState.sortedConversations, key = { it.conversation.id }) { conversation ->
+                        ConversationRow(
+                            conversation = conversation,
+                            currentEmployeeId = currentEmployeeId,
+                            onClick = { onConversationClick(conversation) },
+                        )
+                    }
+
+                    items(uiState.usersForNewMessage, key = { "new-${it.id}" }) { user ->
+                        NewMessageRow(
+                            user = user,
+                            onClick = { onStartDirectMessage(user) },
                         )
                     }
                 }
@@ -141,10 +215,14 @@ private fun ConversationListScreen(
 }
 
 @Composable
-private fun ContactRow(
-    contact: ChatContactItem,
+private fun ConversationRow(
+    conversation: ChatConversationItem,
+    currentEmployeeId: Int,
     onClick: () -> Unit,
 ) {
+    val hasUnread = conversation.lastMessageId != null &&
+            conversation.lastMessageSenderId != currentEmployeeId
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -154,48 +232,33 @@ private fun ContactRow(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
+        ConversationAvatar(
+            conversation = conversation,
             modifier = Modifier.size(44.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(AppColorPalette.SelectionOverlay, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = contact.initials,
-                    color = AppColorPalette.TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
-            if (contact.hasUnread) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(10.dp)
-                        .background(AppColorPalette.Error, CircleShape),
-                )
-            }
-        }
+        )
 
         Spacer(modifier = Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = contact.title,
+                    text = conversation.title,
                     color = AppColorPalette.TextPrimary,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
 
+                if (conversation.isGroup) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    GroupBadge()
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
-                    text = chatClockTimeLabel(contact.lastSentAt),
+                    text = chatClockTimeLabel(conversation.lastSentAt),
                     color = AppColorPalette.TextSecondary,
                     style = MaterialTheme.typography.labelSmall,
                 )
@@ -204,12 +267,249 @@ private fun ContactRow(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = contact.lastMessage,
-                color = AppColorPalette.TextSecondary,
+                text = conversation.lastMessage,
+                color = if (hasUnread) AppColorPalette.TextPrimary else AppColorPalette.TextSecondary,
+                fontWeight = if (hasUnread) FontWeight.Medium else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+
+            if (conversation.isGroup && conversation.subtitle.isNotBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = conversation.subtitle,
+                    color = AppColorPalette.TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun NewMessageRow(
+    user: User,
+    onClick: () -> Unit,
+) {
+    val strings = LocalAppStrings.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(AppColorPalette.SurfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ParticipantAvatar(
+            participant = ChatParticipant(
+                id = user.id,
+                name = user.name,
+                email = user.email,
+                role = user.role.displayName,
+                status = user.status,
+            ),
+            modifier = Modifier.size(40.dp),
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = strings.format("Start chat with {name}", "name" to user.name),
+                color = AppColorPalette.TextPrimary,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = user.email,
+                color = AppColorPalette.TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GroupBadge() {
+    val strings = LocalAppStrings.current
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(AppColorPalette.Primary.copy(alpha = 0.2f))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = strings.text("GROUP"),
+            color = AppColorPalette.Primary,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            fontSize = 10.sp,
+        )
+    }
+}
+
+@Composable
+private fun ConversationAvatar(
+    conversation: ChatConversationItem,
+    modifier: Modifier = Modifier,
+) {
+    if (conversation.isGroup) {
+        GroupAvatar(
+            participants = conversation.participants,
+            modifier = modifier,
+        )
+    } else {
+        val participant = conversation.participants.firstOrNull()
+        if (participant != null) {
+            ParticipantAvatar(participant = participant, modifier = modifier)
+        } else {
+            InitialsAvatar(initials = conversation.initials, userId = conversation.conversation.id, modifier = modifier)
+        }
+    }
+}
+
+@Composable
+private fun GroupAvatar(
+    participants: List<ChatParticipant>,
+    modifier: Modifier = Modifier,
+) {
+    val shown = participants.take(2)
+
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(12.dp))
+                .background(AppColorPalette.SurfaceVariant)
+                .border(1.dp, AppColorPalette.Border, RoundedCornerShape(12.dp)),
+        ) {
+            if (shown.isEmpty()) {
+                InitialsAvatar(
+                    initials = "G",
+                    userId = 0,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .align(Alignment.Center),
+                )
+            } else {
+                shown.forEachIndexed { index, participant ->
+                    Box(
+                        modifier = Modifier
+                            .align(if (index == 0) Alignment.TopStart else Alignment.BottomEnd)
+                            .padding(4.dp)
+                            .size(22.dp),
+                    ) {
+                        ParticipantAvatar(
+                            participant = participant,
+                            modifier = Modifier.fillMaxSize(),
+                            showStatus = false,
+                        )
+                    }
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(16.dp)
+                .clip(CircleShape)
+                .background(AppColorPalette.Primary),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "G",
+                color = AppColorPalette.OnPrimary,
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+@Composable
+fun ParticipantAvatar(
+    participant: ChatParticipant,
+    modifier: Modifier = Modifier,
+    showStatus: Boolean = true,
+) {
+    val color = AppColorPalette.AvatarPalette[participant.id % AppColorPalette.AvatarPalette.size]
+    val initials = participant.name
+        .split(" ")
+        .filter { it.isNotBlank() }
+        .take(2)
+        .joinToString("") { it.first().uppercase() }
+        .ifBlank { "?" }
+
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .background(color),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = if (participant.isBot) "AI" else initials,
+                color = AppColorPalette.TextPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+            )
+        }
+
+        if (showStatus) {
+            val statusColor = when (participant.status.lowercase()) {
+                "online" -> AppColorPalette.Success
+                "busy" -> AppColorPalette.Error
+                else -> AppColorPalette.TextSecondary
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(AppColorPalette.Surface)
+                    .padding(1.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(statusColor),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InitialsAvatar(
+    initials: String,
+    userId: Int,
+    modifier: Modifier = Modifier,
+) {
+    val color = AppColorPalette.AvatarPalette[userId % AppColorPalette.AvatarPalette.size]
+
+    Box(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(color),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = initials,
+            color = AppColorPalette.TextPrimary,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+        )
     }
 }
 
@@ -220,6 +520,7 @@ private fun ConversationDetailScreen(
     onBackClick: () -> Unit,
     onMessageDraftChanged: (String) -> Unit,
     onSendClick: () -> Unit,
+    onGroupSettingsClick: () -> Unit,
 ) {
     val selectedConversation = uiState.selectedConversation ?: return
     val listState = rememberLazyListState()
@@ -232,8 +533,7 @@ private fun ConversationDetailScreen(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
     ) {
         Row(
             modifier = Modifier
@@ -245,6 +545,13 @@ private fun ConversationDetailScreen(
             AppBackButton(onClick = onBackClick)
 
             Spacer(modifier = Modifier.width(4.dp))
+
+            ConversationAvatar(
+                conversation = selectedConversation,
+                modifier = Modifier.size(36.dp),
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -262,6 +569,15 @@ private fun ConversationDetailScreen(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
+
+            if (selectedConversation.isGroup) {
+                TextButton(onClick = onGroupSettingsClick) {
+                    Text(
+                        text = strings.text("Settings"),
+                        color = AppColorPalette.Primary,
+                    )
+                }
+            }
         }
 
         HorizontalDivider(color = AppColorPalette.Border)
@@ -278,7 +594,10 @@ private fun ConversationDetailScreen(
                 MessageBubble(
                     message = message,
                     isMine = message.senderId == currentEmployeeId,
-                    senderName = uiState.usersById[message.senderId]?.name ?: strings.text("Unknown sender"),
+                    senderName = uiState.usersById[message.senderId]?.name
+                        ?: selectedConversation.participants.find { it.id == message.senderId }?.name
+                        ?: strings.text("Unknown sender"),
+                    showSenderName = selectedConversation.isGroup,
                 )
             }
         }
@@ -287,6 +606,8 @@ private fun ConversationDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(AppColorPalette.Surface)
+                .navigationBarsPadding()
+                .imePadding()
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -323,6 +644,7 @@ private fun MessageBubble(
     message: ChatMessage,
     isMine: Boolean,
     senderName: String,
+    showSenderName: Boolean,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -335,10 +657,10 @@ private fun MessageBubble(
                 .background(if (isMine) AppColorPalette.Primary else AppColorPalette.SurfaceVariant)
                 .padding(12.dp),
         ) {
-            if (!isMine) {
+            if (!isMine && showSenderName) {
                 Text(
                     text = senderName,
-                    color = AppColorPalette.TextSecondary,
+                    color = AppColorPalette.Primary,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -368,6 +690,357 @@ private fun MessageBubble(
 }
 
 @Composable
+private fun CreateGroupDialog(
+    uiState: ChatUiState,
+    currentEmployeeId: Int,
+    onDismiss: () -> Unit,
+    onNameChanged: (String) -> Unit,
+    onMemberSearchChanged: (String) -> Unit,
+    onToggleMember: (Int) -> Unit,
+    onCreate: () -> Unit,
+) {
+    val strings = LocalAppStrings.current
+    val dialog = uiState.createGroupDialog
+    val availableUsers = uiState.allUsers.filter { user ->
+        user.id != currentEmployeeId &&
+                (dialog.memberSearch.isBlank() ||
+                        user.name.contains(dialog.memberSearch, ignoreCase = true) ||
+                        user.email.contains(dialog.memberSearch, ignoreCase = true))
+    }
+
+    GroupDialogShell(
+        title = strings.text("Create group"),
+        onDismiss = onDismiss,
+        error = dialog.error,
+        isSaving = dialog.isSaving,
+        onCancel = onDismiss,
+        onSave = onCreate,
+        saveLabel = strings.text("Create"),
+    ) {
+        OutlinedTextField(
+            value = dialog.name,
+            onValueChange = onNameChanged,
+            label = { Text(strings.text("Group name")) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = chatTextFieldColors(),
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = strings.text("Add members"),
+            color = AppColorPalette.TextPrimary,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        AppSearchField(
+            value = dialog.memberSearch,
+            onValueChange = onMemberSearchChanged,
+            placeholder = strings.text("Search people..."),
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        MemberPickerList(
+            users = availableUsers,
+            selectedIds = dialog.selectedMemberIds,
+            onToggle = onToggleMember,
+            emptyText = strings.text("No users found"),
+        )
+    }
+}
+
+@Composable
+private fun EditGroupDialog(
+    settings: GroupSettingsState,
+    currentEmployeeId: Int,
+    allUsers: List<User>,
+    onDismiss: () -> Unit,
+    onNameChanged: (String) -> Unit,
+    onMemberSearchChanged: (String) -> Unit,
+    onToggleAddMember: (Int) -> Unit,
+    onToggleRemoveMember: (Int) -> Unit,
+    onSave: () -> Unit,
+) {
+    val strings = LocalAppStrings.current
+    val memberIds = settings.members.map { it.id }.toSet()
+    val availableToAdd = allUsers.filter { user ->
+        user.id != currentEmployeeId &&
+                !memberIds.contains(user.id) &&
+                (settings.memberSearch.isBlank() ||
+                        user.name.contains(settings.memberSearch, ignoreCase = true) ||
+                        user.email.contains(settings.memberSearch, ignoreCase = true))
+    }
+
+    GroupDialogShell(
+        title = strings.text("Edit group"),
+        onDismiss = onDismiss,
+        error = settings.error,
+        isSaving = settings.isSaving,
+        onCancel = onDismiss,
+        onSave = onSave,
+        saveLabel = strings.text("Save changes"),
+    ) {
+        OutlinedTextField(
+            value = settings.name,
+            onValueChange = onNameChanged,
+            label = { Text(strings.text("Group name")) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = chatTextFieldColors(),
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = strings.text("Current members"),
+            color = AppColorPalette.TextPrimary,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        settings.members.forEach { member ->
+            val isCurrentUser = member.id == currentEmployeeId
+            val markedForRemoval = settings.membersToRemove.contains(member.id)
+
+            MemberRow(
+                participant = member,
+                trailing = {
+                    if (!isCurrentUser) {
+                        TextButton(
+                            onClick = { onToggleRemoveMember(member.id) },
+                        ) {
+                            Text(
+                                text = if (markedForRemoval) {
+                                    strings.text("Undo remove")
+                                } else {
+                                    strings.text("Remove")
+                                },
+                                color = if (markedForRemoval) AppColorPalette.TextSecondary else AppColorPalette.Error,
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = strings.text("You"),
+                            color = AppColorPalette.TextSecondary,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                },
+                dimmed = markedForRemoval,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = strings.text("Add members"),
+            color = AppColorPalette.TextPrimary,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        AppSearchField(
+            value = settings.memberSearch,
+            onValueChange = onMemberSearchChanged,
+            placeholder = strings.text("Search people..."),
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        MemberPickerList(
+            users = availableToAdd,
+            selectedIds = settings.selectedToAdd,
+            onToggle = onToggleAddMember,
+            emptyText = strings.text("No users found"),
+        )
+    }
+}
+
+@Composable
+private fun GroupDialogShell(
+    title: String,
+    onDismiss: () -> Unit,
+    error: String?,
+    isSaving: Boolean,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    saveLabel: String,
+    content: @Composable () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 560.dp)
+                .background(AppColorPalette.Surface, RoundedCornerShape(20.dp))
+                .border(1.dp, AppColorPalette.Border, RoundedCornerShape(20.dp))
+                .padding(20.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = title,
+                    color = AppColorPalette.TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                )
+                TextButton(onClick = onDismiss) {
+                    Text("✕", color = AppColorPalette.TextSecondary)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                content()
+            }
+
+            if (error != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = error, color = AppColorPalette.Error)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onCancel, enabled = !isSaving) {
+                    Text(strings.text("Cancel"), color = AppColorPalette.TextSecondary)
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
+                    onClick = onSave,
+                    enabled = !isSaving,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppColorPalette.Primary,
+                        contentColor = AppColorPalette.OnPrimary,
+                    ),
+                ) {
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = AppColorPalette.OnPrimary,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(saveLabel)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MemberPickerList(
+    users: List<User>,
+    selectedIds: Set<Int>,
+    onToggle: (Int) -> Unit,
+    emptyText: String,
+) {
+    if (users.isEmpty()) {
+        Text(
+            text = emptyText,
+            color = AppColorPalette.TextSecondary,
+            modifier = Modifier.padding(vertical = 8.dp),
+        )
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        users.forEach { user ->
+            val participant = ChatParticipant(
+                id = user.id,
+                name = user.name,
+                email = user.email,
+                role = user.role.displayName,
+                status = user.status,
+            )
+            MemberRow(
+                participant = participant,
+                leading = {
+                    Checkbox(
+                        checked = selectedIds.contains(user.id),
+                        onCheckedChange = { onToggle(user.id) },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = AppColorPalette.Primary,
+                            uncheckedColor = AppColorPalette.TextSecondary,
+                        ),
+                    )
+                },
+                onClick = { onToggle(user.id) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun MemberRow(
+    participant: ChatParticipant,
+    modifier: Modifier = Modifier,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    dimmed: Boolean = false,
+    onClick: (() -> Unit)? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .background(if (dimmed) AppColorPalette.SurfaceVariant.copy(alpha = 0.5f) else AppColorPalette.SurfaceVariant)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        leading?.invoke()
+
+        ParticipantAvatar(
+            participant = participant,
+            modifier = Modifier.size(36.dp),
+        )
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = participant.name,
+                color = if (dimmed) AppColorPalette.TextSecondary else AppColorPalette.TextPrimary,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = participant.role.ifBlank { participant.email },
+                color = AppColorPalette.TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+
+        trailing?.invoke()
+    }
+}
+
+@Composable
 private fun chatTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = AppColorPalette.TextPrimary,
     unfocusedTextColor = AppColorPalette.TextPrimary,
@@ -378,4 +1051,9 @@ private fun chatTextFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedBorderColor = AppColorPalette.Border,
     focusedPlaceholderColor = AppColorPalette.TextSecondary,
     unfocusedPlaceholderColor = AppColorPalette.TextSecondary,
+    focusedLabelColor = AppColorPalette.TextSecondary,
+    unfocusedLabelColor = AppColorPalette.TextSecondary,
 )
+
+private val strings
+    @Composable get() = LocalAppStrings.current

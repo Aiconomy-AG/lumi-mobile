@@ -1,8 +1,6 @@
 package org.example.project.presentation.returns
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,23 +10,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,9 +31,17 @@ import androidx.compose.ui.unit.dp
 import org.example.project.domain.returns.ReturnDisplayItem
 import org.example.project.domain.returns.ReturnRequest
 import org.example.project.domain.returns.ReturnStatus
-import org.example.project.presentation.components.AppPaginationBar
+import org.example.project.presentation.components.AppButton
+import org.example.project.presentation.components.AppDetailField
+import org.example.project.presentation.components.AppDetailGridRows
+import org.example.project.presentation.components.AppDetailOverlay
+import org.example.project.presentation.components.AppListContainer
+import org.example.project.presentation.components.AppListRow
+import org.example.project.presentation.components.AppOutlinedButton
 import org.example.project.presentation.components.AppSearchField
+import org.example.project.presentation.components.AppStatusBadge
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
+import org.example.project.presentation.components.PlatformBackHandler
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppComponentDefaults
@@ -53,8 +50,6 @@ import org.example.project.presentation.theme.AppTextStyles
 import org.example.project.presentation.theme.StatusColor
 import org.example.project.presentation.theme.formatChf
 
-private const val RETURNS_PAGE_SIZE = 6
-
 @Composable
 fun ReturnsScreen(
     viewModel: ReturnsViewModel,
@@ -62,109 +57,79 @@ fun ReturnsScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val strings = LocalAppStrings.current
-    var currentPage by remember { mutableStateOf(0) }
-    val filteredReturns = state.filteredReturns
-    val totalPages = maxOf(1, (filteredReturns.size + RETURNS_PAGE_SIZE - 1) / RETURNS_PAGE_SIZE)
-    val pagedReturns = filteredReturns
-        .drop(currentPage * RETURNS_PAGE_SIZE)
-        .take(RETURNS_PAGE_SIZE)
 
-    LaunchedEffect(filteredReturns.size) {
-        if (currentPage > totalPages - 1) {
-            currentPage = totalPages - 1
-        }
-    }
+    PlatformBackHandler(
+        enabled = state.selectedReturn != null,
+        onBack = viewModel::closeReturn,
+    )
 
-    DismissKeyboardOnTapOutside(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(AppColorPalette.Background)
-                .padding(AppDimensions.ScreenPadding),
-        ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        DismissKeyboardOnTapOutside(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppColorPalette.Background)
+                    .padding(AppDimensions.ScreenPadding),
+            ) {
         ReturnsHeader(
-            returnCount = state.returns.size,
-            requestedCount = state.requestedCount,
-            activeCount = state.activeCount,
-            searchQuery = state.searchQuery,
-            onSearchQueryChanged = viewModel::onSearchQueryChanged,
-        )
+                    requestedCount = state.requestedCount,
+                    activeCount = state.activeCount,
+                    searchQuery = state.searchQuery,
+                    onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                )
 
-        state.errorMessage?.let { message ->
-            Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-            Text(
-                text = strings.format("Error: {message}", "message" to message),
-                color = AppColorPalette.Error,
-                style = AppTextStyles.Emphasis,
-            )
-        }
-
-        Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
-
-        when {
-            state.isLoading && state.returns.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(color = AppColorPalette.Primary)
-                }
-            }
-
-            pagedReturns.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
+                state.errorMessage?.let { message ->
+                    Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
                     Text(
-                        text = strings.text("No returns found."),
-                        color = AppColorPalette.TextSecondary,
+                        text = strings.format("Error: {message}", "message" to message),
+                        color = AppColorPalette.Error,
+                        style = AppTextStyles.Emphasis,
                     )
                 }
-            }
 
-            else -> {
-                ReturnsTable(
-                    returns = pagedReturns,
-                    onReturnClick = { viewModel.openReturn(it.id) },
-                    modifier = Modifier.weight(1f),
-                )
+                Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
-                Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+                when {
+                    state.isLoading && state.returns.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(color = AppColorPalette.Primary)
+                        }
+                    }
 
-                AppPaginationBar(
-                    currentPage = currentPage,
-                    totalPages = totalPages,
-                    onPreviousClick = { if (currentPage > 0) currentPage-- },
-                    onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
-                )
+                    else -> {
+                        ReturnsTable(
+                            returns = state.filteredReturns,
+                            onReturnClick = { viewModel.openReturn(it.id) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
         }
-    }
-    }
 
-    state.selectedReturn?.let { returnRequest ->
-        ReturnDetailsDialog(
-            returnRequest = returnRequest,
-            isSaving = state.isSaving,
-            errorMessage = state.dialogErrorMessage,
-            onDismiss = viewModel::closeReturn,
-            onSave = { status, notes ->
-                viewModel.updateReturn(
-                    returnId = returnRequest.id,
-                    status = status,
-                    notes = notes,
-                )
-            },
-        )
+        state.selectedReturn?.let { returnRequest ->
+            ReturnDetailsOverlay(
+                returnRequest = returnRequest,
+                isSaving = state.isSaving,
+                errorMessage = state.dialogErrorMessage,
+                onBackClick = viewModel::closeReturn,
+                onSave = { status, notes ->
+                    viewModel.updateReturn(
+                        returnId = returnRequest.id,
+                        status = status,
+                        notes = notes,
+                    )
+                },
+            )
+        }
     }
 }
 
 @Composable
 private fun ReturnsHeader(
-    returnCount: Int,
     requestedCount: Int,
     activeCount: Int,
     searchQuery: String,
@@ -174,18 +139,7 @@ private fun ReturnsHeader(
 
     Column {
         Text(
-            text = strings.text("Returns"),
-            color = AppColorPalette.TextPrimary,
-            style = AppTextStyles.PageTitle,
-        )
-
-        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-
-        Text(
             text = strings.format(
-                "{count} returns",
-                "count" to returnCount.toString(),
-            ) + " · " + strings.format(
                 "{count} requested",
                 "count" to requestedCount.toString(),
             ) + " · " + strings.format(
@@ -212,31 +166,16 @@ private fun ReturnsTable(
     onReturnClick: (ReturnRequest) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = AppColorPalette.Border,
-                shape = RoundedCornerShape(AppDimensions.TableCornerRadius),
-            )
-            .background(
-                color = AppColorPalette.Surface,
-                shape = RoundedCornerShape(AppDimensions.TableCornerRadius),
-            )
-            .padding(12.dp),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            returns.forEachIndexed { index, returnRequest ->
-                ReturnRow(
-                    returnRequest = returnRequest,
-                    onClick = { onReturnClick(returnRequest) },
-                )
-                if (index != returns.lastIndex) {
-                    HorizontalDivider(color = AppColorPalette.Border)
-                }
-            }
-        }
+    AppListContainer(
+        items = returns,
+        emptyMessage = LocalAppStrings.current.text("No returns found."),
+        modifier = modifier,
+        key = { it.id },
+    ) { returnRequest ->
+        ReturnRow(
+            returnRequest = returnRequest,
+            onClick = { onReturnClick(returnRequest) },
+        )
     }
 }
 
@@ -245,12 +184,7 @@ private fun ReturnRow(
     returnRequest: ReturnRequest,
     onClick: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-    ) {
+    AppListRow(onClick = onClick) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -269,20 +203,26 @@ private fun ReturnRow(
                 color = AppColorPalette.TextPrimary,
                 maxLines = 1,
             )
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = returnRequest.customerLabel(),
+                modifier = Modifier.weight(1f),
+                color = AppColorPalette.TextPrimary.copy(alpha = 0.85f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
 
             Spacer(modifier = Modifier.width(AppDimensions.TinySpacing))
 
             ReturnStatusBadge(status = returnRequest.status)
         }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = returnRequest.customerLabel(),
-            color = AppColorPalette.TextPrimary.copy(alpha = 0.85f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -296,11 +236,11 @@ private fun ReturnRow(
 }
 
 @Composable
-private fun ReturnDetailsDialog(
+private fun ReturnDetailsOverlay(
     returnRequest: ReturnRequest,
     isSaving: Boolean,
     errorMessage: String?,
-    onDismiss: () -> Unit,
+    onBackClick: () -> Unit,
     onSave: (ReturnStatus, String) -> Unit,
 ) {
     val strings = LocalAppStrings.current
@@ -310,149 +250,120 @@ private fun ReturnDetailsDialog(
     var notes by remember(returnRequest.id, returnRequest.notes) {
         mutableStateOf(returnRequest.notes.orEmpty())
     }
-    val scrollState = rememberScrollState()
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = AppColorPalette.OverlaySurface,
-        title = {
-            Text(
-                text = strings.format("Return #{id}", "id" to returnRequest.id.toString()),
-                color = AppColorPalette.TextPrimary,
-            )
+    AppDetailOverlay(
+        title = strings.format("Return #{id}", "id" to returnRequest.id.toString()),
+        onBackClick = onBackClick,
+        trailingContent = {
+            ReturnStatusBadge(status = selectedStatus)
         },
-        text = {
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 560.dp)
-                    .verticalScroll(scrollState),
-            ) {
-                DetailRow(strings.text("Order"), returnRequest.orderLabel())
-                DetailRow(strings.text("Customer"), returnRequest.email ?: "—")
-                DetailRow(strings.text("Reason"), returnRequest.reason.ifBlank { "—" })
-                DetailRow(strings.text("Refund amount"), returnRequest.refundLabel())
-                DetailRow(strings.text("Created"), returnRequest.createdAt.dateLabel())
-                DetailRow(strings.text("Received"), returnRequest.receivedAt.dateLabel())
-                DetailRow(strings.text("Refunded"), returnRequest.refundedAt.dateLabel())
-
-                Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-
-                Text(
-                    text = strings.text("Status"),
-                    color = AppColorPalette.TextSecondary,
-                    style = AppTextStyles.Emphasis,
-                )
-
-                Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
-
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ReturnStatus.entries.forEach { status ->
-                        val selected = status == selectedStatus
-                        if (selected) {
-                            Button(
-                                onClick = { selectedStatus = status },
-                                colors = AppComponentDefaults.primaryButtonColors(),
-                            ) {
-                                Text(strings.returnStatus(status))
-                            }
-                        } else {
-                            OutlinedButton(
-                                onClick = { selectedStatus = status },
-                            ) {
-                                Text(strings.returnStatus(status))
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = {
-                        Text(strings.text("Notes"))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    colors = AppComponentDefaults.appTextFieldColors(),
-                )
-
-                errorMessage?.let { message ->
-                    Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-                    Text(
-                        text = message,
-                        color = AppColorPalette.Error,
-                        style = AppTextStyles.Emphasis,
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-
-                Text(
-                    text = strings.format(
-                        "{count} return items",
-                        "count" to returnRequest.items.size.toString(),
-                    ),
-                    color = AppColorPalette.TextSecondary,
-                    style = AppTextStyles.Emphasis,
-                )
-
-                Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
-
-                if (returnRequest.items.isEmpty()) {
-                    Text(
-                        text = strings.text("No item details available."),
-                        color = AppColorPalette.TextSecondary,
-                    )
-                } else {
-                    returnRequest.items.forEach { item ->
-                        ReturnItemRow(item = item)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
+        bottomContent = {
+            AppButton(
                 onClick = { onSave(selectedStatus, notes) },
+                modifier = Modifier.fillMaxWidth(),
                 enabled = !isSaving,
-                colors = AppComponentDefaults.primaryButtonColors(),
             ) {
                 Text(if (isSaving) strings.text("Saving...") else strings.text("Save changes"))
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(strings.text("Close"))
-            }
-        },
-    )
-}
-
-@Composable
-private fun DetailRow(
-    label: String,
-    value: String,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
     ) {
-        Text(
-            text = label,
-            modifier = Modifier.width(112.dp),
-            color = AppColorPalette.TextSecondary,
-            fontWeight = FontWeight.SemiBold,
+        AppDetailGridRows(
+            rows = listOf(
+                listOf(
+                    AppDetailField(strings.text("Order"), returnRequest.orderLabel()),
+                    AppDetailField(strings.text("Reason"), returnRequest.reason),
+                ),
+                listOf(
+                    AppDetailField(strings.text("Customer"), returnRequest.email),
+                ),
+                listOf(
+                    AppDetailField(strings.text("Refund amount"), returnRequest.refundLabel()),
+                    AppDetailField(strings.text("Created"), returnRequest.createdAt.dateLabel()),
+                ),
+                listOf(
+                    AppDetailField(strings.text("Received"), returnRequest.receivedAt.dateLabel()),
+                    AppDetailField(strings.text("Refunded"), returnRequest.refundedAt.dateLabel()),
+                ),
+            ),
         )
+
+        Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
+
         Text(
-            text = value,
-            modifier = Modifier.weight(1f),
+            text = strings.text("Status"),
             color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.Emphasis,
         )
+
+        Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ReturnStatus.entries.forEach { status ->
+                val selected = status == selectedStatus
+                if (selected) {
+                    AppButton(
+                        onClick = { selectedStatus = status },
+                    ) {
+                        Text(strings.returnStatus(status))
+                    }
+                } else {
+                    AppOutlinedButton(
+                        onClick = { selectedStatus = status },
+                    ) {
+                        Text(strings.returnStatus(status), color = AppColorPalette.TextPrimary)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+
+        OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            label = {
+                Text(strings.text("Notes"))
+            },
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 3,
+            colors = AppComponentDefaults.appTextFieldColors(),
+        )
+
+        errorMessage?.let { message ->
+            Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
+            Text(
+                text = message,
+                color = AppColorPalette.Error,
+                style = AppTextStyles.Emphasis,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
+
+        Text(
+            text = strings.format(
+                "{count} return items",
+                "count" to returnRequest.items.size.toString(),
+            ),
+            color = AppColorPalette.TextPrimary,
+            style = AppTextStyles.Emphasis,
+        )
+
+        Spacer(modifier = Modifier.height(AppDimensions.TinySpacing))
+
+        if (returnRequest.items.isEmpty()) {
+            Text(
+                text = strings.text("No item details available."),
+                color = AppColorPalette.TextSecondary,
+            )
+        } else {
+            returnRequest.items.forEach { item ->
+                ReturnItemRow(item = item)
+            }
+        }
     }
 }
 
@@ -495,23 +406,11 @@ private fun ReturnStatusBadge(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalAppStrings.current
-    val statusColor = status.statusColor()
-
-    Box(
-        modifier = modifier.background(
-            color = statusColor.background,
-            shape = MaterialTheme.shapes.extraSmall,
-        ),
-    ) {
-        Text(
-            text = strings.returnStatus(status),
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            color = statusColor.content,
-            style = MaterialTheme.typography.labelMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+    AppStatusBadge(
+        label = strings.returnStatus(status),
+        statusColor = status.statusColor(),
+        modifier = modifier,
+    )
 }
 
 private fun ReturnStatus.statusColor(): StatusColor {

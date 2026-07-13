@@ -35,3 +35,12 @@ data class ChatMessage(
     val messageText: String,
     val sentAt: String,
 )
+
+data class ChatParticipant(
+    val id: Int,
+    val name: String,
+    val email: String,
+    val role: String = "",
+    val status: String = "",
+    val isBot: Boolean = false,
+)

@@ -10,12 +10,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.example.project.presentation.components.AppButton
 import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
-import org.example.project.presentation.theme.AppTextStyles
 
 @Composable
 fun StockHeader(
@@ -32,14 +30,6 @@ fun StockHeader(
     val strings = LocalAppStrings.current
 
     Column {
-        Text(
-            text = strings.text("Stock"),
-            color = AppColorPalette.TextPrimary,
-            style = AppTextStyles.PageTitle
-        )
-
-        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -85,21 +75,24 @@ fun StockHeader(
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
 
-        AppSearchField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChanged,
-            placeholder = strings.text("Search products..."),
-            enabled = !isLoading,
-        )
-
-        Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
-
-        AppButton(
-            onClick = onAddProductClick,
-            enabled = !isLoading,
+        Row(
             modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(strings.text("+ Add product"))
+            AppSearchField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChanged,
+                placeholder = strings.text("Search products..."),
+                enabled = !isLoading,
+                modifier = Modifier.weight(1f),
+            )
+
+            Spacer(modifier = Modifier.width(AppDimensions.SmallSpacing))
+
+            StockAddActionButton(
+                onClick = onAddProductClick,
+                enabled = !isLoading,
+            )
         }
     }
 }
