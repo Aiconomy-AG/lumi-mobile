@@ -56,7 +56,6 @@ private val SearchFieldShape = RoundedCornerShape(AppDimensions.SearchFieldRadiu
 private val TextFieldShape = RoundedCornerShape(AppDimensions.SearchFieldRadius)
 private val ButtonShape = RoundedCornerShape(50)
 
-// ─── Search Field ────────────────────────────────────────────────────────────
 
 @Composable
 fun AppSearchField(
@@ -107,8 +106,6 @@ private fun SearchIcon() {
     }
 }
 
-// ─── Back Button ─────────────────────────────────────────────────────────────
-
 @Composable
 fun AppBackButton(
     onClick: () -> Unit,
@@ -151,8 +148,6 @@ private fun BackChevronIcon(color: Color) {
     }
 }
 
-// ─── Text Field ──────────────────────────────────────────────────────────────
-
 @Composable
 fun AppTextField(
     value: String,
@@ -180,8 +175,6 @@ fun AppTextField(
         colors = AppComponentDefaults.appSearchFieldColors(),
     )
 }
-
-// ─── Buttons ─────────────────────────────────────────────────────────────────
 
 @Composable
 fun AppButton(
@@ -467,8 +460,6 @@ private fun AppDetailFieldView(
         )
     }
 }
-
-// ─── Pagination ───────────────────────────────────────────────────────────────
 
 @Composable
 fun AppPaginationBar(

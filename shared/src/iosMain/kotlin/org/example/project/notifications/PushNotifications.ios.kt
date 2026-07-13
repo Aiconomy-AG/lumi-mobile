@@ -6,7 +6,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 actual object PushNotifications {
     actual fun initialize(platformContext: Any?) {
-        // APNs registration is handled in AppDelegate.swift.
     }
 
     actual suspend fun requestPermission(): Boolean {

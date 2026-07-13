@@ -3,10 +3,6 @@ package org.example.project.presentation.theme
 import kotlin.math.abs
 import kotlin.math.round
 
-/**
- * Formats monetary amounts in Swiss Francs.
- * Currency is never localized — CHF is always used regardless of app language.
- */
 fun formatChf(amount: Double): String {
     val cents = round(amount * 100).toLong()
     val whole = cents / 100
