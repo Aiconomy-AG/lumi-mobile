@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.domain.project.Project
 import org.example.project.domain.task.Task
+import org.example.project.presentation.components.AppBackButton
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.tasks.TaskList
 
@@ -48,16 +50,19 @@ fun ProjectDetailScreen(
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppBackButton(onClick = onBack)
+
+            Spacer(modifier = Modifier.width(8.dp))
+
             Text(
                 text = strings.text("Projects"),
                 color = colors.onSurfaceVariant,
-                modifier = Modifier.clickable(onClick = onBack),
-            )
-            Text(text = " / ", color = colors.onSurfaceVariant)
-            Text(
-                text = project.name,
-                color = colors.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
         }

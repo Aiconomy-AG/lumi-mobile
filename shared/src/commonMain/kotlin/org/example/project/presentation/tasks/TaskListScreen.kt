@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -23,12 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import org.example.project.presentation.components.AppButton
-import org.example.project.presentation.components.AppPaginationBar
 import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.components.AppStatusBadge
 import androidx.compose.ui.Alignment
@@ -41,9 +39,9 @@ import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.theme.AppColorPalette
+import org.example.project.presentation.theme.AppDimensions
 
 private const val TASK_LIST_REFRESH_INTERVAL_MS = 5_000L
-private const val TASK_LIST_PAGE_SIZE = 5
 
 @Composable
 fun TaskListScreen(
@@ -55,15 +53,6 @@ fun TaskListScreen(
     val colors = MaterialTheme.colorScheme
     val strings = LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
-
-    var currentPage by remember { mutableStateOf(0) }
-    val pageSize = TASK_LIST_PAGE_SIZE
-    val totalPages = maxOf(1, (uiState.filteredTasks.size + pageSize - 1) / pageSize)
-    val pagedTasks = uiState.filteredTasks.drop(currentPage * pageSize).take(pageSize)
-
-    LaunchedEffect(uiState.filteredTasks.size) {
-        if (currentPage > totalPages - 1) currentPage = totalPages - 1
-    }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -106,15 +95,10 @@ fun TaskListScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    TaskList(tasks = pagedTasks, onTaskClick = onTaskClick)
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    AppPaginationBar(
-                        currentPage = currentPage,
-                        totalPages = totalPages,
-                        onPreviousClick = { if (currentPage > 0) currentPage-- },
-                        onNextClick = { if (currentPage < totalPages - 1) currentPage++ },
+                    ScrollableTaskList(
+                        tasks = uiState.filteredTasks,
+                        onTaskClick = onTaskClick,
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
@@ -240,6 +224,51 @@ private fun MyTasksToggle(
             color = if (active) colors.onPrimary else colors.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold,
         )
+    }
+}
+
+@Composable
+private fun ScrollableTaskList(
+    tasks: List<Task>,
+    onTaskClick: (Task) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(width = 1.dp, color = colors.outline, shape = RoundedCornerShape(AppDimensions.TableCornerRadius))
+            .background(color = colors.surface, shape = RoundedCornerShape(AppDimensions.TableCornerRadius)),
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+        ) {
+            item {
+                TaskListHeader()
+                HorizontalDivider(color = colors.outline, modifier = Modifier.padding(vertical = 8.dp))
+            }
+
+            if (tasks.isEmpty()) {
+                item {
+                    Text(
+                        text = strings.text("No tasks found."),
+                        color = colors.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 20.dp),
+                    )
+                }
+            } else {
+                itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
+                    TaskRow(task, onClick = { onTaskClick(task) })
+                    if (index != tasks.lastIndex) {
+                        HorizontalDivider(color = colors.outlineVariant)
+                    }
+                }
+            }
+        }
     }
 }
 

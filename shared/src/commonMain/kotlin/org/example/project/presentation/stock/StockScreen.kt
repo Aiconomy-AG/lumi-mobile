@@ -76,6 +76,7 @@ fun StockScreen(
                 product = product,
                 categories = state.categories,
                 isSaving = state.isSaving,
+                onBackClick = { selectedProductId = null },
                 onUpdateProduct = { productId, name, description, imageUrl, sku, price, stockQuantity, categoryId ->
                     viewModel.updateProduct(
                         productId = productId,

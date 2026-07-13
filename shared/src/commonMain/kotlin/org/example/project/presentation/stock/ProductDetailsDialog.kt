@@ -28,6 +28,7 @@ fun ProductDetailsOverlay(
     product: Product,
     categories: List<Category>,
     isSaving: Boolean,
+    onBackClick: () -> Unit,
     onUpdateProduct: (
         productId: Int,
         name: String,
@@ -74,7 +75,7 @@ fun ProductDetailsOverlay(
 
     AppDetailOverlay(
         title = product.name,
-        showHeader = false,
+        onBackClick = onBackClick,
     ) {
         if (isEditingProduct) {
             ProductEditSection(
