@@ -1,0 +1,59 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned documentation dependencies
+        run: pip install -r requirements-docs.txt
+
+      - name: Build MkDocs in strict mode
+        run: mkdocs build --strict
+
+      - name: Check internal documentation links
+        run: python3 scripts/check_docs_links.py
+
+      - name: Check route and page documentation coverage
+        run: python3 scripts/check_route_docs.py
+
+      - name: Scan documentation for sensitive content
+        run: python3 scripts/scan_docs_for_secrets.py
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
