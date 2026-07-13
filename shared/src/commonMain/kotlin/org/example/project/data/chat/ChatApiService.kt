@@ -5,6 +5,7 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -16,8 +17,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatMessage
+import org.example.project.domain.chat.ChatMessagePreview
+import org.example.project.domain.chat.ChatParticipant
 import org.example.project.domain.chat.Conversation
+import org.example.project.domain.chat.ConversationDetail
 import org.example.project.domain.chat.ConversationParticipant
+import org.example.project.domain.chat.ConversationSummary
 import org.example.project.domain.chat.ConversationType
 
 class ChatApiService(
@@ -27,18 +32,26 @@ class ChatApiService(
 ) : ChatApi {
 
 
-    override suspend fun getConversations(employeeId: Int): List<Conversation> {
+    override suspend fun getConversations(employeeId: Int): List<ConversationSummary> {
         val response = client.get("$baseUrl/workspace/conversations") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
-        return chatJson.decodeFromString<ConversationListResponse>(text).data.map { it.toConversation() }
+        return chatJson.decodeFromString<ConversationListResponse>(text).data.map { it.toConversationSummary() }
     }
 
-    override suspend fun getParticipants(conversationId: Int): List<ConversationParticipant> {
+    override suspend fun getConversation(conversationId: Int): ConversationDetail {
         val response = client.get("$baseUrl/workspace/conversations/$conversationId") { bearerAuth() }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
-        return chatJson.decodeFromString<ConversationResponse>(text).data.participants.map {
+        val dto = chatJson.decodeFromString<ConversationResponse>(text).data
+        return ConversationDetail(
+            conversation = dto.toConversation(),
+            participants = dto.participants.map { it.toChatParticipant() },
+        )
+    }
+
+    override suspend fun getParticipants(conversationId: Int): List<ConversationParticipant> {
+        return getConversation(conversationId).participants.map {
             ConversationParticipant(
                 conversationId = conversationId,
                 employeeId = it.id,
@@ -62,6 +75,48 @@ class ChatApiService(
                 StoreConversationRequestBody(
                     type = ConversationType.DIRECT,
                     participantEmployeeIds = listOf(participantEmployeeId),
+                )
+            )
+        }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
+        return chatJson.decodeFromString<ConversationResponse>(text).data.toConversation()
+    }
+
+    override suspend fun createGroupConversation(
+        name: String,
+        participantEmployeeIds: List<Int>,
+    ): Conversation {
+        val response = client.post("$baseUrl/workspace/conversations") {
+            bearerAuth()
+            contentType(ContentType.Application.Json)
+            setBody(
+                StoreGroupConversationRequestBody(
+                    type = ConversationType.GROUP,
+                    name = name,
+                    participantEmployeeIds = participantEmployeeIds,
+                )
+            )
+        }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
+        return chatJson.decodeFromString<ConversationResponse>(text).data.toConversation()
+    }
+
+    override suspend fun updateGroupConversation(
+        conversationId: Int,
+        name: String?,
+        addParticipantEmployeeIds: List<Int>,
+        removeParticipantEmployeeIds: List<Int>,
+    ): Conversation {
+        val response = client.put("$baseUrl/workspace/conversations/$conversationId") {
+            bearerAuth()
+            contentType(ContentType.Application.Json)
+            setBody(
+                UpdateGroupRequestBody(
+                    name = name,
+                    addParticipantEmployeeIds = addParticipantEmployeeIds.takeIf { it.isNotEmpty() },
+                    removeParticipantEmployeeIds = removeParticipantEmployeeIds.takeIf { it.isNotEmpty() },
                 )
             )
         }
@@ -113,12 +168,38 @@ private data class ConversationDto(
     @SerialName("created_by")
     val createdBy: Int? = null,
     val participants: List<ParticipantDto> = emptyList(),
+    @SerialName("last_message_at")
+    val lastMessageAt: String? = null,
+    @SerialName("last_message")
+    val lastMessage: LastMessageDto? = null,
 ) {
     fun toConversation(): Conversation = Conversation(
         id = id,
         type = type,
         name = name,
         createdBy = createdBy ?: 0,
+    )
+
+    fun toConversationSummary(): ConversationSummary = ConversationSummary(
+        conversation = toConversation(),
+        participants = participants.map { it.toChatParticipant() },
+        lastMessage = lastMessage?.toChatMessagePreview(),
+        lastMessageAt = lastMessageAt,
+    )
+}
+
+@Serializable
+private data class LastMessageDto(
+    val message: String = "",
+    @SerialName("sender_id")
+    val senderId: Int = 0,
+    @SerialName("sent_at")
+    val sentAt: String = "",
+) {
+    fun toChatMessagePreview(): ChatMessagePreview = ChatMessagePreview(
+        message = message,
+        senderId = senderId,
+        sentAt = sentAt,
     )
 }
 
@@ -127,7 +208,20 @@ private data class ParticipantDto(
     val id: Int,
     val name: String = "",
     val email: String = "",
-)
+    val role: String = "",
+    val status: String = "",
+    @SerialName("is_bot")
+    val isBot: Boolean = false,
+) {
+    fun toChatParticipant(): ChatParticipant = ChatParticipant(
+        id = id,
+        name = name,
+        email = email,
+        role = role,
+        status = status,
+        isBot = isBot,
+    )
+}
 
 @Serializable
 private data class MessageListResponse(
@@ -172,10 +266,28 @@ private data class StoreConversationRequestBody(
 )
 
 @Serializable
+private data class StoreGroupConversationRequestBody(
+    val type: ConversationType,
+    val name: String,
+    @SerialName("participants_employee_ids")
+    val participantEmployeeIds: List<Int>,
+)
+
+@Serializable
+private data class UpdateGroupRequestBody(
+    val name: String? = null,
+    @SerialName("add_participants_employee_ids")
+    val addParticipantEmployeeIds: List<Int>? = null,
+    @SerialName("remove_participants_employee_ids")
+    val removeParticipantEmployeeIds: List<Int>? = null,
+)
+
+@Serializable
 private data class ApiErrorResponse(
     val message: String = "Request failed.",
 )
 
 private val chatJson = Json {
     ignoreUnknownKeys = true
+    explicitNulls = false
 }

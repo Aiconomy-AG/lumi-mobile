@@ -19,8 +19,10 @@ import org.example.project.data.chat.currentTimeLabel
 import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.domain.chat.ChatNotificationEvent
+import org.example.project.domain.chat.ChatParticipant
 import org.example.project.domain.chat.ChatRealtimeApi
 import org.example.project.domain.chat.Conversation
+import org.example.project.domain.chat.ConversationSummary
 import org.example.project.domain.chat.ConversationType
 
 data class ChatConversationItem(
@@ -33,6 +35,8 @@ data class ChatConversationItem(
     val lastMessageId: Int? = null,
     val lastMessageSenderId: Int? = null,
     val lastActivitySortKey: Long = 0L,
+    val isGroup: Boolean = false,
+    val participants: List<ChatParticipant> = emptyList(),
 )
 
 data class ChatContactItem(
@@ -47,6 +51,25 @@ data class ChatContactItem(
     val lastSentAt: String = conversation?.lastSentAt ?: ""
 }
 
+data class CreateGroupDialogState(
+    val name: String = "",
+    val memberSearch: String = "",
+    val selectedMemberIds: Set<Int> = emptySet(),
+    val isSaving: Boolean = false,
+    val error: String? = null,
+)
+
+data class GroupSettingsState(
+    val conversationId: Int,
+    val name: String,
+    val members: List<ChatParticipant>,
+    val membersToRemove: Set<Int> = emptySet(),
+    val memberSearch: String = "",
+    val selectedToAdd: Set<Int> = emptySet(),
+    val isSaving: Boolean = false,
+    val error: String? = null,
+)
+
 data class ChatUiState(
     val isLoading: Boolean = false,
     val conversations: List<ChatConversationItem> = emptyList(),
@@ -54,10 +77,44 @@ data class ChatUiState(
     val selectedConversation: ChatConversationItem? = null,
     val messages: List<ChatMessage> = emptyList(),
     val usersById: Map<Int, User> = emptyMap(),
+    val allUsers: List<User> = emptyList(),
     val searchQuery: String = "",
     val messageDraft: String = "",
     val error: String? = null,
+    val showCreateGroupDialog: Boolean = false,
+    val createGroupDialog: CreateGroupDialogState = CreateGroupDialogState(),
+    val groupSettings: GroupSettingsState? = null,
+    val showNewMessagePicker: Boolean = false,
 ) {
+    val filteredConversations: List<ChatConversationItem>
+        get() = if (searchQuery.isBlank()) {
+            conversations
+        } else {
+            conversations.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                        it.subtitle.contains(searchQuery, ignoreCase = true) ||
+                        it.lastMessage.contains(searchQuery, ignoreCase = true)
+            }
+        }
+
+    val sortedConversations: List<ChatConversationItem>
+        get() = filteredConversations.sortedByDescending { it.lastActivitySortKey }
+
+    val usersForNewMessage: List<User>
+        get() {
+            if (searchQuery.isBlank()) return emptyList()
+            val directUserIds = conversations
+                .filter { !it.isGroup }
+                .flatMap { it.participants.map { p -> p.id } }
+                .toSet()
+            return allUsers.filter { user ->
+                user.id != 0 &&
+                        !directUserIds.contains(user.id) &&
+                        (user.name.contains(searchQuery, ignoreCase = true) ||
+                                user.email.contains(searchQuery, ignoreCase = true))
+            }
+        }
+
     val filteredContacts: List<ChatContactItem>
         get() = if (searchQuery.isBlank()) {
             contacts
@@ -104,6 +161,222 @@ class ChatViewModel(
         _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 
+    fun showCreateGroupDialog() {
+        _uiState.value = _uiState.value.copy(
+            showCreateGroupDialog = true,
+            createGroupDialog = CreateGroupDialogState(),
+            error = null,
+        )
+    }
+
+    fun dismissCreateGroupDialog() {
+        _uiState.value = _uiState.value.copy(
+            showCreateGroupDialog = false,
+            createGroupDialog = CreateGroupDialogState(),
+        )
+    }
+
+    fun onCreateGroupNameChanged(name: String) {
+        _uiState.value = _uiState.value.copy(
+            createGroupDialog = _uiState.value.createGroupDialog.copy(name = name, error = null),
+        )
+    }
+
+    fun onCreateGroupMemberSearchChanged(query: String) {
+        _uiState.value = _uiState.value.copy(
+            createGroupDialog = _uiState.value.createGroupDialog.copy(memberSearch = query, error = null),
+        )
+    }
+
+    fun toggleCreateGroupMember(userId: Int) {
+        val dialog = _uiState.value.createGroupDialog
+        val next = if (dialog.selectedMemberIds.contains(userId)) {
+            dialog.selectedMemberIds - userId
+        } else {
+            dialog.selectedMemberIds + userId
+        }
+        _uiState.value = _uiState.value.copy(
+            createGroupDialog = dialog.copy(selectedMemberIds = next, error = null),
+        )
+    }
+
+    fun createGroup() {
+        val dialog = _uiState.value.createGroupDialog
+        val name = dialog.name.trim()
+        if (name.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                createGroupDialog = dialog.copy(error = "Introdu numele grupului."),
+            )
+            return
+        }
+        if (dialog.selectedMemberIds.isEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                createGroupDialog = dialog.copy(error = "Selectează cel puțin un membru."),
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                createGroupDialog = dialog.copy(isSaving = true, error = null),
+            )
+            try {
+                val conversation = chatApi.createGroupConversation(
+                    name = name,
+                    participantEmployeeIds = dialog.selectedMemberIds.toList(),
+                )
+                val detail = chatApi.getConversation(conversation.id)
+                val item = detail.toConversationItem(
+                    usersById = _uiState.value.usersById,
+                    currentEmployeeId = currentEmployeeId,
+                )
+                _uiState.value = _uiState.value.copy(
+                    showCreateGroupDialog = false,
+                    createGroupDialog = CreateGroupDialogState(),
+                    conversations = sortConversations(_uiState.value.conversations + item),
+                    selectedConversation = item,
+                    messages = emptyList(),
+                    messageDraft = "",
+                    error = null,
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    createGroupDialog = _uiState.value.createGroupDialog.copy(
+                        isSaving = false,
+                        error = e.message ?: "Nu am putut crea grupul.",
+                    ),
+                )
+            }
+        }
+    }
+
+    fun openGroupSettings() {
+        val selected = _uiState.value.selectedConversation ?: return
+        if (!selected.isGroup) return
+
+        viewModelScope.launch {
+            try {
+                val detail = chatApi.getConversation(selected.conversation.id)
+                _uiState.value = _uiState.value.copy(
+                    groupSettings = GroupSettingsState(
+                        conversationId = detail.conversation.id,
+                        name = detail.conversation.name.orEmpty(),
+                        members = detail.participants,
+                    ),
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "Nu am putut încărca setările grupului.",
+                )
+            }
+        }
+    }
+
+    fun dismissGroupSettings() {
+        _uiState.value = _uiState.value.copy(groupSettings = null)
+    }
+
+    fun onGroupSettingsNameChanged(name: String) {
+        val settings = _uiState.value.groupSettings ?: return
+        _uiState.value = _uiState.value.copy(
+            groupSettings = settings.copy(name = name, error = null),
+        )
+    }
+
+    fun onGroupSettingsMemberSearchChanged(query: String) {
+        val settings = _uiState.value.groupSettings ?: return
+        _uiState.value = _uiState.value.copy(
+            groupSettings = settings.copy(memberSearch = query, error = null),
+        )
+    }
+
+    fun toggleGroupSettingsAddMember(userId: Int) {
+        val settings = _uiState.value.groupSettings ?: return
+        val next = if (settings.selectedToAdd.contains(userId)) {
+            settings.selectedToAdd - userId
+        } else {
+            settings.selectedToAdd + userId
+        }
+        _uiState.value = _uiState.value.copy(
+            groupSettings = settings.copy(selectedToAdd = next, error = null),
+        )
+    }
+
+    fun toggleGroupSettingsRemoveMember(userId: Int) {
+        val settings = _uiState.value.groupSettings ?: return
+        if (userId == currentEmployeeId) return
+        val next = if (settings.membersToRemove.contains(userId)) {
+            settings.membersToRemove - userId
+        } else {
+            settings.membersToRemove + userId
+        }
+        _uiState.value = _uiState.value.copy(
+            groupSettings = settings.copy(membersToRemove = next, error = null),
+        )
+    }
+
+    fun saveGroupSettings() {
+        val settings = _uiState.value.groupSettings ?: return
+        val trimmedName = settings.name.trim()
+        val selected = _uiState.value.selectedConversation ?: return
+
+        if (trimmedName.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                groupSettings = settings.copy(error = "Introdu numele grupului."),
+            )
+            return
+        }
+
+        val nameChanged = trimmedName != selected.conversation.name.orEmpty()
+        val hasChanges = nameChanged ||
+                settings.selectedToAdd.isNotEmpty() ||
+                settings.membersToRemove.isNotEmpty()
+
+        if (!hasChanges) {
+            dismissGroupSettings()
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                groupSettings = settings.copy(isSaving = true, error = null),
+            )
+            try {
+                val updated = chatApi.updateGroupConversation(
+                    conversationId = settings.conversationId,
+                    name = if (nameChanged) trimmedName else null,
+                    addParticipantEmployeeIds = settings.selectedToAdd.toList(),
+                    removeParticipantEmployeeIds = settings.membersToRemove.toList(),
+                )
+                val detail = chatApi.getConversation(updated.id)
+                val item = detail.toConversationItem(
+                    usersById = _uiState.value.usersById,
+                    currentEmployeeId = currentEmployeeId,
+                )
+                val currentState = _uiState.value
+                _uiState.value = currentState.copy(
+                    groupSettings = null,
+                    conversations = sortConversations(
+                        currentState.conversations.map {
+                            if (it.conversation.id == item.conversation.id) item else it
+                        }
+                    ),
+                    selectedConversation = currentState.selectedConversation?.let {
+                        if (it.conversation.id == item.conversation.id) item else it
+                    },
+                    error = null,
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    groupSettings = _uiState.value.groupSettings?.copy(
+                        isSaving = false,
+                        error = e.message ?: "Nu am putut salva modificările.",
+                    ),
+                )
+            }
+        }
+    }
+
     fun selectContact(contact: ChatContactItem) {
         contact.conversation?.let {
             selectConversation(it)
@@ -115,15 +388,15 @@ class ChatViewModel(
 
             try {
                 val conversation = chatApi.createDirectConversation(contact.user.id)
-                val conversationItem = conversation.toConversationItem(
+                val detail = chatApi.getConversation(conversation.id)
+                val conversationItem = detail.toConversationItem(
                     usersById = _uiState.value.usersById,
-                    participants = listOf(currentEmployeeId, contact.user.id),
-                    messages = emptyList(),
+                    currentEmployeeId = currentEmployeeId,
                 )
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    conversations = _uiState.value.conversations + conversationItem,
+                    conversations = sortConversations(_uiState.value.conversations + conversationItem),
                     contacts = finalizeContacts(
                         _uiState.value.contacts.map {
                             if (it.user.id == contact.user.id) {
@@ -136,6 +409,7 @@ class ChatViewModel(
                     selectedConversation = conversationItem,
                     messages = emptyList(),
                     messageDraft = "",
+                    searchQuery = "",
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -144,6 +418,15 @@ class ChatViewModel(
                 )
             }
         }
+    }
+
+    fun startDirectMessage(user: User) {
+        selectContact(
+            ChatContactItem(
+                user = user,
+                conversation = null,
+            )
+        )
     }
 
     fun selectConversation(conversation: ChatConversationItem) {
@@ -157,10 +440,39 @@ class ChatViewModel(
             try {
                 val messages = chatApi.getMessages(conversation.conversation.id)
                 markConversationAsRead(conversation.conversation.id, messages)
+                val lastMessage = messages.lastOrNull()
+                val updatedConversation = if (lastMessage != null) {
+                    conversation.copy(
+                        lastMessageId = lastMessage.id.takeIf { it > 0 },
+                        lastMessageSenderId = lastMessage.senderId,
+                        lastMessage = formatLastMessagePreview(
+                            conversation = conversation.conversation,
+                            messageText = lastMessage.messageText,
+                            senderId = lastMessage.senderId,
+                            participants = conversation.participants,
+                            usersById = _uiState.value.usersById,
+                        ),
+                        lastSentAt = lastMessage.sentAt,
+                        lastActivitySortKey = chatActivitySortKey(lastMessage.sentAt),
+                    )
+                } else {
+                    conversation
+                }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     messages = messages,
+                    conversations = sortConversations(
+                        _uiState.value.conversations.map {
+                            if (it.conversation.id == updatedConversation.conversation.id) {
+                                updatedConversation
+                            } else {
+                                it
+                            }
+                        }
+                    ),
+                    selectedConversation = updatedConversation,
                     contacts = finalizeContacts(_uiState.value.contacts),
+                    searchQuery = "",
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -196,6 +508,7 @@ class ChatViewModel(
             selectedConversation = null,
             messages = emptyList(),
             messageDraft = "",
+            groupSettings = null,
         )
     }
 
@@ -216,8 +529,15 @@ class ChatViewModel(
             messageText = text,
             sentAt = currentTimeLabel(),
         )
+        val optimisticPreview = formatLastMessagePreview(
+            conversation = selectedConversation.conversation,
+            messageText = optimisticMessage.messageText,
+            senderId = optimisticMessage.senderId,
+            participants = selectedConversation.participants,
+            usersById = _uiState.value.usersById,
+        )
         val optimisticConversation = selectedConversation.copy(
-            lastMessage = optimisticMessage.messageText,
+            lastMessage = optimisticPreview,
             lastSentAt = optimisticMessage.sentAt,
             lastMessageId = optimisticMessage.id,
             lastMessageSenderId = optimisticMessage.senderId,
@@ -303,26 +623,21 @@ class ChatViewModel(
         try {
             val users = userApi.getUsers().getOrThrow()
             val usersById = users.associateBy { it.id }
-            val conversations = chatApi.getConversations(currentEmployeeId)
-            val participantIdsByConversation = conversations.associate { conversation ->
-                conversation.id to chatApi.getParticipants(conversation.id).map { it.employeeId }
-            }
+            val summaries = chatApi.getConversations(currentEmployeeId)
 
-            val items = conversations.map { conversation ->
-                val conversationMessages = chatApi.getMessages(conversation.id)
-                conversation.toConversationItem(
+            val items = summaries.map { summary ->
+                summary.toConversationItem(
                     usersById = usersById,
-                    participants = participantIdsByConversation[conversation.id].orEmpty(),
-                    messages = conversationMessages,
+                    currentEmployeeId = currentEmployeeId,
                 )
             }
-            val directConversationByUserId = conversations
+            val directConversationByUserId = summaries
                 .zip(items)
-                .mapNotNull { (conversation, item) ->
-                    if (conversation.type != ConversationType.DIRECT) return@mapNotNull null
-                    val otherUserId = participantIdsByConversation[conversation.id]
-                        .orEmpty()
-                        .firstOrNull { it != currentEmployeeId }
+                .mapNotNull { (summary, item) ->
+                    if (summary.conversation.type != ConversationType.DIRECT) return@mapNotNull null
+                    val otherUserId = summary.participants
+                        .firstOrNull { it.id != currentEmployeeId }
+                        ?.id
                         ?: return@mapNotNull null
 
                     otherUserId to item
@@ -351,11 +666,38 @@ class ChatViewModel(
                 markConversationAsRead(selectedConversationId, mergedSelectedMessages)
             }
 
+            val enrichedSelectedConversation = if (
+                selectedConversation != null &&
+                mergedSelectedMessages != null
+            ) {
+                val lastMessage = mergedSelectedMessages.lastOrNull()
+                if (lastMessage != null) {
+                    selectedConversation.copy(
+                        lastMessageId = lastMessage.id.takeIf { it > 0 },
+                        lastMessageSenderId = lastMessage.senderId,
+                        lastMessage = formatLastMessagePreview(
+                            conversation = selectedConversation.conversation,
+                            messageText = lastMessage.messageText,
+                            senderId = lastMessage.senderId,
+                            participants = selectedConversation.participants,
+                            usersById = usersById,
+                        ),
+                        lastSentAt = lastMessage.sentAt,
+                        lastActivitySortKey = chatActivitySortKey(lastMessage.sentAt),
+                    )
+                } else {
+                    selectedConversation
+                }
+            } else {
+                selectedConversation ?: _uiState.value.selectedConversation
+            }
+
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 conversations = sortConversations(items),
                 contacts = contacts,
-                selectedConversation = selectedConversation ?: _uiState.value.selectedConversation,
+                allUsers = users.filter { it.id != currentEmployeeId && it.isActive },
+                selectedConversation = enrichedSelectedConversation,
                 messages = mergedSelectedMessages ?: _uiState.value.messages,
                 usersById = usersById,
                 error = null,
@@ -404,7 +746,15 @@ class ChatViewModel(
             ?: existingConversation
         val lastMessage = mergedMessages.lastOrNull()
         val updatedConversation = conversation.copy(
-            lastMessage = lastMessage?.messageText ?: conversation.lastMessage,
+            lastMessage = lastMessage?.let {
+                formatLastMessagePreview(
+                    conversation = conversation.conversation,
+                    messageText = it.messageText,
+                    senderId = it.senderId,
+                    participants = conversation.participants,
+                    usersById = currentState.usersById,
+                )
+            } ?: conversation.lastMessage,
             lastSentAt = lastMessage?.sentAt ?: conversation.lastSentAt,
             lastMessageId = lastMessage?.id?.takeIf { it > 0 } ?: conversation.lastMessageId,
             lastMessageSenderId = lastMessage?.senderId ?: conversation.lastMessageSenderId,
@@ -463,15 +813,21 @@ class ChatViewModel(
         val lastMessage = nextMessages
             .lastOrNull { it.conversationId == savedMessage.conversationId }
             ?: savedMessage
-        val updatedConversation = currentState.selectedConversation
+        val selected = currentState.selectedConversation
             ?.takeIf { it.conversation.id == savedMessage.conversationId }
-            ?.copy(
-                lastMessage = lastMessage.messageText,
-                lastSentAt = lastMessage.sentAt,
-                lastMessageId = lastMessage.id,
-                lastMessageSenderId = lastMessage.senderId,
-                lastActivitySortKey = chatActivitySortKey(lastMessage.sentAt),
-            )
+        val updatedConversation = selected?.copy(
+            lastMessage = formatLastMessagePreview(
+                conversation = selected.conversation,
+                messageText = lastMessage.messageText,
+                senderId = lastMessage.senderId,
+                participants = selected.participants,
+                usersById = currentState.usersById,
+            ),
+            lastSentAt = lastMessage.sentAt,
+            lastMessageId = lastMessage.id,
+            lastMessageSenderId = lastMessage.senderId,
+            lastActivitySortKey = chatActivitySortKey(lastMessage.sentAt),
+        )
 
         markConversationAsRead(savedMessage.conversationId, nextMessages)
 
@@ -481,7 +837,7 @@ class ChatViewModel(
                 currentState.conversations.map {
                     if (it.conversation.id == savedMessage.conversationId) {
                         it.copy(
-                            lastMessage = lastMessage.messageText,
+                            lastMessage = updatedConversation?.lastMessage ?: it.lastMessage,
                             lastSentAt = lastMessage.sentAt,
                             lastMessageId = lastMessage.id,
                             lastMessageSenderId = lastMessage.senderId,
@@ -498,7 +854,7 @@ class ChatViewModel(
                     if (it.conversation?.conversation?.id == savedMessage.conversationId) {
                         it.copy(
                             conversation = it.conversation.copy(
-                                lastMessage = lastMessage.messageText,
+                                lastMessage = updatedConversation?.lastMessage ?: it.conversation.lastMessage,
                                 lastSentAt = lastMessage.sentAt,
                                 lastMessageId = lastMessage.id,
                                 lastMessageSenderId = lastMessage.senderId,
@@ -517,7 +873,21 @@ class ChatViewModel(
         val currentState = _uiState.value
         val nextMessages = currentState.messages.filterNot { it.id == message.id }
         val lastMessage = nextMessages.lastOrNull { it.conversationId == message.conversationId }
-        val fallbackLastMessage = lastMessage?.messageText ?: "Nu exista mesaje inca."
+        val fallbackLastMessage = lastMessage?.let {
+            val selected = currentState.selectedConversation
+                ?.takeIf { it.conversation.id == message.conversationId }
+            if (selected != null) {
+                formatLastMessagePreview(
+                    conversation = selected.conversation,
+                    messageText = it.messageText,
+                    senderId = it.senderId,
+                    participants = selected.participants,
+                    usersById = currentState.usersById,
+                )
+            } else {
+                it.messageText
+            }
+        } ?: "Nu exista mesaje inca."
         val fallbackLastSentAt = lastMessage?.sentAt ?: ""
 
         _uiState.value = currentState.copy(
@@ -582,18 +952,53 @@ class ChatViewModel(
         return (serverMessages + pendingMessages).distinctBy { it.id }
     }
 
+    private fun ConversationSummary.toConversationItem(
+        usersById: Map<Int, User>,
+        currentEmployeeId: Int,
+    ): ChatConversationItem = conversation.toConversationItem(
+        usersById = usersById,
+        currentEmployeeId = currentEmployeeId,
+        participants = participants,
+        lastMessageText = lastMessage?.message,
+        lastMessageSenderId = lastMessage?.senderId,
+        lastSentAt = lastMessage?.sentAt ?: lastMessageAt.orEmpty(),
+    )
+
+    private fun org.example.project.domain.chat.ConversationDetail.toConversationItem(
+        usersById: Map<Int, User>,
+        currentEmployeeId: Int,
+    ): ChatConversationItem = conversation.toConversationItem(
+        usersById = usersById,
+        currentEmployeeId = currentEmployeeId,
+        participants = participants,
+        lastMessageText = null,
+        lastMessageSenderId = null,
+        lastSentAt = "",
+    )
+
     private fun Conversation.toConversationItem(
         usersById: Map<Int, User>,
-        participants: List<Int>,
-        messages: List<ChatMessage>,
+        currentEmployeeId: Int,
+        participants: List<ChatParticipant>,
+        lastMessageText: String?,
+        lastMessageSenderId: Int?,
+        lastSentAt: String,
     ): ChatConversationItem {
-        val lastMessage = messages.lastOrNull()
-        val otherParticipants = participants
-            .mapNotNull { usersById[it] }
-            .filter { it.id != currentEmployeeId }
+        val otherParticipants = participants.filter { it.id != currentEmployeeId }
         val title = when (type) {
             ConversationType.DIRECT -> otherParticipants.firstOrNull()?.name ?: "Chat direct"
             ConversationType.GROUP -> name ?: "Chat de grup"
+        }
+        val preview = if (lastMessageText.isNullOrBlank()) {
+            "Nu exista mesaje inca."
+        } else {
+            formatLastMessagePreview(
+                conversation = this,
+                messageText = lastMessageText,
+                senderId = lastMessageSenderId,
+                participants = participants,
+                usersById = usersById,
+            )
         }
 
         return ChatConversationItem(
@@ -601,12 +1006,27 @@ class ChatViewModel(
             title = title,
             subtitle = otherParticipants.joinToString { it.name },
             initials = title.initials(),
-            lastMessage = lastMessage?.messageText ?: "Nu exista mesaje inca.",
-            lastSentAt = lastMessage?.sentAt ?: "",
-            lastMessageId = lastMessage?.id?.takeIf { it > 0 },
-            lastMessageSenderId = lastMessage?.senderId,
-            lastActivitySortKey = chatActivitySortKey(lastMessage?.sentAt ?: ""),
+            lastMessage = preview,
+            lastSentAt = lastSentAt,
+            lastMessageSenderId = lastMessageSenderId,
+            lastActivitySortKey = chatActivitySortKey(lastSentAt),
+            isGroup = type == ConversationType.GROUP,
+            participants = participants,
         )
+    }
+
+    private fun formatLastMessagePreview(
+        conversation: Conversation,
+        messageText: String,
+        senderId: Int?,
+        participants: List<ChatParticipant>,
+        usersById: Map<Int, User>,
+    ): String {
+        if (conversation.type != ConversationType.GROUP) return messageText
+        val senderName = senderId?.let { id ->
+            participants.find { it.id == id }?.name ?: usersById[id]?.name
+        } ?: "?"
+        return "$senderName: $messageText"
     }
 
     private fun buildContacts(
@@ -668,5 +1088,4 @@ class ChatViewModel(
     private companion object {
         const val CHAT_REFRESH_INTERVAL_MS = 1_000L
     }
-
 }
