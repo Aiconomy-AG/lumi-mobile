@@ -13,13 +13,18 @@ import io.livekit.android.room.Room
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.example.project.notifications.IncomingCallRingingService
 
 object AndroidCallRuntime {
     private var applicationContext: Context? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var callsManager: CallsManager? = null
     private val controls = mutableMapOf<String, CallControlScope>()
+
     fun initialize(context: Context) {
         applicationContext = context.applicationContext
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && callsManager == null) {
@@ -28,9 +33,10 @@ object AndroidCallRuntime {
             }
         }
     }
+
     internal fun context(): Context = checkNotNull(applicationContext) { "AndroidCallRuntime is not initialized." }
 
-    fun reportIncoming(callId: String, callerUserId: String, callerName: String) {
+    fun reportIncoming(callId: String, callerUserId: String, callerName: String, isVideo: Boolean = false) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || controls.containsKey(callId)) return
         val manager = callsManager ?: return
         scope.launch {
@@ -40,7 +46,11 @@ object AndroidCallRuntime {
                         callerName,
                         Uri.parse("sip:lumi-user-$callerUserId@lumi.internal"),
                         CallAttributesCompat.DIRECTION_INCOMING,
-                        CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
+                        if (isVideo) {
+                            CallAttributesCompat.CALL_TYPE_VIDEO_CALL
+                        } else {
+                            CallAttributesCompat.CALL_TYPE_AUDIO_CALL
+                        },
                         0,
                     ),
                     onAnswer = { openCallAction(callId, "answer") },
@@ -55,42 +65,71 @@ object AndroidCallRuntime {
     fun dismiss(callId: String) {
         val control = controls.remove(callId) ?: return
         scope.launch { control.disconnect(DisconnectCause(DisconnectCause.REMOTE)) }
+        IncomingCallRingingService.stop(context(), callId)
     }
 
-    private fun openCallAction(callId: String, action: String) {
-        context().packageManager.getLaunchIntentForPackage(context().packageName)?.apply {
+    fun openCallAction(callId: String, action: String) {
+        IncomingCallRingingService.stop(context(), callId)
+        val intent = Intent(context(), IncomingCallActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("type", "workspace_call_incoming")
             putExtra("call_id", callId)
-            putExtra("call_action", action)
-        }?.let(context()::startActivity)
+            if (action.isNotEmpty()) putExtra("call_action", action)
+        }
+        context().startActivity(intent)
     }
 }
 
 private class AndroidLiveKitCallController : PlatformCallController {
     private var room: Room? = null
+    private val _remoteParticipantCount = MutableStateFlow(0)
+    override val remoteParticipantCount: StateFlow<Int> = _remoteParticipantCount.asStateFlow()
+
+    init {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            AndroidLiveKitRoomHolder.remoteParticipantCount.collect {
+                _remoteParticipantCount.value = it
+            }
+        }
+    }
 
     override suspend fun connect(call: WorkspaceCall) {
         val connection = call.connection ?: return
         disconnect()
-        room = LiveKit.create(AndroidCallRuntime.context()).also {
-            it.connect(connection.url, connection.token)
-            it.localParticipant.setMicrophoneEnabled(true)
+        room = LiveKit.create(AndroidCallRuntime.context()).also { connectedRoom ->
+            connectedRoom.connect(connection.url, connection.token)
+            connectedRoom.localParticipant.setMicrophoneEnabled(true)
+            if (call.isVideo) {
+                connectedRoom.localParticipant.setCameraEnabled(true)
+            }
+            AndroidLiveKitRoomHolder.refresh(connectedRoom)
         }
     }
 
     override suspend fun disconnect() {
         room?.disconnect()
         room = null
+        AndroidLiveKitRoomHolder.clear()
     }
 
     override suspend fun setMuted(muted: Boolean) {
         room?.localParticipant?.setMicrophoneEnabled(!muted)
     }
 
-    override fun showIncoming(call: WorkspaceCall) {
-        AndroidCallRuntime.reportIncoming(call.id, call.caller.id.toString(), call.caller.name)
+    override suspend fun setCameraEnabled(enabled: Boolean) {
+        room?.localParticipant?.setCameraEnabled(enabled)
+        room?.let { AndroidLiveKitRoomHolder.refresh(it) }
     }
+
+    override fun showIncoming(call: WorkspaceCall) {
+        AndroidCallRuntime.reportIncoming(
+            call.id,
+            call.caller.id.toString(),
+            call.caller.name,
+            call.isVideo,
+        )
+    }
+
     override fun dismissIncoming(callId: String) = AndroidCallRuntime.dismiss(callId)
 }
 

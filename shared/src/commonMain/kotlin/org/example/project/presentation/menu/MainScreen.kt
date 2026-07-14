@@ -28,6 +28,7 @@ import org.example.project.data.auth.UserSession
 import org.example.project.data.chat.ChatApiService
 import org.example.project.data.chat.ReverbChatRealtimeService
 import org.example.project.data.calls.CallApiService
+import org.example.project.data.calls.ReverbCallPresenceRealtimeService
 import org.example.project.data.calls.ReverbCallRealtimeService
 import org.example.project.data.createHttpClient
 import org.example.project.data.orders.OrdersApiService
@@ -50,6 +51,8 @@ import org.example.project.presentation.auditlogs.AuditLogsViewModel
 import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
 import org.example.project.domain.calls.createPlatformCallController
+import org.example.project.presentation.calls.CallHistoryScreen
+import org.example.project.presentation.calls.CallHistoryViewModel
 import org.example.project.presentation.calls.CallOverlay
 import org.example.project.presentation.calls.CallViewModel
 import org.example.project.presentation.components.PlatformBackHandler
@@ -197,12 +200,21 @@ fun MainScreen(
     val callRealtime = remember(realtimeClient) {
         ReverbCallRealtimeService(realtimeClient)
     }
+    val callPresenceRealtime = remember(realtimeClient) {
+        ReverbCallPresenceRealtimeService(realtimeClient)
+    }
     val platformCallController = remember { createPlatformCallController() }
     val callViewModel = remember(user.id, user.token) {
-        CallViewModel(user.id, callApi, callRealtime, platformCallController)
+        CallViewModel(user.id, callApi, callRealtime, callPresenceRealtime, platformCallController)
     }
-    DisposableEffect(callViewModel) {
-        onDispose(callViewModel::close)
+    val callHistoryViewModel = remember(user.token) {
+        CallHistoryViewModel(callApi)
+    }
+    DisposableEffect(callViewModel, callHistoryViewModel) {
+        onDispose {
+            callViewModel.close()
+            callHistoryViewModel.close()
+        }
     }
     val authRepository = remember(apiHttpClient) {
         AuthApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL)
@@ -267,7 +279,7 @@ fun MainScreen(
             }
 
             "workspace_call_incoming", "workspace_call_updated" -> {
-                callViewModel.openFromNotification(link.callAction)
+                callViewModel.openFromNotification(link.callId, link.callAction)
             }
         }
 
@@ -417,7 +429,16 @@ fun MainScreen(
                     ChatScreen(
                         viewModel = chatViewModel,
                         currentEmployeeId = user.id,
-                        onStartCall = callViewModel::start,
+                        onStartCall = { participantIds, type, conversationId ->
+                            callViewModel.startFromConversation(participantIds, type, conversationId)
+                        },
+                        modifier = Modifier.padding(paddingValues),
+                    )
+                }
+
+                AppSection.CALL_HISTORY -> {
+                    CallHistoryScreen(
+                        viewModel = callHistoryViewModel,
                         modifier = Modifier.padding(paddingValues),
                     )
                 }

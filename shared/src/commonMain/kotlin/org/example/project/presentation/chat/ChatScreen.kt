@@ -63,7 +63,7 @@ import org.example.project.presentation.theme.AppDimensions
 fun ChatScreen(
     viewModel: ChatViewModel,
     currentEmployeeId: Int,
-    onStartCall: (Int) -> Unit,
+    onStartCall: (participantIds: List<Int>, type: String, conversationId: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -92,7 +92,14 @@ fun ChatScreen(
                 onMessageDraftChanged = viewModel::onMessageDraftChanged,
                 onSendClick = viewModel::sendMessage,
                 onGroupSettingsClick = viewModel::openGroupSettings,
-                onStartCall = { onStartCall(uiState.selectedConversation!!.conversation.id) },
+                onStartCall = { type ->
+                    val conversation = uiState.selectedConversation!!
+                    onStartCall(
+                        conversation.participants.map { it.id },
+                        type,
+                        conversation.conversation.id,
+                    )
+                },
             )
         }
 
@@ -523,7 +530,7 @@ private fun ConversationDetailScreen(
     onMessageDraftChanged: (String) -> Unit,
     onSendClick: () -> Unit,
     onGroupSettingsClick: () -> Unit,
-    onStartCall: () -> Unit,
+    onStartCall: (String) -> Unit,
 ) {
     val selectedConversation = uiState.selectedConversation ?: return
     val listState = rememberLazyListState()
@@ -580,9 +587,18 @@ private fun ConversationDetailScreen(
                         color = AppColorPalette.Primary,
                     )
                 }
+                TextButton(onClick = { onStartCall("audio") }) {
+                    Text(text = strings.text("Group audio"), color = AppColorPalette.Primary)
+                }
+                TextButton(onClick = { onStartCall("video") }) {
+                    Text(text = strings.text("Group video"), color = AppColorPalette.Primary)
+                }
             } else {
-                TextButton(onClick = onStartCall) {
-                    Text(text = "Call", color = AppColorPalette.Primary)
+                TextButton(onClick = { onStartCall("audio") }) {
+                    Text(text = strings.text("Audio call"), color = AppColorPalette.Primary)
+                }
+                TextButton(onClick = { onStartCall("video") }) {
+                    Text(text = strings.text("Video call"), color = AppColorPalette.Primary)
                 }
             }
         }

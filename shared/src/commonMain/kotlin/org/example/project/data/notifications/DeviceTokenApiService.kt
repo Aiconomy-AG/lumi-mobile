@@ -14,8 +14,12 @@ import io.ktor.http.contentType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.example.project.data.calls.ClientInstanceIdStorage
 
 enum class DevicePlatform {
+    @SerialName("fcm_android")
+    FCM_ANDROID,
+
     @SerialName("android")
     ANDROID,
 
@@ -31,6 +35,7 @@ class DeviceTokenApiService(
     suspend fun registerDeviceToken(
         fcmToken: String,
         platform: DevicePlatform,
+        deviceId: String? = null,
     ): Result<Unit> {
         return try {
             val response = client.post("$baseUrl/device-tokens") {
@@ -40,6 +45,7 @@ class DeviceTokenApiService(
                     RegisterDeviceTokenRequest(
                         token = fcmToken,
                         platform = platform,
+                        deviceId = deviceId,
                     )
                 )
             }
@@ -88,10 +94,13 @@ class DeviceTokenApiService(
     }
 }
 
+fun currentDeviceId(): String = ClientInstanceIdStorage.getOrCreate()
+
 @Serializable
 private data class RegisterDeviceTokenRequest(
     val token: String,
     val platform: DevicePlatform,
+    @SerialName("device_id") val deviceId: String? = null,
 )
 
 @Serializable

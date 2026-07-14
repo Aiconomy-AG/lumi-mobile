@@ -63,7 +63,10 @@ class ReverbPrivateChannelClient(
     }
 
     private fun channelEvents(channel: String): Flow<ReverbEvent> = flow {
-        val channelName = if (channel.startsWith("private-")) channel else "private-$channel"
+        val channelName = when {
+            channel.startsWith("private-") || channel.startsWith("presence-") -> channel
+            else -> "private-$channel"
+        }
         while (currentCoroutineContext().isActive) {
             try {
                 client.webSocket(urlString = webSocketUrl()) {

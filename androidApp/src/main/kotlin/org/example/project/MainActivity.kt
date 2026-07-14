@@ -13,7 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import org.example.project.data.calls.ClientInstanceIdStorage
 import org.example.project.notifications.AndroidNotificationIntents
+import org.example.project.notifications.PushNotificationCoordinator
 import org.example.project.notifications.PushNotifications
 import org.example.project.domain.calls.AndroidCallRuntime
 
@@ -23,13 +25,19 @@ class MainActivity : ComponentActivity() {
     ) {
         lifecycleScope.launch {
             logFcmToken()
+            PushNotificationCoordinator.reregisterIfPossible()
         }
     }
+
+    private val requestCameraPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        ClientInstanceIdStorage.initialize(this)
         PushNotifications.initialize(this)
         AndroidCallRuntime.initialize(this)
         org.example.project.data.auth.SessionStorage.initialize(this)
@@ -48,6 +56,10 @@ class MainActivity : ComponentActivity() {
 
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(Manifest.permission.RECORD_AUDIO)
+        }
+
+        if (checkSelfPermission(Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestCameraPermission.launch(Manifest.permission.CAMERA)
         }
 
         setContent {
