@@ -20,6 +20,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
@@ -46,6 +47,9 @@ class ReverbPrivateChannelClient(
     private val streams = mutableMapOf<String, Flow<ReverbEvent>>()
 
     fun events(channel: String): Flow<ReverbEvent> = streams.getOrPut(channel) {
+        if (appKey.isBlank()) {
+            return@getOrPut emptyFlow()
+        }
         channelEvents(channel).shareIn(
             scope = scope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -59,7 +63,6 @@ class ReverbPrivateChannelClient(
     }
 
     private fun channelEvents(channel: String): Flow<ReverbEvent> = flow {
-        require(appKey.isNotBlank()) { "Reverb app key is not configured." }
         val channelName = if (channel.startsWith("private-")) channel else "private-$channel"
         while (currentCoroutineContext().isActive) {
             try {
