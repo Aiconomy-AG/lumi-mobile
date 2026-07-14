@@ -63,6 +63,7 @@ import org.example.project.presentation.theme.AppDimensions
 fun ChatScreen(
     viewModel: ChatViewModel,
     currentEmployeeId: Int,
+    onStartCall: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -91,6 +92,7 @@ fun ChatScreen(
                 onMessageDraftChanged = viewModel::onMessageDraftChanged,
                 onSendClick = viewModel::sendMessage,
                 onGroupSettingsClick = viewModel::openGroupSettings,
+                onStartCall = { onStartCall(uiState.selectedConversation!!.conversation.id) },
             )
         }
 
@@ -521,6 +523,7 @@ private fun ConversationDetailScreen(
     onMessageDraftChanged: (String) -> Unit,
     onSendClick: () -> Unit,
     onGroupSettingsClick: () -> Unit,
+    onStartCall: () -> Unit,
 ) {
     val selectedConversation = uiState.selectedConversation ?: return
     val listState = rememberLazyListState()
@@ -576,6 +579,10 @@ private fun ConversationDetailScreen(
                         text = strings.text("Settings"),
                         color = AppColorPalette.Primary,
                     )
+                }
+            } else {
+                TextButton(onClick = onStartCall) {
+                    Text(text = "Call", color = AppColorPalette.Primary)
                 }
             }
         }

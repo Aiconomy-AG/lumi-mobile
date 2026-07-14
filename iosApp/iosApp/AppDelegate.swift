@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
+        _ = LumiCallManager.shared
 
         requestNotificationPermission(application: application)
 

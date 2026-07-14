@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.example.project.notifications.AndroidNotificationIntents
 import org.example.project.notifications.PushNotifications
+import org.example.project.domain.calls.AndroidCallRuntime
 
 class MainActivity : ComponentActivity() {
     private val requestNotificationPermission = registerForActivityResult(
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         PushNotifications.initialize(this)
+        AndroidCallRuntime.initialize(this)
         org.example.project.data.auth.SessionStorage.initialize(this)
         org.example.project.data.chat.ChatReadStateStorage.initialize(this)
         AndroidNotificationIntents.handle(intent)
@@ -42,6 +44,10 @@ class MainActivity : ComponentActivity() {
                 }
                 else -> logFcmToken()
             }
+        }
+
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(Manifest.permission.RECORD_AUDIO)
         }
 
         setContent {

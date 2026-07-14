@@ -8,6 +8,7 @@ import androidx.core.app.NotificationManagerCompat
 
 object NotificationChannels {
     const val DEFAULT_CHANNEL_ID = "lumi_default"
+    const val CALL_CHANNEL_ID = "lumi_calls"
     private const val DEFAULT_CHANNEL_NAME = "General"
     private const val DEFAULT_CHANNEL_DESCRIPTION = "Task and app notifications"
 
@@ -24,6 +25,13 @@ object NotificationChannels {
 
         val notificationManager = context.getSystemService(NotificationManager::class.java)
         notificationManager?.createNotificationChannel(channel)
+        notificationManager?.createNotificationChannel(
+            NotificationChannel(CALL_CHANNEL_ID, "Lumi calls", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "Incoming and active Lumi audio calls"
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                setSound(android.provider.Settings.System.DEFAULT_RINGTONE_URI, null)
+            }
+        )
     }
 
     fun areNotificationsEnabled(context: Context): Boolean {

@@ -26,6 +26,8 @@ import org.example.project.data.auth.AuthApiService
 import org.example.project.data.auth.UserSession
 import org.example.project.data.chat.ChatApiService
 import org.example.project.data.chat.ReverbChatRealtimeService
+import org.example.project.data.calls.CallApiService
+import org.example.project.data.calls.ReverbCallRealtimeService
 import org.example.project.data.createHttpClient
 import org.example.project.data.orders.OrdersApiService
 import org.example.project.data.project.ProjectApiService
@@ -45,6 +47,10 @@ import org.example.project.presentation.auditlogs.AuditLogsScreen
 import org.example.project.presentation.auditlogs.AuditLogsViewModel
 import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
+import org.example.project.domain.calls.createPlatformCallController
+import org.example.project.presentation.calls.CallEffect
+import org.example.project.presentation.calls.CallOverlay
+import org.example.project.presentation.calls.CallViewModel
 import org.example.project.presentation.components.PlatformBackHandler
 import org.example.project.presentation.dashboard.DashboardScreen
 import org.example.project.presentation.localization.AppLanguage
@@ -142,6 +148,7 @@ fun MainScreen(
     }
 
     var showUserDetail by remember { mutableStateOf(false) }
+    var editPhoneForCall by remember { mutableStateOf(false) }
     val taskTimeEntryApi = remember(user.token) {
         TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
     }
@@ -186,6 +193,24 @@ fun MainScreen(
             chatRealtimeApi = chatRealtimeApi,
         )
     }
+    val callApi = remember(user.token) {
+        CallApiService(apiHttpClient, ApiConfig.BASE_URL, user.token)
+    }
+    val callRealtime = remember(user.token) {
+        ReverbCallRealtimeService(
+            apiHttpClient,
+            ApiConfig.BASE_URL,
+            ApiConfig.REVERB_APP_KEY,
+            ApiConfig.REVERB_HOST,
+            ApiConfig.REVERB_PORT,
+            ApiConfig.REVERB_SCHEME,
+            user.token,
+        )
+    }
+    val platformCallController = remember { createPlatformCallController() }
+    val callViewModel = remember(user.id, user.token) {
+        CallViewModel(user.id, user.phoneNumber, callApi, callRealtime, platformCallController)
+    }
     val authRepository = remember(apiHttpClient) {
         AuthApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL)
     }
@@ -193,6 +218,16 @@ fun MainScreen(
     val strings = LocalAppStrings.current
     val pendingDeepLink by NotificationRouter.pending.collectAsState()
     val chatUiState by chatViewModel.uiState.collectAsState()
+    val callUiState by callViewModel.state.collectAsState()
+
+    LaunchedEffect(callViewModel) {
+        callViewModel.effects.collect { effect ->
+            if (effect is CallEffect.EditPhone) {
+                editPhoneForCall = true
+                showUserDetail = true
+            }
+        }
+    }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -245,6 +280,10 @@ fun MainScreen(
             "chat_message_received" -> {
                 navigateToMainSection(AppSection.CHAT)
                 link.conversationId?.let { chatViewModel.openConversationById(it) }
+            }
+
+            "workspace_call_incoming", "workspace_call_updated" -> {
+                callViewModel.openFromNotification(link.callAction)
             }
         }
 
@@ -394,6 +433,7 @@ fun MainScreen(
                     ChatScreen(
                         viewModel = chatViewModel,
                         currentEmployeeId = user.id,
+                        onStartCall = callViewModel::start,
                         modifier = Modifier.padding(paddingValues),
                     )
                 }
@@ -429,11 +469,22 @@ fun MainScreen(
                     selectedLanguage = selectedLanguage,
                     authRepository = authRepository,
                     onLanguageSelected = onLanguageSelected,
-                    onPhoneNumberUpdated = onPhoneNumberUpdated,
-                    onDismiss = { showUserDetail = false },
+                    onPhoneNumberUpdated = { number ->
+                        onPhoneNumberUpdated(number)
+                        callViewModel.onPhoneNumberUpdated(number)
+                        editPhoneForCall = false
+                        showUserDetail = false
+                    },
+                    startInPhoneEditMode = editPhoneForCall,
+                    onDismiss = {
+                        showUserDetail = false
+                        editPhoneForCall = false
+                    },
                     onLogout = onLogout,
                 )
             }
+
+            CallOverlay(callViewModel, user.id, callUiState)
         }
     }
 }

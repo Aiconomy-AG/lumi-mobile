@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		325D260D3000EE4B001A0224 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 325D260C3000EE4B001A0224 /* FirebaseCore */; };
 		FA12D7732FFFC1D400DF55A8 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FA12D7722FFFC1D400DF55A8 /* FirebaseMessaging */; settings = {ATTRIBUTES = (Required, ); }; };
+		A10000000000000000000003 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000002 /* LiveKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +49,7 @@
 			files = (
 				325D260D3000EE4B001A0224 /* FirebaseCore in Frameworks */,
 				FA12D7732FFFC1D400DF55A8 /* FirebaseMessaging in Frameworks */,
+				A10000000000000000000003 /* LiveKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -102,6 +104,7 @@
 			packageProductDependencies = (
 				FA12D7722FFFC1D400DF55A8 /* FirebaseMessaging */,
 				325D260C3000EE4B001A0224 /* FirebaseCore */,
+				A10000000000000000000002 /* LiveKit */,
 			);
 			productName = iosApp;
 			productReference = 7C3CC0AEDD8C89E15C798B3A /* Lumi.app */;
@@ -133,6 +136,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FA12D7712FFFC1D400DF55A8 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				A10000000000000000000001 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 184A2C880E41F80C42D4C723 /* Products */;
@@ -396,6 +400,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		A10000000000000000000001 /* XCRemoteSwiftPackageReference "client-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/livekit/client-sdk-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.13.0;
+			};
+		};
 		FA12D7712FFFC1D400DF55A8 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -407,6 +419,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A10000000000000000000002 /* LiveKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000001 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
+			productName = LiveKit;
+		};
 		325D260C3000EE4B001A0224 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = FA12D7712FFFC1D400DF55A8 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

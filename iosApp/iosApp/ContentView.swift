@@ -12,7 +12,15 @@ struct ComposeView: UIViewControllerRepresentable {
 
 struct ContentView: View {
     var body: some View {
-        ComposeView()
-            .ignoresSafeArea()
+        ZStack(alignment: .bottomTrailing) {
+            ComposeView().ignoresSafeArea()
+#if DEBUG
+            Button("Debug CallKit") {
+                LumiCallManager.shared.debugIncomingCall()
+            }
+            .buttonStyle(.borderedProminent)
+            .padding()
+#endif
+        }
     }
 }

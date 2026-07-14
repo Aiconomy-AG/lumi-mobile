@@ -50,6 +50,7 @@ fun UserDetailDialog(
     onPhoneNumberUpdated: (String) -> Unit,
     onDismiss: () -> Unit,
     onLogout: () -> Unit,
+    startInPhoneEditMode: Boolean = false,
 ) {
     val strings = LocalAppStrings.current
     var displayedPhone by remember(user.phoneNumber) { mutableStateOf(user.phoneNumber) }
@@ -109,6 +110,7 @@ fun UserDetailDialog(
                     displayedPhone = updatedPhone
                     onPhoneNumberUpdated(updatedPhone)
                 },
+                startInEditMode = startInPhoneEditMode,
             )
             StatusRow(status = user.status)
             InfoRow(label = strings.text("Role"), value = strings.userRole(user.role))
@@ -259,10 +261,11 @@ private fun EditablePhoneRow(
     authRepository: AuthRepository,
     token: String,
     onPhoneNumberUpdated: (String) -> Unit,
+    startInEditMode: Boolean = false,
 ) {
     val strings = LocalAppStrings.current
     val scope = rememberCoroutineScope()
-    var isEditing by remember { mutableStateOf(false) }
+    var isEditing by remember(startInEditMode) { mutableStateOf(startInEditMode) }
     var draftPhone by remember(phoneNumber) { mutableStateOf(phoneNumber) }
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -325,12 +328,8 @@ private fun EditablePhoneRow(
                             .clickable {
                                 if (isEditing) {
                                     val trimmed = draftPhone.trim()
-                                    if (trimmed.isBlank()) {
-                                        errorMessage = strings.text("Phone number is required.")
-                                        return@clickable
-                                    }
-                                    if (trimmed.length > 20) {
-                                        errorMessage = strings.text("Phone number is too long.")
+                                    if (!trimmed.matches(Regex("^\\+[1-9]\\d{7,14}$"))) {
+                                        errorMessage = strings.text("Use international format, for example +40722123456.")
                                         return@clickable
                                     }
 

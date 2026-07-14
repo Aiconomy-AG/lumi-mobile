@@ -155,6 +155,8 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.messaging)
             implementation("androidx.core:core-ktx:1.15.0")
+            implementation("androidx.core:core-telecom:1.0.0")
+            implementation("io.livekit:livekit-android:2.25.3")
         }
         commonMain {
             kotlin.srcDir(generatedApiConfigDir)
