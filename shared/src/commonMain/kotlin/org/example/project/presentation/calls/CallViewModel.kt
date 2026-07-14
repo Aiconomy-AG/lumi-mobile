@@ -30,6 +30,7 @@ data class CallUiState(
     val connectionLabel: String = "",
     val elapsedSeconds: Int = 0,
     val remoteParticipantCount: Int = 0,
+    val accepting: Boolean = false,
     val error: String? = null,
 )
 
@@ -80,14 +81,18 @@ class CallViewModel(
     fun recover() {
         scope.launch {
             runCatching { api.active(instanceId) }.onSuccess { call ->
-                if (call != null) {
-                    val mediaType = if (call.isVideo) "video" else "audio"
-                    if (call.connection != null && call.status == CallStatus.ACTIVE &&
-                        !ensurePermissions(mediaType)
-                    ) {
-                        return@launch
-                    }
+                if (call == null) return@onSuccess
+                val incoming = call.status == CallStatus.RINGING &&
+                    call.initiatedByUserId != currentUserId
+                if (incoming) {
                     activate(call)
+                    return@onSuccess
+                }
+                if (call.status == CallStatus.ACTIVE && call.connection != null &&
+                    canJoinActiveCall(call)
+                ) {
+                    activate(call)
+                    connectMedia(call, permissionsAlreadyGranted = true)
                 }
             }
         }
@@ -156,13 +161,8 @@ class CallViewModel(
 
             when (action) {
                 "answer" -> {
-                    acceptingCall = true
-                    try {
-                        if (!ensurePermissions(if (call.isVideo) "video" else "audio")) return@launch
-                        runCallRequest { api.accept(call.id, instanceId) }
-                    } finally {
-                        acceptingCall = false
-                    }
+                    activate(call)
+                    acceptIncomingCall()
                 }
                 "decline", "hangup" -> {
                     runCatching {
@@ -178,15 +178,49 @@ class CallViewModel(
     }
 
     fun accept() {
+        scope.launch { acceptIncomingCall() }
+    }
+
+    private suspend fun acceptIncomingCall() {
         val call = _state.value.call ?: return
-        scope.launch {
-            acceptingCall = true
-            try {
-                if (!ensurePermissions(if (call.isVideo) "video" else "audio")) return@launch
-                runCallRequest { api.accept(call.id, instanceId) }
-            } finally {
-                acceptingCall = false
+        if (acceptingCall || call.status != CallStatus.RINGING) return
+
+        acceptingCall = true
+        _state.value = _state.value.copy(accepting = true, error = null)
+        try {
+            val mediaType = if (call.isVideo) "video" else "audio"
+            if (!ensurePermissions(mediaType)) {
+                return
             }
+            val acceptedCall = api.accept(call.id, instanceId)
+            joinAcceptedCall(acceptedCall)
+        } catch (error: CallApiException) {
+            if (error.code == "ANSWERED_ELSEWHERE") {
+                clearCall(call.id)
+                _state.value = CallUiState(error = error.message)
+            } else {
+                _state.value = _state.value.copy(error = error.message)
+            }
+        } catch (error: Exception) {
+            _state.value = _state.value.copy(
+                error = error.message ?: "Could not answer call.",
+            )
+        } finally {
+            acceptingCall = false
+            _state.value = _state.value.copy(accepting = false)
+        }
+    }
+
+    private suspend fun joinAcceptedCall(call: WorkspaceCall) {
+        _state.value = _state.value.copy(
+            call = call,
+            error = null,
+            cameraEnabled = if (call.isVideo) CallPermissions.hasCamera() else false,
+            connectionLabel = buildConnectionLabel(call, ""),
+        )
+        subscribePresence(call)
+        if (call.connection != null) {
+            connectMedia(call, permissionsAlreadyGranted = true)
         }
     }
 
@@ -284,10 +318,14 @@ class CallViewModel(
         }
     }
 
-    private suspend fun connectMedia(call: WorkspaceCall) {
+    private suspend fun connectMedia(call: WorkspaceCall, permissionsAlreadyGranted: Boolean = false) {
         connectMutex.withLock {
             if (_state.value.connectionLabel == "Connected") return
-            if (!ensurePermissions(if (call.isVideo) "video" else "audio")) return
+            if (!permissionsAlreadyGranted) {
+                if (!ensurePermissions(if (call.isVideo) "video" else "audio")) return
+            } else if (!hasRequiredPermissions(call)) {
+                return
+            }
             _state.value = _state.value.copy(connectionLabel = "Connecting…")
             try {
                 platform.connect(call)
@@ -328,12 +366,22 @@ class CallViewModel(
 
         if (acceptingCall) return
 
+        val incomingRinging = call.status == CallStatus.RINGING &&
+            call.initiatedByUserId != currentUserId
+        if (incomingRinging) return
+
         if (call.status == CallStatus.ACTIVE && call.connection != null &&
             _state.value.connectionLabel != "Connected" &&
+            canJoinActiveCall(call) &&
             hasRequiredPermissions(call)
         ) {
-            connectMedia(call)
+            connectMedia(call, permissionsAlreadyGranted = true)
         }
+    }
+
+    private fun canJoinActiveCall(call: WorkspaceCall): Boolean {
+        if (call.initiatedByUserId == currentUserId) return true
+        return call.answeredClientInstanceId == instanceId
     }
 
     private fun hasRequiredPermissions(call: WorkspaceCall): Boolean {

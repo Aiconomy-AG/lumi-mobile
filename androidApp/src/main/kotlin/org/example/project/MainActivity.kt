@@ -16,7 +16,9 @@ import kotlinx.coroutines.launch
 import org.example.project.data.calls.ClientInstanceIdStorage
 import org.example.project.domain.calls.AndroidCallRuntime
 import org.example.project.domain.calls.CallPermissions
-import org.example.project.notifications.AndroidNotificationIntents
+import org.example.project.data.auth.SessionStorage
+import org.example.project.data.chat.ChatReadStateStorage
+import org.example.project.notifications.PendingNotificationIntent
 import org.example.project.notifications.PushNotificationCoordinator
 import org.example.project.notifications.PushNotifications
 
@@ -40,7 +42,7 @@ class MainActivity : ComponentActivity() {
         AndroidCallRuntime.initialize(this)
         org.example.project.data.auth.SessionStorage.initialize(this)
         org.example.project.data.chat.ChatReadStateStorage.initialize(this)
-        AndroidNotificationIntents.handle(intent)
+        PendingNotificationIntent.enqueue(intent)
 
         lifecycleScope.launch {
             when {
@@ -60,7 +62,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        AndroidNotificationIntents.handle(intent)
+        PendingNotificationIntent.enqueue(intent)
     }
 
     private suspend fun logFcmToken() {

@@ -143,7 +143,7 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
                 Spacer(Modifier.height(28.dp))
 
                 when {
-                    incoming -> IncomingControls(viewModel, strings)
+                    incoming -> IncomingControls(viewModel, strings, state.accepting)
                     call.status == CallStatus.RINGING -> OutgoingRingingControls(viewModel, strings)
                     else -> ActiveControls(viewModel, state, call.isVideo, call.isGroup, strings)
                 }
@@ -173,6 +173,7 @@ private fun CallAvatar(name: String) {
 private fun IncomingControls(
     viewModel: CallViewModel,
     strings: org.example.project.presentation.localization.AppStrings,
+    accepting: Boolean,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -184,6 +185,7 @@ private fun IncomingControls(
             icon = Icons.Filled.CallEnd,
             contentDescription = strings.text("Decline"),
             onClick = viewModel::decline,
+            enabled = !accepting,
         )
         CallCircleButton(
             background = AppColorPalette.Success,
@@ -192,6 +194,7 @@ private fun IncomingControls(
             onClick = viewModel::accept,
             size = 72.dp,
             iconSize = 32.dp,
+            enabled = !accepting,
         )
     }
 }
@@ -270,9 +273,11 @@ private fun CallCircleButton(
     onClick: () -> Unit,
     size: androidx.compose.ui.unit.Dp = 56.dp,
     iconSize: androidx.compose.ui.unit.Dp = 26.dp,
+    enabled: Boolean = true,
 ) {
     IconButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier
             .size(size)
             .background(background, CircleShape),
@@ -295,6 +300,7 @@ private fun statusText(
 ): String {
     return when {
         incoming && call.isVideo -> strings.text("Incoming video call")
+        incoming && state.accepting -> strings.text("Requesting permissions…")
         incoming -> strings.text("Incoming audio call")
         call.status == CallStatus.RINGING && call.initiatedByUserId == currentUserId -> strings.text("Calling…")
         call.status == CallStatus.RINGING -> strings.text("Ringing…")

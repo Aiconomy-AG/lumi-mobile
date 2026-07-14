@@ -3,59 +3,38 @@ package org.example.project.domain.calls
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import androidx.activity.ComponentActivity
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 actual object CallPermissions {
     private var appContext: Context? = null
-    private var permissionLauncher: ActivityResultLauncher<Array<String>>? = null
-    private var pendingResult: CompletableDeferred<Boolean>? = null
+    private var requestHandler: (suspend (Array<String>) -> Boolean)? = null
     private val mutex = Mutex()
 
     actual fun initialize(platformContext: Any?) {
-        val activity = platformContext as? ComponentActivity ?: return
-        appContext = activity.applicationContext
-        pendingResult?.takeIf { !it.isCompleted }?.complete(hasAudio())
-        pendingResult = null
-        permissionLauncher = activity.registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions(),
-        ) { results ->
-            val granted = results.values.all { it }
-            pendingResult?.complete(granted)
-            pendingResult = null
-        }
+        val context = platformContext as? Context ?: return
+        appContext = context.applicationContext
     }
 
-    actual fun hasAudio(): Boolean {
-        val context = appContext ?: return false
-        return ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-            PackageManager.PERMISSION_GRANTED
+    fun bindRequestHandler(handler: suspend (Array<String>) -> Boolean) {
+        requestHandler = handler
     }
 
-    actual fun hasCamera(): Boolean {
-        val context = appContext ?: return false
-        return ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
+    fun unbindRequestHandler() {
+        requestHandler = null
     }
+
+    actual fun hasAudio(): Boolean = isGranted(Manifest.permission.RECORD_AUDIO)
+
+    actual fun hasCamera(): Boolean = isGranted(Manifest.permission.CAMERA)
 
     actual suspend fun ensureForCall(type: String): Boolean {
+        val needed = permissionsFor(type).filterNot { isGranted(it) }
+        if (needed.isEmpty()) return true
+        val handler = requestHandler ?: return false
         return mutex.withLock {
-            val needed = permissionsFor(type).filterNot { isGranted(it) }
-            if (needed.isEmpty()) return@withLock true
-            val launcher = permissionLauncher ?: return@withLock false
-            withContext(Dispatchers.Main) {
-                val deferred = CompletableDeferred<Boolean>()
-                pendingResult = deferred
-                launcher.launch(needed.toTypedArray())
-                deferred.await()
-            }
+            handler(needed.toTypedArray())
         }
     }
 

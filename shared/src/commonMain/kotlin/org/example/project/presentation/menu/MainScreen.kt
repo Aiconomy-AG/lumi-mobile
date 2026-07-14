@@ -56,7 +56,9 @@ import org.example.project.domain.calls.createPlatformCallController
 import org.example.project.presentation.calls.CallHistoryScreen
 import org.example.project.presentation.calls.CallHistoryViewModel
 import org.example.project.presentation.calls.CallOverlay
+import org.example.project.presentation.calls.CallPermissionHost
 import org.example.project.presentation.calls.CallViewModel
+import org.example.project.notifications.processStartupNotificationIntent
 import org.example.project.presentation.components.PlatformBackHandler
 import org.example.project.presentation.dashboard.DashboardScreen
 import org.example.project.presentation.localization.AppLanguage
@@ -226,6 +228,12 @@ fun MainScreen(
     val pendingDeepLink by NotificationRouter.pending.collectAsState()
     val chatUiState by chatViewModel.uiState.collectAsState()
     val callUiState by callViewModel.state.collectAsState()
+
+    CallPermissionHost()
+
+    LaunchedEffect(Unit) {
+        processStartupNotificationIntent()
+    }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
