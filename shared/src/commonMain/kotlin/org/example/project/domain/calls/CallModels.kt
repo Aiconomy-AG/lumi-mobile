@@ -21,7 +21,6 @@ enum class CallStatus {
 data class CallIdentity(
     val id: Int,
     val name: String,
-    @SerialName("phone_number") val phoneNumber: String,
 )
 
 @Serializable
@@ -40,6 +39,7 @@ data class WorkspaceCall(
     val id: String,
     @SerialName("conversation_id") val conversationId: Int,
     @SerialName("initiated_by_user_id") val initiatedByUserId: Int,
+    @SerialName("destination_type") val destinationType: String = "workspace_user",
     val caller: CallIdentity,
     val participants: List<CallParticipant>,
     @SerialName("media_type") val mediaType: String = "audio",

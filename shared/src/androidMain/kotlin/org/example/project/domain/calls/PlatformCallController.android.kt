@@ -30,7 +30,7 @@ object AndroidCallRuntime {
     }
     internal fun context(): Context = checkNotNull(applicationContext) { "AndroidCallRuntime is not initialized." }
 
-    fun reportIncoming(callId: String, callerName: String, phoneNumber: String) {
+    fun reportIncoming(callId: String, callerUserId: String, callerName: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || controls.containsKey(callId)) return
         val manager = callsManager ?: return
         scope.launch {
@@ -38,7 +38,7 @@ object AndroidCallRuntime {
                 manager.addCall(
                     CallAttributesCompat(
                         callerName,
-                        Uri.parse("lumi:$phoneNumber"),
+                        Uri.parse("sip:lumi-user-$callerUserId@lumi.internal"),
                         CallAttributesCompat.DIRECTION_INCOMING,
                         CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
                         0,
@@ -89,7 +89,7 @@ private class AndroidLiveKitCallController : PlatformCallController {
     }
 
     override fun showIncoming(call: WorkspaceCall) {
-        AndroidCallRuntime.reportIncoming(call.id, call.caller.name, call.caller.phoneNumber)
+        AndroidCallRuntime.reportIncoming(call.id, call.caller.id.toString(), call.caller.name)
     }
     override fun dismissIncoming(callId: String) = AndroidCallRuntime.dismiss(callId)
 }

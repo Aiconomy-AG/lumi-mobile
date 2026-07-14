@@ -51,7 +51,7 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
             Spacer(Modifier.height(16.dp))
             Text(name, color = AppColorPalette.TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Text(
-                if (incoming) "${call.caller.phoneNumber} · self-declared Lumi handle" else state.connectionLabel,
+                if (incoming) "Lumi Workspace audio call" else state.connectionLabel,
                 color = AppColorPalette.TextSecondary,
                 fontSize = 12.sp,
             )
@@ -78,4 +78,3 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
 private fun CallButton(label: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
     Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = color)) { Text(label) }
 }
-

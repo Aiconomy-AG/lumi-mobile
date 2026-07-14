@@ -18,7 +18,7 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
         let configuration = CXProviderConfiguration(localizedName: "Lumi")
         configuration.supportsVideo = false
         configuration.maximumCallsPerCallGroup = 1
-        configuration.supportedHandleTypes = [.generic, .phoneNumber]
+        configuration.supportedHandleTypes = [.generic]
         provider = CXProvider(configuration: configuration)
         super.init()
         provider.setDelegate(self, queue: .main)
@@ -61,7 +61,8 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
         let update = CXCallUpdate()
         update.hasVideo = false
         update.localizedCallerName = notification.userInfo?["callerName"] as? String
-        update.remoteHandle = CXHandle(type: .phoneNumber, value: notification.userInfo?["phone"] as? String ?? "Lumi")
+        let callerUserId = notification.userInfo?["callerUserId"] as? String ?? "unknown"
+        update.remoteHandle = CXHandle(type: .generic, value: "lumi-user-\(callerUserId)")
         provider.reportNewIncomingCall(with: uuid, update: update) { error in
             if let error { NSLog("CallKit incoming call failed: \(error.localizedDescription)") }
         }
@@ -74,7 +75,7 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
 
     func debugIncomingCall() {
         let callId = "debug-\(UUID().uuidString)"
-        showIncoming(Notification(name: .lumiCallIncoming, userInfo: ["callId": callId, "callerName": "Lumi Debug", "phone": "+40000000000"]))
+        showIncoming(Notification(name: .lumiCallIncoming, userInfo: ["callId": callId, "callerName": "Lumi Debug", "callerUserId": "debug"]))
     }
 
     nonisolated func providerDidReset(_ provider: CXProvider) {

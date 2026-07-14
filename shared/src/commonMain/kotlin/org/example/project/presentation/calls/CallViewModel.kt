@@ -4,10 +4,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.example.project.domain.calls.CallApi
@@ -25,10 +23,6 @@ data class CallUiState(
     val error: String? = null,
 )
 
-sealed interface CallEffect {
-    data class EditPhone(val conversationId: Int) : CallEffect
-}
-
 class CallViewModel(
     private val currentUserId: Int,
     private val api: CallApi,
@@ -37,11 +31,8 @@ class CallViewModel(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val instanceId = "mobile-$currentUserId-${Random.nextLong().toString(16)}"
-    private var pendingConversationId: Int? = null
     private val _state = MutableStateFlow(CallUiState())
     val state: StateFlow<CallUiState> = _state.asStateFlow()
-    private val _effects = MutableSharedFlow<CallEffect>(extraBufferCapacity = 1)
-    val effects = _effects.asSharedFlow()
 
     init {
         recover()
@@ -51,16 +42,8 @@ class CallViewModel(
     }
 
     fun start(conversationId: Int) {
-        pendingConversationId = conversationId
         scope.launch {
             runCallRequest { api.start(conversationId, instanceId) }
-        }
-    }
-
-    fun onPhoneNumberUpdated() {
-        pendingConversationId?.let {
-            pendingConversationId = null
-            start(it)
         }
     }
 
@@ -127,16 +110,9 @@ class CallViewModel(
     private suspend fun runCallRequest(block: suspend () -> WorkspaceCall) {
         try {
             activate(block())
-            pendingConversationId = null
         } catch (error: CallApiException) {
-            if (error.code == "PHONE_NUMBER_REQUIRED") {
-                pendingConversationId?.let { _effects.emit(CallEffect.EditPhone(it)) }
-            } else {
-                pendingConversationId = null
-                _state.value = _state.value.copy(error = error.message)
-            }
+            _state.value = _state.value.copy(error = error.message)
         } catch (error: Exception) {
-            pendingConversationId = null
             _state.value = _state.value.copy(error = error.message ?: "Call request failed.")
         }
     }

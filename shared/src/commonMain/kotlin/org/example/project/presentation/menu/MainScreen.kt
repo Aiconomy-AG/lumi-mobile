@@ -50,7 +50,6 @@ import org.example.project.presentation.auditlogs.AuditLogsViewModel
 import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
 import org.example.project.domain.calls.createPlatformCallController
-import org.example.project.presentation.calls.CallEffect
 import org.example.project.presentation.calls.CallOverlay
 import org.example.project.presentation.calls.CallViewModel
 import org.example.project.presentation.components.PlatformBackHandler
@@ -150,7 +149,6 @@ fun MainScreen(
     }
 
     var showUserDetail by remember { mutableStateOf(false) }
-    var editPhoneForCall by remember { mutableStateOf(false) }
     val realtimeClient = remember(user.token) {
         ReverbPrivateChannelClient(
             client = apiHttpClient,
@@ -214,15 +212,6 @@ fun MainScreen(
     val pendingDeepLink by NotificationRouter.pending.collectAsState()
     val chatUiState by chatViewModel.uiState.collectAsState()
     val callUiState by callViewModel.state.collectAsState()
-
-    LaunchedEffect(callViewModel) {
-        callViewModel.effects.collect { effect ->
-            if (effect is CallEffect.EditPhone) {
-                editPhoneForCall = true
-                showUserDetail = true
-            }
-        }
-    }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -466,14 +455,10 @@ fun MainScreen(
                     onLanguageSelected = onLanguageSelected,
                     onPhoneNumberUpdated = { number ->
                         onPhoneNumberUpdated(number)
-                        callViewModel.onPhoneNumberUpdated()
-                        editPhoneForCall = false
                         showUserDetail = false
                     },
-                    startInPhoneEditMode = editPhoneForCall,
                     onDismiss = {
                         showUserDetail = false
-                        editPhoneForCall = false
                     },
                     onLogout = onLogout,
                 )

@@ -55,8 +55,8 @@ class LumiFirebaseMessagingService : FirebaseMessagingService() {
         data["call_id"]?.let { callId ->
             AndroidCallRuntime.reportIncoming(
                 callId,
+                data["caller_user_id"] ?: callId,
                 data["caller_name"] ?: title,
-                data["caller_phone_number"] ?: "Lumi",
             )
         }
         val answerIntent = callPendingIntent(data, "answer")

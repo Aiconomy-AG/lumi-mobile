@@ -24,7 +24,7 @@ private class IosLiveKitCallController : PlatformCallController {
         NSNotificationCenter.defaultCenter.postNotificationName(
             "LumiCallIncoming",
             null,
-            mapOf("callId" to call.id, "callerName" to call.caller.name, "phone" to call.caller.phoneNumber),
+            mapOf("callId" to call.id, "callerName" to call.caller.name, "callerUserId" to call.caller.id.toString()),
         )
     }
 
