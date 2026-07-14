@@ -33,19 +33,11 @@ class CallApiService(
         return callsJson.decodeFromString<NullableCallResponse>(text).data
     }
 
-    override suspend fun get(callId: String): WorkspaceCall = requestGet("$baseUrl/workspace/calls/$callId")
     override suspend fun accept(callId: String, clientInstanceId: String): WorkspaceCall =
         post("$baseUrl/workspace/calls/$callId/accept", ClientRequest(clientInstanceId))
     override suspend fun decline(callId: String): WorkspaceCall = postWithoutBody("$baseUrl/workspace/calls/$callId/decline")
     override suspend fun cancel(callId: String): WorkspaceCall = postWithoutBody("$baseUrl/workspace/calls/$callId/cancel")
     override suspend fun end(callId: String): WorkspaceCall = postWithoutBody("$baseUrl/workspace/calls/$callId/end")
-
-    private suspend fun requestGet(url: String): WorkspaceCall {
-        val response = client.get(url) { bearer() }
-        val text = response.bodyAsText()
-        ensureSuccess(response.status.isSuccess(), text)
-        return callsJson.decodeFromString<CallResponse>(text).data
-    }
 
     private suspend inline fun <reified T> post(url: String, body: T? = null): WorkspaceCall {
         val response = client.post(url) {

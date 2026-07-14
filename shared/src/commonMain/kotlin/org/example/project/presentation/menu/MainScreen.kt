@@ -9,6 +9,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,6 +32,7 @@ import org.example.project.data.calls.ReverbCallRealtimeService
 import org.example.project.data.createHttpClient
 import org.example.project.data.orders.OrdersApiService
 import org.example.project.data.project.ProjectApiService
+import org.example.project.data.realtime.ReverbPrivateChannelClient
 import org.example.project.data.returns.ReturnsApiService
 import org.example.project.data.stock.StockApiService
 import org.example.project.data.task.TaskApiService
@@ -149,11 +151,8 @@ fun MainScreen(
 
     var showUserDetail by remember { mutableStateOf(false) }
     var editPhoneForCall by remember { mutableStateOf(false) }
-    val taskTimeEntryApi = remember(user.token) {
-        TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
-    }
-    val taskTimeEntryRealtimeApi = remember(user.token) {
-        ReverbTaskTimeEntryRealtimeService(
+    val realtimeClient = remember(user.token) {
+        ReverbPrivateChannelClient(
             client = apiHttpClient,
             baseUrl = ApiConfig.BASE_URL,
             appKey = ApiConfig.REVERB_APP_KEY,
@@ -162,6 +161,15 @@ fun MainScreen(
             scheme = ApiConfig.REVERB_SCHEME,
             token = user.token,
         )
+    }
+    DisposableEffect(realtimeClient) {
+        onDispose(realtimeClient::close)
+    }
+    val taskTimeEntryApi = remember(user.token) {
+        TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
+    val taskTimeEntryRealtimeApi = remember(realtimeClient) {
+        ReverbTaskTimeEntryRealtimeService(realtimeClient)
     }
     val activeTimerViewModel = remember(user.id, user.token) {
         ActiveTimerViewModel(
@@ -174,16 +182,8 @@ fun MainScreen(
     val chatApi = remember(user.token) {
         ChatApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
     }
-    val chatRealtimeApi = remember(user.token) {
-        ReverbChatRealtimeService(
-            client = apiHttpClient,
-            baseUrl = ApiConfig.BASE_URL,
-            appKey = ApiConfig.REVERB_APP_KEY,
-            host = ApiConfig.REVERB_HOST,
-            port = ApiConfig.REVERB_PORT,
-            scheme = ApiConfig.REVERB_SCHEME,
-            token = user.token,
-        )
+    val chatRealtimeApi = remember(realtimeClient) {
+        ReverbChatRealtimeService(realtimeClient)
     }
     val chatViewModel = remember(user.id, user.token) {
         ChatViewModel(
@@ -196,20 +196,15 @@ fun MainScreen(
     val callApi = remember(user.token) {
         CallApiService(apiHttpClient, ApiConfig.BASE_URL, user.token)
     }
-    val callRealtime = remember(user.token) {
-        ReverbCallRealtimeService(
-            apiHttpClient,
-            ApiConfig.BASE_URL,
-            ApiConfig.REVERB_APP_KEY,
-            ApiConfig.REVERB_HOST,
-            ApiConfig.REVERB_PORT,
-            ApiConfig.REVERB_SCHEME,
-            user.token,
-        )
+    val callRealtime = remember(realtimeClient) {
+        ReverbCallRealtimeService(realtimeClient)
     }
     val platformCallController = remember { createPlatformCallController() }
     val callViewModel = remember(user.id, user.token) {
-        CallViewModel(user.id, user.phoneNumber, callApi, callRealtime, platformCallController)
+        CallViewModel(user.id, callApi, callRealtime, platformCallController)
+    }
+    DisposableEffect(callViewModel) {
+        onDispose(callViewModel::close)
     }
     val authRepository = remember(apiHttpClient) {
         AuthApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL)
@@ -471,7 +466,7 @@ fun MainScreen(
                     onLanguageSelected = onLanguageSelected,
                     onPhoneNumberUpdated = { number ->
                         onPhoneNumberUpdated(number)
-                        callViewModel.onPhoneNumberUpdated(number)
+                        callViewModel.onPhoneNumberUpdated()
                         editPhoneForCall = false
                         showUserDetail = false
                     },

@@ -14,7 +14,7 @@ enum class CallStatus {
     @SerialName("failed") FAILED;
 
     val isTerminal: Boolean
-        get() = this in setOf(DECLINED, CANCELLED, MISSED, ENDED, FAILED)
+        get() = this != RINGING && this != ACTIVE
 }
 
 @Serializable
@@ -50,4 +50,3 @@ data class WorkspaceCall(
     @SerialName("created_at") val createdAt: String = "",
     val connection: CallConnection? = null,
 )
-

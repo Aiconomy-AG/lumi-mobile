@@ -2,6 +2,8 @@ package org.example.project.presentation.calls
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.example.project.domain.calls.CallApi
 import org.example.project.domain.calls.CallApiException
 import org.example.project.domain.calls.CallRealtimeApi
+import org.example.project.domain.calls.CallStatus
 import org.example.project.domain.calls.PlatformCallController
 import org.example.project.domain.calls.WorkspaceCall
 import kotlin.random.Random
@@ -28,14 +31,12 @@ sealed interface CallEffect {
 
 class CallViewModel(
     private val currentUserId: Int,
-    initialPhoneNumber: String,
     private val api: CallApi,
     private val realtime: CallRealtimeApi,
     private val platform: PlatformCallController,
 ) {
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val instanceId = "mobile-$currentUserId-${Random.nextLong().toString(16)}"
-    private var phoneNumber = initialPhoneNumber
     private var pendingConversationId: Int? = null
     private val _state = MutableStateFlow(CallUiState())
     val state: StateFlow<CallUiState> = _state.asStateFlow()
@@ -50,24 +51,20 @@ class CallViewModel(
     }
 
     fun start(conversationId: Int) {
-        if (!phoneNumber.matches(Regex("^\\+[1-9]\\d{7,14}$"))) {
-            pendingConversationId = conversationId
-            _effects.tryEmit(CallEffect.EditPhone(conversationId))
-            return
-        }
         pendingConversationId = conversationId
         scope.launch {
             runCallRequest { api.start(conversationId, instanceId) }
         }
     }
 
-    fun onPhoneNumberUpdated(value: String) {
-        phoneNumber = value
+    fun onPhoneNumberUpdated() {
         pendingConversationId?.let {
             pendingConversationId = null
             start(it)
         }
     }
+
+    fun close() = scope.cancel()
 
     fun recover() {
         scope.launch {
@@ -85,7 +82,7 @@ class CallViewModel(
                 "answer" -> runCallRequest { api.accept(recovered.id, instanceId) }
                 "decline", "hangup" -> {
                     runCatching {
-                        if (recovered.status.name == "RINGING") {
+                        if (recovered.status == CallStatus.RINGING) {
                             api.decline(recovered.id)
                         } else {
                             api.end(recovered.id)
@@ -135,9 +132,11 @@ class CallViewModel(
             if (error.code == "PHONE_NUMBER_REQUIRED") {
                 pendingConversationId?.let { _effects.emit(CallEffect.EditPhone(it)) }
             } else {
+                pendingConversationId = null
                 _state.value = _state.value.copy(error = error.message)
             }
         } catch (error: Exception) {
+            pendingConversationId = null
             _state.value = _state.value.copy(error = error.message ?: "Call request failed.")
         }
     }
@@ -150,7 +149,7 @@ class CallViewModel(
             return
         }
         _state.value = _state.value.copy(call = call, error = null)
-        val incoming = call.status.name == "RINGING" && call.initiatedByUserId != currentUserId
+        val incoming = call.status == CallStatus.RINGING && call.initiatedByUserId != currentUserId
         if (incoming) platform.showIncoming(call)
         if (call.connection != null) {
             _state.value = _state.value.copy(connectionLabel = "Connecting")
@@ -164,13 +163,13 @@ class CallViewModel(
         if (current != null && current.id != call.id) return
         if (call.status.isTerminal || (
                 call.initiatedByUserId != currentUserId &&
-                    call.status.name == "ACTIVE" &&
+                    call.status == CallStatus.ACTIVE &&
                     call.answeredClientInstanceId != instanceId
             )) {
             platform.disconnect()
             platform.dismissIncoming(call.id)
             _state.value = CallUiState(
-                error = if (call.status.name == "ACTIVE") "Answered on another device." else null,
+                error = if (call.status == CallStatus.ACTIVE) "Answered on another device." else null,
             )
             return
         }

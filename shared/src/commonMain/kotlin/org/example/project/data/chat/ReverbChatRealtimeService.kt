@@ -1,6 +1,5 @@
 package org.example.project.data.chat
 
-import io.ktor.client.HttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
@@ -14,16 +13,8 @@ import org.example.project.domain.chat.ChatNotificationEvent
 import org.example.project.domain.chat.ChatRealtimeApi
 
 class ReverbChatRealtimeService(
-    client: HttpClient,
-    baseUrl: String,
-    appKey: String,
-    host: String,
-    port: Int,
-    scheme: String,
-    token: String,
+    private val realtime: ReverbPrivateChannelClient,
 ) : ChatRealtimeApi {
-    private val realtime = ReverbPrivateChannelClient(client, baseUrl, appKey, host, port, scheme, token)
-
     override fun notificationEvents(userId: Int): Flow<ChatNotificationEvent> = realtime
         .events("users.$userId")
         .filter { it.name == "notification.delivered" }

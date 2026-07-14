@@ -8,7 +8,7 @@ private class IosLiveKitCallController : PlatformCallController {
         NSNotificationCenter.defaultCenter.postNotificationName(
             "LumiCallConnect",
             null,
-            mapOf("url" to connection.url, "token" to connection.token, "callId" to call.id),
+            mapOf("url" to connection.url, "token" to connection.token),
         )
     }
 
@@ -34,4 +34,3 @@ private class IosLiveKitCallController : PlatformCallController {
 }
 
 actual fun createPlatformCallController(): PlatformCallController = IosLiveKitCallController()
-

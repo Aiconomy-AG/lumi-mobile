@@ -1,6 +1,5 @@
 package org.example.project.data.tasktimeentry
 
-import io.ktor.client.HttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
@@ -16,16 +15,8 @@ import org.example.project.domain.tasktimeentry.TimeEntryRealtimeEvent
 import kotlin.time.Instant
 
 class ReverbTaskTimeEntryRealtimeService(
-    client: HttpClient,
-    baseUrl: String,
-    appKey: String,
-    host: String,
-    port: Int,
-    scheme: String,
-    token: String,
+    private val realtime: ReverbPrivateChannelClient,
 ) : TaskTimeEntryRealtimeApi {
-    private val realtime = ReverbPrivateChannelClient(client, baseUrl, appKey, host, port, scheme, token)
-
     override fun timeEntryEvents(userId: Int): Flow<TimeEntryRealtimeEvent> = realtime
         .events("users.$userId")
         .filter { it.name == "time-entry.started" || it.name == "time-entry.stopped" }

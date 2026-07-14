@@ -12,10 +12,16 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import io.ktor.websocket.send
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -36,7 +42,23 @@ class ReverbPrivateChannelClient(
     private val scheme: String,
     private val token: String,
 ) {
-    fun events(channel: String): Flow<ReverbEvent> = flow {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val streams = mutableMapOf<String, Flow<ReverbEvent>>()
+
+    fun events(channel: String): Flow<ReverbEvent> = streams.getOrPut(channel) {
+        channelEvents(channel).shareIn(
+            scope = scope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            replay = 0,
+        )
+    }
+
+    fun close() {
+        scope.cancel()
+        streams.clear()
+    }
+
+    private fun channelEvents(channel: String): Flow<ReverbEvent> = flow {
         require(appKey.isNotBlank()) { "Reverb app key is not configured." }
         val channelName = if (channel.startsWith("private-")) channel else "private-$channel"
         while (currentCoroutineContext().isActive) {
@@ -65,8 +87,7 @@ class ReverbPrivateChannelClient(
     }
 
     private suspend fun authenticate(channel: String, socketId: String): AuthResponse {
-        val root = baseUrl.trimEnd('/').replace(Regex("/v\\d+$"), "")
-        val response = client.submitForm("$root/broadcasting/auth", Parameters.build {
+        val response = client.submitForm("${baseUrl.trimEnd('/')}/broadcasting/auth", Parameters.build {
             append("channel_name", channel); append("socket_id", socketId)
         }) {
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -103,4 +124,3 @@ private inline fun <reified T> JsonElement?.decodeNested(): T = decodeRealtime()
 @Serializable private data class ConnectionData(@SerialName("socket_id") val socketId: String)
 @Serializable private data class AuthResponse(val auth: String, @SerialName("channel_data") val channelData: String? = null)
 internal val realtimeJson = Json { ignoreUnknownKeys = true; encodeDefaults = true }
-
