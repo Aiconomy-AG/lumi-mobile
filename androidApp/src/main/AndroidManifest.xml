@@ -57,7 +57,7 @@
         <service
             android:name="org.example.project.notifications.IncomingCallRingingService"
             android:exported="false"
-            android:foregroundServiceType="phoneCall|microphone" />
+            android:foregroundServiceType="phoneCall" />
     </application>
 
 </manifest>

@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -71,22 +71,20 @@ private fun CallVideoPlaceholder(name: String, modifier: Modifier) {
 
 @Composable
 private fun VideoTrackView(room: Room, track: VideoTrack, modifier: Modifier, mirror: Boolean) {
-    AndroidView(
-        modifier = modifier,
-        factory = { context ->
-            SurfaceViewRenderer(context).apply {
-                room.initVideoRenderer(this)
-                setMirror(mirror)
-                track.addRenderer(this)
-            }
-        },
-        onRelease = { view ->
-            val surface = view as SurfaceViewRenderer
-            track.removeRenderer(surface)
-            surface.release()
-        },
-    )
-    DisposableEffect(track) {
-        onDispose { }
+    key(track) {
+        AndroidView(
+            modifier = modifier,
+            factory = { context ->
+                SurfaceViewRenderer(context).apply {
+                    room.initVideoRenderer(this)
+                    setMirror(mirror)
+                    track.addRenderer(this)
+                }
+            },
+            onRelease = { surface ->
+                track.removeRenderer(surface)
+                surface.release()
+            },
+        )
     }
 }

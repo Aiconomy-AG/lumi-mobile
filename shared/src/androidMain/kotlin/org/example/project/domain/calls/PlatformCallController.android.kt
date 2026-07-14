@@ -99,14 +99,15 @@ private class AndroidLiveKitCallController : PlatformCallController {
 
     override suspend fun connect(call: WorkspaceCall) {
         val connection = call.connection ?: return
+        check(CallPermissions.hasAudio() && CallPermissions.hasCamera()) {
+            "Camera and microphone permissions are required before connecting a call."
+        }
         withContext(Dispatchers.Main) {
             disconnect()
             room = LiveKit.create(AndroidCallRuntime.context()).also { connectedRoom ->
                 connectedRoom.connect(connection.url, connection.token)
-                if (CallPermissions.hasAudio()) {
-                    connectedRoom.localParticipant.setMicrophoneEnabled(true)
-                }
-                if (call.isVideo && CallPermissions.hasCamera()) {
+                connectedRoom.localParticipant.setMicrophoneEnabled(true)
+                if (call.isVideo) {
                     connectedRoom.localParticipant.setCameraEnabled(true)
                 }
                 AndroidLiveKitRoomHolder.attach(connectedRoom, mediaScope)

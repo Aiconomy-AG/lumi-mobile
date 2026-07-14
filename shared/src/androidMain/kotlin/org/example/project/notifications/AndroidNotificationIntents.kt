@@ -9,7 +9,8 @@ object AndroidNotificationIntents {
         val extras = intent.extras ?: return
         val data = buildMap {
             for (key in extras.keySet()) {
-                val value = extras.getString(key) ?: continue
+                @Suppress("DEPRECATION")
+                val value = extras.get(key) as? String ?: continue
                 put(key, value)
             }
         }

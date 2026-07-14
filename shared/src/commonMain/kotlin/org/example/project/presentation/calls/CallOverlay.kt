@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.VideocamOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.domain.calls.CallStatus
+import org.example.project.domain.calls.CallPermissionState
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 
@@ -138,6 +140,11 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
                 state.error?.let {
                     Spacer(Modifier.height(8.dp))
                     Text(it, color = AppColorPalette.Error, fontSize = 12.sp, textAlign = TextAlign.Center)
+                    if (state.permissionState == CallPermissionState.PERMANENTLY_DENIED) {
+                        TextButton(onClick = viewModel::openPermissionSettings) {
+                            Text(strings.text("Open App Settings"))
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(28.dp))

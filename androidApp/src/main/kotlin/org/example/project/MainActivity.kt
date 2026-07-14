@@ -23,12 +23,16 @@ import org.example.project.notifications.PushNotificationCoordinator
 import org.example.project.notifications.PushNotifications
 
 class MainActivity : ComponentActivity() {
+    private var initialPermissionFlowStarted = false
+    private var startedFromIncomingCall = false
+
     private val requestNotificationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) {
         lifecycleScope.launch {
             logFcmToken()
             PushNotificationCoordinator.reregisterIfPossible()
+            CallPermissions.requestAtLaunchIfNeeded()
         }
     }
 
@@ -37,25 +41,41 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         ClientInstanceIdStorage.initialize(this)
+        CallPermissions.attachActivity(this)
         CallPermissions.initialize(this)
         PushNotifications.initialize(this)
         AndroidCallRuntime.initialize(this)
         org.example.project.data.auth.SessionStorage.initialize(this)
         org.example.project.data.chat.ChatReadStateStorage.initialize(this)
+        startedFromIncomingCall =
+            intent.getStringExtra("type") == "workspace_call_incoming"
         PendingNotificationIntent.enqueue(intent)
-
-        lifecycleScope.launch {
-            when {
-                !PushNotifications.needsRuntimePermission() -> logFcmToken()
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
-                    requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
-                else -> logFcmToken()
-            }
-        }
 
         setContent {
             App()
+        }
+    }
+
+    override fun onPostResume() {
+        super.onPostResume()
+        CallPermissions.refresh()
+        if (initialPermissionFlowStarted) return
+        initialPermissionFlowStarted = true
+
+        if (startedFromIncomingCall) {
+            lifecycleScope.launch { logFcmToken() }
+            return
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            PushNotifications.needsRuntimePermission()
+        ) {
+            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            lifecycleScope.launch {
+                logFcmToken()
+                CallPermissions.requestAtLaunchIfNeeded()
+            }
         }
     }
 
