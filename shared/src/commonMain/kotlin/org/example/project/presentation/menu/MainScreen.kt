@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import feature.stock.presentation.AddProductScreen
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.example.project.data.ApiConfig
 import org.example.project.data.accounts.UserApiService
@@ -269,6 +270,10 @@ fun MainScreen(
             conversationId?.let { id ->
                 scope.launch {
                     chatViewModel.refreshConversation(id)
+                    delay(800)
+                    chatViewModel.refreshConversation(id)
+                    delay(2_000)
+                    chatViewModel.refreshConversation(id)
                 }
             }
         }
@@ -291,6 +296,7 @@ fun MainScreen(
 
             "workspace_call_incoming", "workspace_call_updated" -> {
                 callViewModel.openFromNotification(link.callId, link.callAction)
+                link.conversationId?.let { chatViewModel.refreshConversation(it) }
             }
         }
 

@@ -40,6 +40,7 @@ object AndroidCallRuntime {
     fun reportIncoming(callId: String, callerUserId: String, callerName: String, isVideo: Boolean = false) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || controls.containsKey(callId)) return
         val manager = callsManager ?: return
+        val reportAsVideo = isVideo && CallPermissions.hasCamera()
         scope.launch {
             runCatching {
                 manager.addCall(
@@ -47,7 +48,7 @@ object AndroidCallRuntime {
                         callerName,
                         Uri.parse("sip:lumi-user-$callerUserId@lumi.internal"),
                         CallAttributesCompat.DIRECTION_INCOMING,
-                        if (isVideo) {
+                        if (reportAsVideo) {
                             CallAttributesCompat.CALL_TYPE_VIDEO_CALL
                         } else {
                             CallAttributesCompat.CALL_TYPE_AUDIO_CALL
@@ -86,6 +87,7 @@ private class AndroidLiveKitCallController : PlatformCallController {
     private val mediaScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val _remoteParticipantCount = MutableStateFlow(0)
     override val remoteParticipantCount: StateFlow<Int> = _remoteParticipantCount.asStateFlow()
+    override val remoteCameraEnabled: StateFlow<Boolean> = AndroidLiveKitRoomHolder.remoteCameraEnabled
 
     init {
         mediaScope.launch {
@@ -101,8 +103,10 @@ private class AndroidLiveKitCallController : PlatformCallController {
             disconnect()
             room = LiveKit.create(AndroidCallRuntime.context()).also { connectedRoom ->
                 connectedRoom.connect(connection.url, connection.token)
-                connectedRoom.localParticipant.setMicrophoneEnabled(true)
-                if (call.isVideo) {
+                if (CallPermissions.hasAudio()) {
+                    connectedRoom.localParticipant.setMicrophoneEnabled(true)
+                }
+                if (call.isVideo && CallPermissions.hasCamera()) {
                     connectedRoom.localParticipant.setCameraEnabled(true)
                 }
                 AndroidLiveKitRoomHolder.attach(connectedRoom, mediaScope)
@@ -126,6 +130,7 @@ private class AndroidLiveKitCallController : PlatformCallController {
 
     override suspend fun setCameraEnabled(enabled: Boolean) {
         withContext(Dispatchers.Main) {
+            if (enabled && !CallPermissions.hasCamera()) return@withContext
             room?.localParticipant?.setCameraEnabled(enabled)
             room?.let { AndroidLiveKitRoomHolder.refresh(it) }
         }

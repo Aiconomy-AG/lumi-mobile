@@ -17,6 +17,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CallEnd
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.VideocamOff
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,7 +48,8 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
     val strings = LocalAppStrings.current
     val incoming = call.status == CallStatus.RINGING && call.initiatedByUserId != currentUserId
     val other = call.participants.firstOrNull { it.userId != currentUserId }
-    val name = if (incoming) call.caller.name else other?.name ?: call.caller.name
+    val remoteName = if (incoming) call.caller.name else other?.name ?: call.caller.name
+    val selfName = call.participants.find { it.userId == currentUserId }?.name ?: strings.text("You")
     val isActiveVideo = call.isVideo && call.status == CallStatus.ACTIVE
 
     Box(
@@ -51,6 +61,8 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
             CallVideoRenderer(
                 isLocal = false,
                 modifier = Modifier.fillMaxSize(),
+                participantName = remoteName,
+                cameraEnabled = state.remoteCameraEnabled,
             )
             CallVideoRenderer(
                 isLocal = true,
@@ -60,6 +72,8 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
                     .padding(16.dp)
                     .size(112.dp)
                     .clip(RoundedCornerShape(16.dp)),
+                participantName = selfName,
+                cameraEnabled = state.cameraEnabled,
             )
         }
 
@@ -80,13 +94,13 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 if (!isActiveVideo) {
-                    CallAvatar(name = name)
+                    CallAvatar(name = remoteName)
                     Spacer(Modifier.height(20.dp))
                 }
 
                 if (!isActiveVideo || call.isGroup) {
                     Text(
-                        text = name,
+                        text = remoteName,
                         color = AppColorPalette.TextPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
@@ -129,7 +143,7 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
                 Spacer(Modifier.height(28.dp))
 
                 when {
-                    incoming -> IncomingControls(viewModel, call.isVideo, strings)
+                    incoming -> IncomingControls(viewModel, strings)
                     call.status == CallStatus.RINGING -> OutgoingRingingControls(viewModel, strings)
                     else -> ActiveControls(viewModel, state, call.isVideo, call.isGroup, strings)
                 }
@@ -158,7 +172,6 @@ private fun CallAvatar(name: String) {
 @Composable
 private fun IncomingControls(
     viewModel: CallViewModel,
-    isVideo: Boolean,
     strings: org.example.project.presentation.localization.AppStrings,
 ) {
     Row(
@@ -168,16 +181,17 @@ private fun IncomingControls(
     ) {
         CallCircleButton(
             background = AppColorPalette.LogoutDanger,
-            icon = CallControlIcon.Decline,
+            icon = Icons.Filled.CallEnd,
             contentDescription = strings.text("Decline"),
             onClick = viewModel::decline,
         )
         CallCircleButton(
             background = AppColorPalette.Success,
-            icon = CallControlIcon.Answer,
+            icon = Icons.Filled.Call,
             contentDescription = strings.text("Answer"),
             onClick = viewModel::accept,
             size = 72.dp,
+            iconSize = 32.dp,
         )
     }
 }
@@ -193,7 +207,7 @@ private fun OutgoingRingingControls(
     ) {
         CallCircleButton(
             background = AppColorPalette.LogoutDanger,
-            icon = CallControlIcon.EndCall,
+            icon = Icons.Filled.CallEnd,
             contentDescription = strings.text("Cancel"),
             onClick = viewModel::cancel,
         )
@@ -216,7 +230,7 @@ private fun ActiveControls(
         if (isVideo) {
             CallCircleButton(
                 background = if (state.cameraEnabled) AppColorPalette.SurfaceVariant else AppColorPalette.BorderStrong,
-                icon = if (state.cameraEnabled) CallControlIcon.Camera else CallControlIcon.CameraOff,
+                icon = if (state.cameraEnabled) Icons.Filled.Videocam else Icons.Filled.VideocamOff,
                 contentDescription = if (state.cameraEnabled) {
                     strings.text("Camera off")
                 } else {
@@ -227,21 +241,21 @@ private fun ActiveControls(
         }
         CallCircleButton(
             background = if (state.muted) AppColorPalette.BorderStrong else AppColorPalette.SurfaceVariant,
-            icon = if (state.muted) CallControlIcon.MicOff else CallControlIcon.Mic,
+            icon = if (state.muted) Icons.Filled.MicOff else Icons.Filled.Mic,
             contentDescription = if (state.muted) strings.text("Unmute") else strings.text("Mute"),
             onClick = viewModel::toggleMute,
         )
         if (isGroup) {
             CallCircleButton(
                 background = AppColorPalette.SurfaceVariant,
-                icon = CallControlIcon.Decline,
+                icon = Icons.Filled.CallEnd,
                 contentDescription = strings.text("Leave"),
                 onClick = viewModel::leave,
             )
         }
         CallCircleButton(
             background = AppColorPalette.LogoutDanger,
-            icon = CallControlIcon.EndCall,
+            icon = Icons.Filled.CallEnd,
             contentDescription = strings.text("End call"),
             onClick = viewModel::end,
         )
@@ -251,10 +265,11 @@ private fun ActiveControls(
 @Composable
 private fun CallCircleButton(
     background: Color,
-    icon: CallControlIcon,
+    icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
     size: androidx.compose.ui.unit.Dp = 56.dp,
+    iconSize: androidx.compose.ui.unit.Dp = 26.dp,
 ) {
     IconButton(
         onClick = onClick,
@@ -262,10 +277,11 @@ private fun CallCircleButton(
             .size(size)
             .background(background, CircleShape),
     ) {
-        CallControlIcon(
-            icon = icon,
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
             tint = AppColorPalette.TextPrimary,
-            size = size * 0.4f,
+            modifier = Modifier.size(iconSize),
         )
     }
 }

@@ -54,7 +54,10 @@ import org.example.project.data.chat.chatClockTimeLabel
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.domain.chat.ChatMessageType
 import org.example.project.domain.chat.ChatParticipant
-import org.example.project.presentation.calls.CallControlIcon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material3.Icon
 import org.example.project.presentation.components.AppBackButton
 import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
@@ -593,17 +596,19 @@ private fun ConversationDetailScreen(
                 }
             }
             IconButton(onClick = { onStartCall("audio") }) {
-                CallControlIcon(
-                    icon = CallControlIcon.Mic,
+                Icon(
+                    imageVector = Icons.Filled.Call,
+                    contentDescription = strings.text("Audio call"),
                     tint = AppColorPalette.Primary,
-                    size = 20.dp,
+                    modifier = Modifier.size(22.dp),
                 )
             }
             IconButton(onClick = { onStartCall("video") }) {
-                CallControlIcon(
-                    icon = CallControlIcon.Camera,
+                Icon(
+                    imageVector = Icons.Filled.Videocam,
+                    contentDescription = strings.text("Video call"),
                     tint = AppColorPalette.Primary,
-                    size = 20.dp,
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }
@@ -680,8 +685,22 @@ private fun CallLogBubble(
 ) {
     val call = message.call
     val isMissed = call?.status in setOf("missed", "declined", "cancelled", "failed")
-    val icon = if (call?.type == "video") CallControlIcon.Camera else CallControlIcon.Mic
-    val tint = if (isMissed) AppColorPalette.LogoutDanger else AppColorPalette.TextSecondary
+    val isCompleted = !isMissed && (
+        call?.status in setOf("ended", "completed") ||
+            (call?.durationSeconds ?: 0) > 0
+        )
+    val icon = if (call?.type == "video") Icons.Filled.Videocam else Icons.Filled.Call
+    val accentColor = when {
+        isMissed -> AppColorPalette.LogoutDanger
+        isCompleted -> AppColorPalette.Success
+        else -> AppColorPalette.TextSecondary
+    }
+    val bubbleBackground = when {
+        isMissed -> AppColorPalette.SurfaceVariant
+        isCompleted -> AppColorPalette.StatusComplete.background
+        else -> AppColorPalette.SurfaceVariant
+    }
+    val label = buildCallLogLabel(message.messageText, call?.durationSeconds)
 
     Column(
         modifier = Modifier
@@ -694,13 +713,18 @@ private fun CallLogBubble(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
-                .background(AppColorPalette.SurfaceVariant)
+                .background(bubbleBackground)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         ) {
-            CallControlIcon(icon = icon, tint = tint, size = 18.dp)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = accentColor,
+                modifier = Modifier.size(18.dp),
+            )
             Text(
-                text = message.messageText,
-                color = if (isMissed) AppColorPalette.LogoutDanger else AppColorPalette.TextSecondary,
+                text = label,
+                color = accentColor,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
             )
@@ -714,6 +738,15 @@ private fun CallLogBubble(
             )
         }
     }
+}
+
+private fun buildCallLogLabel(messageText: String, durationSeconds: Int?): String {
+    val duration = durationSeconds ?: 0
+    if (duration <= 0) return messageText
+    val minutes = duration / 60
+    val seconds = duration % 60
+    val formatted = "$minutes:${seconds.toString().padStart(2, '0')}"
+    return "$messageText · $formatted"
 }
 
 @Composable

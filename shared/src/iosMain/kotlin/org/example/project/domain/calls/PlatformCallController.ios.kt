@@ -7,7 +7,9 @@ import platform.Foundation.NSNotificationCenter
 
 private class IosLiveKitCallController : PlatformCallController {
     private val _remoteParticipantCount = MutableStateFlow(0)
+    private val _remoteCameraEnabled = MutableStateFlow(true)
     override val remoteParticipantCount: StateFlow<Int> = _remoteParticipantCount.asStateFlow()
+    override val remoteCameraEnabled: StateFlow<Boolean> = _remoteCameraEnabled.asStateFlow()
 
     override suspend fun connect(call: WorkspaceCall) {
         val connection = call.connection ?: return

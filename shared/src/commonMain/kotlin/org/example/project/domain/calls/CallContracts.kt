@@ -11,7 +11,11 @@ interface CallApi {
         mode: String? = null,
     ): WorkspaceCall
 
-    suspend fun startFromConversation(conversationId: Int, clientInstanceId: String): WorkspaceCall
+    suspend fun startFromConversation(
+        conversationId: Int,
+        clientInstanceId: String,
+        type: String = "audio",
+    ): WorkspaceCall
     suspend fun get(callId: String): WorkspaceCall
     suspend fun active(clientInstanceId: String): WorkspaceCall?
     suspend fun history(page: Int = 1, perPage: Int = 20): CallHistoryPage
@@ -38,6 +42,7 @@ interface PlatformCallController {
     suspend fun setCameraEnabled(enabled: Boolean)
     fun isMuted(): Boolean
     fun isCameraEnabled(): Boolean
+    val remoteCameraEnabled: StateFlow<Boolean>
     val remoteParticipantCount: StateFlow<Int>
     fun showIncoming(call: WorkspaceCall)
     fun dismissIncoming(callId: String)

@@ -8,16 +8,22 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 actual object CallPermissions {
     private var appContext: Context? = null
     private var permissionLauncher: ActivityResultLauncher<Array<String>>? = null
     private var pendingResult: CompletableDeferred<Boolean>? = null
+    private val mutex = Mutex()
 
     actual fun initialize(platformContext: Any?) {
         val activity = platformContext as? ComponentActivity ?: return
         appContext = activity.applicationContext
-        if (permissionLauncher != null) return
+        pendingResult?.takeIf { !it.isCompleted }?.complete(hasAudio())
+        pendingResult = null
         permissionLauncher = activity.registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
         ) { results ->
@@ -40,13 +46,17 @@ actual object CallPermissions {
     }
 
     actual suspend fun ensureForCall(type: String): Boolean {
-        val needed = permissionsFor(type).filterNot { isGranted(it) }
-        if (needed.isEmpty()) return true
-        val launcher = permissionLauncher ?: return false
-        val deferred = CompletableDeferred<Boolean>()
-        pendingResult = deferred
-        launcher.launch(needed.toTypedArray())
-        return deferred.await()
+        return mutex.withLock {
+            val needed = permissionsFor(type).filterNot { isGranted(it) }
+            if (needed.isEmpty()) return@withLock true
+            val launcher = permissionLauncher ?: return@withLock false
+            withContext(Dispatchers.Main) {
+                val deferred = CompletableDeferred<Boolean>()
+                pendingResult = deferred
+                launcher.launch(needed.toTypedArray())
+                deferred.await()
+            }
+        }
     }
 
     private fun permissionsFor(type: String): List<String> {

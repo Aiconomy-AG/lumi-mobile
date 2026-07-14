@@ -40,11 +40,17 @@ class CallApiService(
         ),
     )
 
-    override suspend fun startFromConversation(conversationId: Int, clientInstanceId: String): WorkspaceCall =
-        post(
-            "$baseUrl/workspace/conversations/$conversationId/calls",
-            ClientRequest(clientInstanceId),
-        )
+    override suspend fun startFromConversation(
+        conversationId: Int,
+        clientInstanceId: String,
+        type: String,
+    ): WorkspaceCall = post(
+        "$baseUrl/workspace/conversations/$conversationId/calls",
+        ConversationCallRequest(
+            clientInstanceId = clientInstanceId,
+            type = type,
+        ),
+    )
 
     override suspend fun get(callId: String): WorkspaceCall {
         val response = client.get("$baseUrl/calls/$callId") { bearer() }
@@ -124,6 +130,12 @@ private data class NullableCallResponse(val data: WorkspaceCall? = null)
 @Serializable
 private data class ClientRequest(
     @SerialName("client_instance_id") val clientInstanceId: String,
+)
+
+@Serializable
+private data class ConversationCallRequest(
+    @SerialName("client_instance_id") val clientInstanceId: String,
+    val type: String = "audio",
 )
 
 @Serializable
