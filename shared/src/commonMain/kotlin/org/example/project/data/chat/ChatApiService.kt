@@ -16,8 +16,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.example.project.domain.chat.ChatApi
+import org.example.project.domain.chat.ChatCallMetadata
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.domain.chat.ChatMessagePreview
+import org.example.project.domain.chat.ChatMessageType
 import org.example.project.domain.chat.ChatParticipant
 import org.example.project.domain.chat.Conversation
 import org.example.project.domain.chat.ConversationDetail
@@ -241,8 +243,11 @@ private data class MessageDto(
     @SerialName("sender_id")
     val senderId: Int,
     val message: String,
+    @SerialName("message_type")
+    val messageType: String = "text",
     @SerialName("sent_at")
     val sentAt: String? = null,
+    val call: ChatCallMetadataDto? = null,
 ) {
     fun toChatMessage(): ChatMessage = ChatMessage(
         id = id,
@@ -250,6 +255,38 @@ private data class MessageDto(
         senderId = senderId,
         messageText = message,
         sentAt = sentAt ?: "",
+        messageType = when (messageType) {
+            "call" -> ChatMessageType.CALL
+            else -> ChatMessageType.TEXT
+        },
+        call = call?.toMetadata(),
+    )
+}
+
+@Serializable
+private data class ChatCallMetadataDto(
+    val id: String,
+    val status: String,
+    val type: String,
+    val mode: String = "1v1",
+    @SerialName("duration_seconds") val durationSeconds: Int? = null,
+    @SerialName("initiated_by_user_id") val initiatedByUserId: Int,
+    @SerialName("caller_name") val callerName: String = "",
+    @SerialName("answered_at") val answeredAt: String? = null,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("ended_at") val endedAt: String? = null,
+) {
+    fun toMetadata(): ChatCallMetadata = ChatCallMetadata(
+        id = id,
+        status = status,
+        type = type,
+        mode = mode,
+        durationSeconds = durationSeconds,
+        initiatedByUserId = initiatedByUserId,
+        callerName = callerName,
+        answeredAt = answeredAt,
+        startedAt = startedAt,
+        endedAt = endedAt,
     )
 }
 

@@ -1,29 +1,34 @@
 package org.example.project.presentation.calls
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import org.example.project.domain.calls.CallStatus
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
@@ -35,115 +40,98 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
     val incoming = call.status == CallStatus.RINGING && call.initiatedByUserId != currentUserId
     val other = call.participants.firstOrNull { it.userId != currentUserId }
     val name = if (incoming) call.caller.name else other?.name ?: call.caller.name
-    val callLabel = when {
-        incoming && call.isVideo -> strings.text("Incoming video call")
-        incoming -> strings.text("Incoming audio call")
-        call.isVideo -> strings.text("Video call")
-        else -> strings.text("Audio call")
-    }
+    val isActiveVideo = call.isVideo && call.status == CallStatus.ACTIVE
 
-    Dialog(onDismissRequest = {}) {
-        Column(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColorPalette.Background),
+    ) {
+        if (isActiveVideo) {
+            CallVideoRenderer(
+                isLocal = false,
+                modifier = Modifier.fillMaxSize(),
+            )
+            CallVideoRenderer(
+                isLocal = true,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(16.dp)
+                    .size(112.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+            )
+        }
+
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(AppColorPalette.OverlaySurface, RoundedCornerShape(24.dp))
-                .border(1.dp, AppColorPalette.Border, RoundedCornerShape(24.dp))
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, AppColorPalette.Background.copy(alpha = 0.92f)),
+                    ),
+                )
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 32.dp),
         ) {
-            Text(callLabel, color = AppColorPalette.TextSecondary)
-            if (call.isGroup) {
-                Text(strings.text("Group call"), color = AppColorPalette.Primary, fontSize = 12.sp)
-            }
-            Spacer(Modifier.height(16.dp))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (!isActiveVideo) {
+                    CallAvatar(name = name)
+                    Spacer(Modifier.height(20.dp))
+                }
 
-            if (call.isVideo && call.status == CallStatus.ACTIVE) {
-                CallVideoRenderer(
-                    isLocal = false,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                )
-                Spacer(Modifier.height(8.dp))
-                CallVideoRenderer(
-                    isLocal = true,
-                    modifier = Modifier
-                        .size(96.dp),
-                )
-                Spacer(Modifier.height(12.dp))
-            } else {
-                Column(
-                    Modifier.size(80.dp).background(AppColorPalette.Primary, CircleShape),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
+                if (!isActiveVideo || call.isGroup) {
                     Text(
-                        name.take(2).uppercase(),
-                        color = AppColorPalette.OnPrimary,
+                        text = name,
+                        color = AppColorPalette.TextPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
                     )
+                    Spacer(Modifier.height(8.dp))
                 }
-                Spacer(Modifier.height(16.dp))
-            }
 
-            Text(name, color = AppColorPalette.TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text(
-                if (incoming) strings.text("Lumi Workspace call") else state.connectionLabel,
-                color = AppColorPalette.TextSecondary,
-                fontSize = 12.sp,
-            )
+                Text(
+                    text = statusText(strings, call, incoming, state, currentUserId),
+                    color = AppColorPalette.TextSecondary,
+                    fontSize = 14.sp,
+                )
 
-            if (call.isGroup) {
-                Spacer(Modifier.height(12.dp))
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    items(call.participants, key = { it.userId }) { participant ->
-                        Text(
-                            "${participant.name.ifBlank { "User ${participant.userId}" }} — ${participant.status}",
-                            color = AppColorPalette.TextSecondary,
-                            fontSize = 12.sp,
-                        )
-                    }
-                }
-            }
-
-            state.error?.let {
-                Text(it, color = AppColorPalette.Error, modifier = Modifier.padding(top = 8.dp))
-            }
-
-            Spacer(Modifier.height(24.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                when {
-                    incoming -> {
-                        CallButton(strings.text("Decline"), AppColorPalette.LogoutDanger, viewModel::decline)
-                        CallButton(strings.text("Answer"), AppColorPalette.Success, viewModel::accept)
-                    }
-                    call.status == CallStatus.RINGING -> {
-                        CallButton(strings.text("Cancel"), AppColorPalette.LogoutDanger, viewModel::cancel)
-                    }
-                    else -> {
-                        if (call.isVideo) {
-                            CallButton(
-                                if (state.cameraEnabled) strings.text("Camera off") else strings.text("Camera on"),
-                                AppColorPalette.SurfaceVariant,
-                                viewModel::toggleCamera,
+                if (call.isGroup && call.status == CallStatus.ACTIVE) {
+                    Spacer(Modifier.height(12.dp))
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        items(call.participants, key = { it.userId }) { participant ->
+                            Text(
+                                "${participant.name.ifBlank { "User ${participant.userId}" }} — ${participant.status}",
+                                color = AppColorPalette.TextSecondary,
+                                fontSize = 12.sp,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
                             )
                         }
-                        CallButton(
-                            if (state.muted) strings.text("Unmute") else strings.text("Mute"),
-                            AppColorPalette.SurfaceVariant,
-                            viewModel::toggleMute,
-                        )
-                        if (call.isGroup) {
-                            CallButton(strings.text("Leave"), AppColorPalette.SurfaceVariant, viewModel::leave)
-                        }
-                        CallButton(strings.text("End call"), AppColorPalette.LogoutDanger, viewModel::end)
                     }
+                }
+
+                state.error?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(it, color = AppColorPalette.Error, fontSize = 12.sp, textAlign = TextAlign.Center)
+                }
+
+                Spacer(Modifier.height(28.dp))
+
+                when {
+                    incoming -> IncomingControls(viewModel, call.isVideo, strings)
+                    call.status == CallStatus.RINGING -> OutgoingRingingControls(viewModel, strings)
+                    else -> ActiveControls(viewModel, state, call.isVideo, call.isGroup, strings)
                 }
             }
         }
@@ -151,8 +139,151 @@ fun CallOverlay(viewModel: CallViewModel, currentUserId: Int, state: CallUiState
 }
 
 @Composable
-private fun CallButton(label: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
-    Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = color)) {
-        Text(label, fontSize = 12.sp)
+private fun CallAvatar(name: String) {
+    Box(
+        modifier = Modifier
+            .size(96.dp)
+            .background(AppColorPalette.Primary, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = name.take(2).uppercase(),
+            color = AppColorPalette.OnPrimary,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun IncomingControls(
+    viewModel: CallViewModel,
+    isVideo: Boolean,
+    strings: org.example.project.presentation.localization.AppStrings,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CallCircleButton(
+            background = AppColorPalette.LogoutDanger,
+            icon = CallControlIcon.Decline,
+            contentDescription = strings.text("Decline"),
+            onClick = viewModel::decline,
+        )
+        CallCircleButton(
+            background = AppColorPalette.Success,
+            icon = CallControlIcon.Answer,
+            contentDescription = strings.text("Answer"),
+            onClick = viewModel::accept,
+            size = 72.dp,
+        )
+    }
+}
+
+@Composable
+private fun OutgoingRingingControls(
+    viewModel: CallViewModel,
+    strings: org.example.project.presentation.localization.AppStrings,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        CallCircleButton(
+            background = AppColorPalette.LogoutDanger,
+            icon = CallControlIcon.EndCall,
+            contentDescription = strings.text("Cancel"),
+            onClick = viewModel::cancel,
+        )
+    }
+}
+
+@Composable
+private fun ActiveControls(
+    viewModel: CallViewModel,
+    state: CallUiState,
+    isVideo: Boolean,
+    isGroup: Boolean,
+    strings: org.example.project.presentation.localization.AppStrings,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (isVideo) {
+            CallCircleButton(
+                background = if (state.cameraEnabled) AppColorPalette.SurfaceVariant else AppColorPalette.BorderStrong,
+                icon = if (state.cameraEnabled) CallControlIcon.Camera else CallControlIcon.CameraOff,
+                contentDescription = if (state.cameraEnabled) {
+                    strings.text("Camera off")
+                } else {
+                    strings.text("Camera on")
+                },
+                onClick = viewModel::toggleCamera,
+            )
+        }
+        CallCircleButton(
+            background = if (state.muted) AppColorPalette.BorderStrong else AppColorPalette.SurfaceVariant,
+            icon = if (state.muted) CallControlIcon.MicOff else CallControlIcon.Mic,
+            contentDescription = if (state.muted) strings.text("Unmute") else strings.text("Mute"),
+            onClick = viewModel::toggleMute,
+        )
+        if (isGroup) {
+            CallCircleButton(
+                background = AppColorPalette.SurfaceVariant,
+                icon = CallControlIcon.Decline,
+                contentDescription = strings.text("Leave"),
+                onClick = viewModel::leave,
+            )
+        }
+        CallCircleButton(
+            background = AppColorPalette.LogoutDanger,
+            icon = CallControlIcon.EndCall,
+            contentDescription = strings.text("End call"),
+            onClick = viewModel::end,
+        )
+    }
+}
+
+@Composable
+private fun CallCircleButton(
+    background: Color,
+    icon: CallControlIcon,
+    contentDescription: String,
+    onClick: () -> Unit,
+    size: androidx.compose.ui.unit.Dp = 56.dp,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(size)
+            .background(background, CircleShape),
+    ) {
+        CallControlIcon(
+            icon = icon,
+            tint = AppColorPalette.TextPrimary,
+            size = size * 0.4f,
+        )
+    }
+}
+
+private fun statusText(
+    strings: org.example.project.presentation.localization.AppStrings,
+    call: org.example.project.domain.calls.WorkspaceCall,
+    incoming: Boolean,
+    state: CallUiState,
+    currentUserId: Int,
+): String {
+    return when {
+        incoming && call.isVideo -> strings.text("Incoming video call")
+        incoming -> strings.text("Incoming audio call")
+        call.status == CallStatus.RINGING && call.initiatedByUserId == currentUserId -> strings.text("Calling…")
+        call.status == CallStatus.RINGING -> strings.text("Ringing…")
+        state.connectionLabel.isNotBlank() -> state.connectionLabel
+        call.isVideo -> strings.text("Video call")
+        else -> strings.text("Audio call")
     }
 }

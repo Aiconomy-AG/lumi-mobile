@@ -39,6 +39,10 @@ private class IosLiveKitCallController : PlatformCallController {
         )
     }
 
+    override fun isMuted(): Boolean = false
+
+    override fun isCameraEnabled(): Boolean = false
+
     override fun showIncoming(call: WorkspaceCall) {
         NSNotificationCenter.defaultCenter.postNotificationName(
             "LumiCallIncoming",

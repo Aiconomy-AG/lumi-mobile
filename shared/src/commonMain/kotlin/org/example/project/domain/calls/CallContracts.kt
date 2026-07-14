@@ -36,6 +36,8 @@ interface PlatformCallController {
     suspend fun disconnect()
     suspend fun setMuted(muted: Boolean)
     suspend fun setCameraEnabled(enabled: Boolean)
+    fun isMuted(): Boolean
+    fun isCameraEnabled(): Boolean
     val remoteParticipantCount: StateFlow<Int>
     fun showIncoming(call: WorkspaceCall)
     fun dismissIncoming(callId: String)

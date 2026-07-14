@@ -30,6 +30,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -51,7 +52,9 @@ import androidx.compose.ui.window.Dialog
 import org.example.project.data.accounts.User
 import org.example.project.data.chat.chatClockTimeLabel
 import org.example.project.domain.chat.ChatMessage
+import org.example.project.domain.chat.ChatMessageType
 import org.example.project.domain.chat.ChatParticipant
+import org.example.project.presentation.calls.CallControlIcon
 import org.example.project.presentation.components.AppBackButton
 import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
@@ -585,21 +588,23 @@ private fun ConversationDetailScreen(
                     Text(
                         text = strings.text("Settings"),
                         color = AppColorPalette.Primary,
+                        fontSize = 12.sp,
                     )
                 }
-                TextButton(onClick = { onStartCall("audio") }) {
-                    Text(text = strings.text("Group audio"), color = AppColorPalette.Primary)
-                }
-                TextButton(onClick = { onStartCall("video") }) {
-                    Text(text = strings.text("Group video"), color = AppColorPalette.Primary)
-                }
-            } else {
-                TextButton(onClick = { onStartCall("audio") }) {
-                    Text(text = strings.text("Audio call"), color = AppColorPalette.Primary)
-                }
-                TextButton(onClick = { onStartCall("video") }) {
-                    Text(text = strings.text("Video call"), color = AppColorPalette.Primary)
-                }
+            }
+            IconButton(onClick = { onStartCall("audio") }) {
+                CallControlIcon(
+                    icon = CallControlIcon.Mic,
+                    tint = AppColorPalette.Primary,
+                    size = 20.dp,
+                )
+            }
+            IconButton(onClick = { onStartCall("video") }) {
+                CallControlIcon(
+                    icon = CallControlIcon.Camera,
+                    tint = AppColorPalette.Primary,
+                    size = 20.dp,
+                )
             }
         }
 
@@ -614,14 +619,20 @@ private fun ConversationDetailScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(uiState.messages, key = { it.id }) { message ->
-                MessageBubble(
-                    message = message,
-                    isMine = message.senderId == currentEmployeeId,
-                    senderName = uiState.usersById[message.senderId]?.name
-                        ?: selectedConversation.participants.find { it.id == message.senderId }?.name
-                        ?: strings.text("Unknown sender"),
-                    showSenderName = selectedConversation.isGroup,
-                )
+                when (message.messageType) {
+                    ChatMessageType.CALL -> CallLogBubble(
+                        message = message,
+                        strings = strings,
+                    )
+                    else -> MessageBubble(
+                        message = message,
+                        isMine = message.senderId == currentEmployeeId,
+                        senderName = uiState.usersById[message.senderId]?.name
+                            ?: selectedConversation.participants.find { it.id == message.senderId }?.name
+                            ?: strings.text("Unknown sender"),
+                        showSenderName = selectedConversation.isGroup,
+                    )
+                }
             }
         }
 
@@ -658,6 +669,49 @@ private fun ConversationDetailScreen(
             ) {
                 Text(strings.text("Send"))
             }
+        }
+    }
+}
+
+@Composable
+private fun CallLogBubble(
+    message: ChatMessage,
+    strings: org.example.project.presentation.localization.AppStrings,
+) {
+    val call = message.call
+    val isMissed = call?.status in setOf("missed", "declined", "cancelled", "failed")
+    val icon = if (call?.type == "video") CallControlIcon.Camera else CallControlIcon.Mic
+    val tint = if (isMissed) AppColorPalette.LogoutDanger else AppColorPalette.TextSecondary
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(AppColorPalette.SurfaceVariant)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+        ) {
+            CallControlIcon(icon = icon, tint = tint, size = 18.dp)
+            Text(
+                text = message.messageText,
+                color = if (isMissed) AppColorPalette.LogoutDanger else AppColorPalette.TextSecondary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+        if (message.sentAt.isNotBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = chatClockTimeLabel(message.sentAt),
+                color = AppColorPalette.TextSecondary,
+                fontSize = 11.sp,
+            )
         }
     }
 }

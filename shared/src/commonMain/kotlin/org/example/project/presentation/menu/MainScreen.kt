@@ -1,6 +1,7 @@
 package features.main
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -263,6 +264,16 @@ fun MainScreen(
         task?.let { pushSubRoute(MainSubRoute.TaskDetail(it)) }
     }
 
+    LaunchedEffect(chatViewModel, callViewModel) {
+        callViewModel.setOnCallEnded { conversationId ->
+            conversationId?.let { id ->
+                scope.launch {
+                    chatViewModel.refreshConversation(id)
+                }
+            }
+        }
+    }
+
     LaunchedEffect(pendingDeepLink) {
         val link = pendingDeepLink ?: return@LaunchedEffect
 
@@ -317,6 +328,7 @@ fun MainScreen(
             )
         },
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = AppColorPalette.Background,
             contentWindowInsets = WindowInsets.safeDrawing,
@@ -467,6 +479,7 @@ fun MainScreen(
                     }
                 }
             }
+        }
 
             if (showUserDetail) {
                 UserDetailDialog(
@@ -485,7 +498,9 @@ fun MainScreen(
                 )
             }
 
-            CallOverlay(callViewModel, user.id, callUiState)
+            if (callUiState.call != null) {
+                CallOverlay(callViewModel, user.id, callUiState)
+            }
         }
     }
 }

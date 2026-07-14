@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.example.project.notifications.IncomingCallRingingService
 
 object AndroidCallRuntime {
@@ -82,11 +83,12 @@ object AndroidCallRuntime {
 
 private class AndroidLiveKitCallController : PlatformCallController {
     private var room: Room? = null
+    private val mediaScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val _remoteParticipantCount = MutableStateFlow(0)
     override val remoteParticipantCount: StateFlow<Int> = _remoteParticipantCount.asStateFlow()
 
     init {
-        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+        mediaScope.launch {
             AndroidLiveKitRoomHolder.remoteParticipantCount.collect {
                 _remoteParticipantCount.value = it
             }
@@ -95,30 +97,52 @@ private class AndroidLiveKitCallController : PlatformCallController {
 
     override suspend fun connect(call: WorkspaceCall) {
         val connection = call.connection ?: return
-        disconnect()
-        room = LiveKit.create(AndroidCallRuntime.context()).also { connectedRoom ->
-            connectedRoom.connect(connection.url, connection.token)
-            connectedRoom.localParticipant.setMicrophoneEnabled(true)
-            if (call.isVideo) {
-                connectedRoom.localParticipant.setCameraEnabled(true)
+        withContext(Dispatchers.Main) {
+            disconnect()
+            room = LiveKit.create(AndroidCallRuntime.context()).also { connectedRoom ->
+                connectedRoom.connect(connection.url, connection.token)
+                connectedRoom.localParticipant.setMicrophoneEnabled(true)
+                if (call.isVideo) {
+                    connectedRoom.localParticipant.setCameraEnabled(true)
+                }
+                AndroidLiveKitRoomHolder.attach(connectedRoom, mediaScope)
             }
-            AndroidLiveKitRoomHolder.refresh(connectedRoom)
         }
     }
 
     override suspend fun disconnect() {
-        room?.disconnect()
-        room = null
-        AndroidLiveKitRoomHolder.clear()
+        withContext(Dispatchers.Main) {
+            room?.disconnect()
+            room = null
+            AndroidLiveKitRoomHolder.clear()
+        }
     }
 
     override suspend fun setMuted(muted: Boolean) {
-        room?.localParticipant?.setMicrophoneEnabled(!muted)
+        withContext(Dispatchers.Main) {
+            room?.localParticipant?.setMicrophoneEnabled(!muted)
+        }
     }
 
     override suspend fun setCameraEnabled(enabled: Boolean) {
-        room?.localParticipant?.setCameraEnabled(enabled)
-        room?.let { AndroidLiveKitRoomHolder.refresh(it) }
+        withContext(Dispatchers.Main) {
+            room?.localParticipant?.setCameraEnabled(enabled)
+            room?.let { AndroidLiveKitRoomHolder.refresh(it) }
+        }
+    }
+
+    override fun isMuted(): Boolean {
+        val publication = room?.localParticipant
+            ?.getTrackPublication(io.livekit.android.room.track.Track.Source.MICROPHONE)
+            ?: return false
+        return publication.muted
+    }
+
+    override fun isCameraEnabled(): Boolean {
+        val publication = room?.localParticipant
+            ?.getTrackPublication(io.livekit.android.room.track.Track.Source.CAMERA)
+            ?: return false
+        return publication.track != null && !publication.muted
     }
 
     override fun showIncoming(call: WorkspaceCall) {

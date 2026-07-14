@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.example.project.data.calls.ClientInstanceIdStorage
 import org.example.project.domain.calls.CallApi
 import org.example.project.domain.calls.CallApiException
+import org.example.project.domain.calls.CallPermissions
 import org.example.project.domain.calls.CallPresenceRealtimeApi
 import org.example.project.domain.calls.CallRealtimeApi
 import org.example.project.domain.calls.CallStatus
@@ -22,7 +24,8 @@ data class CallUiState(
     val call: WorkspaceCall? = null,
     val muted: Boolean = false,
     val cameraEnabled: Boolean = false,
-    val connectionLabel: String = "Disconnected",
+    val connectionLabel: String = "",
+    val elapsedSeconds: Int = 0,
     val remoteParticipantCount: Int = 0,
     val error: String? = null,
 )
@@ -39,6 +42,8 @@ class CallViewModel(
     private val _state = MutableStateFlow(CallUiState())
     val state: StateFlow<CallUiState> = _state.asStateFlow()
     private var presenceJob: Job? = null
+    private var durationJob: Job? = null
+    private var onCallEnded: ((Int?) -> Unit)? = null
 
     init {
         recover()
@@ -52,8 +57,13 @@ class CallViewModel(
         }
     }
 
+    fun setOnCallEnded(callback: (Int?) -> Unit) {
+        onCallEnded = callback
+    }
+
     fun close() {
         presenceJob?.cancel()
+        durationJob?.cancel()
         scope.cancel()
     }
 
@@ -67,6 +77,7 @@ class CallViewModel(
 
     fun startDirectCall(otherUserId: Int, type: String = "audio") {
         scope.launch {
+            if (!ensurePermissions(type)) return@launch
             runCallRequest {
                 api.start(
                     calleeIds = listOf(otherUserId),
@@ -81,6 +92,7 @@ class CallViewModel(
     fun startGroupCall(calleeIds: List<Int>, type: String = "audio") {
         if (calleeIds.isEmpty()) return
         scope.launch {
+            if (!ensurePermissions(type)) return@launch
             runCallRequest {
                 api.start(
                     calleeIds = calleeIds,
@@ -100,6 +112,7 @@ class CallViewModel(
         val calleeIds = participantIds.filter { it != currentUserId }
         if (calleeIds.isEmpty()) return
         scope.launch {
+            if (!ensurePermissions(type)) return@launch
             runCallRequest {
                 if (conversationId != null && calleeIds.size == 1 && type == "audio") {
                     runCatching {
@@ -133,7 +146,10 @@ class CallViewModel(
             } ?: return@launch
 
             when (action) {
-                "answer" -> runCallRequest { api.accept(call.id, instanceId) }
+                "answer" -> {
+                    if (!ensurePermissions(if (call.isVideo) "video" else "audio")) return@launch
+                    runCallRequest { api.accept(call.id, instanceId) }
+                }
                 "decline", "hangup" -> {
                     runCatching {
                         if (call.status == CallStatus.RINGING) api.decline(call.id) else api.end(call.id)
@@ -145,7 +161,14 @@ class CallViewModel(
         }
     }
 
-    fun accept() = action { call -> api.accept(call.id, instanceId) }
+    fun accept() {
+        val call = _state.value.call ?: return
+        scope.launch {
+            if (!ensurePermissions(if (call.isVideo) "video" else "audio")) return@launch
+            runCallRequest { api.accept(call.id, instanceId) }
+        }
+    }
+
     fun decline() = finish { call -> api.decline(call.id) }
     fun cancel() = finish { call -> api.cancel(call.id) }
     fun leave() = finish { call -> api.leave(call.id) }
@@ -162,22 +185,35 @@ class CallViewModel(
     fun toggleMute() {
         scope.launch {
             val next = !_state.value.muted
-            platform.setMuted(next)
-            _state.value = _state.value.copy(muted = next)
+            runCatching { platform.setMuted(next) }
+                .onSuccess {
+                    _state.value = _state.value.copy(muted = platform.isMuted())
+                }
+                .onFailure {
+                    _state.value = _state.value.copy(error = it.message ?: "Could not change microphone.")
+                }
         }
     }
 
     fun toggleCamera() {
         scope.launch {
             val next = !_state.value.cameraEnabled
-            platform.setCameraEnabled(next)
-            _state.value = _state.value.copy(cameraEnabled = next)
+            if (next && !CallPermissions.hasCamera()) {
+                if (!CallPermissions.ensureForCall("video")) {
+                    _state.value = _state.value.copy(
+                        error = "Camera permission is required for video calls.",
+                    )
+                    return@launch
+                }
+            }
+            runCatching { platform.setCameraEnabled(next) }
+                .onSuccess {
+                    _state.value = _state.value.copy(cameraEnabled = platform.isCameraEnabled())
+                }
+                .onFailure {
+                    _state.value = _state.value.copy(error = it.message ?: "Could not change camera.")
+                }
         }
-    }
-
-    private fun action(block: suspend (WorkspaceCall) -> WorkspaceCall) {
-        val call = _state.value.call ?: return
-        scope.launch { runCallRequest { block(call) } }
     }
 
     private fun finish(block: suspend (WorkspaceCall) -> WorkspaceCall) {
@@ -213,7 +249,8 @@ class CallViewModel(
         _state.value = _state.value.copy(
             call = call,
             error = null,
-            cameraEnabled = call.isVideo && !incoming,
+            cameraEnabled = if (incoming) false else call.isVideo,
+            connectionLabel = buildConnectionLabel(call, ""),
         )
 
         subscribePresence(call)
@@ -226,13 +263,25 @@ class CallViewModel(
     }
 
     private suspend fun connectMedia(call: WorkspaceCall) {
-        _state.value = _state.value.copy(connectionLabel = "Connecting")
-        platform.connect(call)
-        if (call.isVideo) {
-            platform.setCameraEnabled(true)
-            _state.value = _state.value.copy(cameraEnabled = true)
+        if (!ensurePermissions(if (call.isVideo) "video" else "audio")) return
+        _state.value = _state.value.copy(connectionLabel = "Connecting…")
+        try {
+            platform.connect(call)
+            if (call.isVideo) {
+                platform.setCameraEnabled(true)
+            }
+            _state.value = _state.value.copy(
+                connectionLabel = "Connected",
+                muted = platform.isMuted(),
+                cameraEnabled = platform.isCameraEnabled(),
+            )
+            startDurationTimer()
+        } catch (error: Exception) {
+            _state.value = _state.value.copy(
+                connectionLabel = "Connection failed",
+                error = error.message ?: "Could not connect to call.",
+            )
         }
-        _state.value = _state.value.copy(connectionLabel = "Connected")
     }
 
     private suspend fun handleRealtime(call: WorkspaceCall) {
@@ -283,12 +332,59 @@ class CallViewModel(
     }
 
     private suspend fun clearCall(callId: String?) {
+        val conversationId = _state.value.call?.conversationId
         presenceJob?.cancel()
         presenceJob = null
+        durationJob?.cancel()
+        durationJob = null
         platform.disconnect()
         if (!callId.isNullOrBlank()) {
             platform.dismissIncoming(callId)
         }
         _state.value = CallUiState()
+        conversationId?.let { onCallEnded?.invoke(it) }
+    }
+
+    private suspend fun ensurePermissions(type: String): Boolean {
+        if (CallPermissions.ensureForCall(type)) return true
+        val message = if (type == "video") {
+            "Camera and microphone permissions are required for video calls."
+        } else {
+            "Microphone permission is required for calls."
+        }
+        _state.value = _state.value.copy(error = message)
+        return false
+    }
+
+    private fun buildConnectionLabel(call: WorkspaceCall, mediaState: String): String {
+        return when {
+            mediaState.isNotBlank() -> mediaState
+            call.status == CallStatus.RINGING && call.initiatedByUserId == currentUserId -> "Calling…"
+            call.status == CallStatus.RINGING -> "Ringing…"
+            call.status == CallStatus.ACTIVE && call.connection == null -> "Connecting…"
+            else -> ""
+        }
+    }
+
+    private fun startDurationTimer() {
+        durationJob?.cancel()
+        durationJob = scope.launch {
+            var seconds = _state.value.elapsedSeconds
+            while (true) {
+                delay(1_000)
+                seconds += 1
+                if (_state.value.call?.status != CallStatus.ACTIVE) break
+                _state.value = _state.value.copy(
+                    elapsedSeconds = seconds,
+                    connectionLabel = formatDuration(seconds),
+                )
+            }
+        }
+    }
+
+    private fun formatDuration(totalSeconds: Int): String {
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return "$minutes:${seconds.toString().padStart(2, '0')}"
     }
 }
