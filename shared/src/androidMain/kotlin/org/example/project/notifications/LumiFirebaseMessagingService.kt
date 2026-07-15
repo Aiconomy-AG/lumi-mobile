@@ -5,12 +5,15 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.example.project.domain.calls.AndroidCallRuntime
+import org.example.project.domain.calls.IncomingCallActivity
 
 class LumiFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -19,18 +22,40 @@ class LumiFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         Log.d(TAG, "FCM message received from=${message.from} data=${message.data}")
 
-        val data = message.data
+        val data = message.data.toMutableMap()
         val notification = message.notification
-        val title = notification?.title ?: data["title"]
-        val body = notification?.body ?: data["body"]
+        if (data["title"].isNullOrBlank()) {
+            data["title"] = notification?.title ?: data["caller_name"] ?: "Lumi"
+        }
+        if (data["body"].isNullOrBlank()) {
+            val callType = data["call_type"] ?: "audio"
+            data["body"] = notification?.body ?: when {
+                data["type"] == "workspace_call_incoming" && callType == "video" -> "Incoming video call"
+                data["type"] == "workspace_call_incoming" -> "Incoming audio call"
+                else -> "New notification"
+            }
+        }
 
-        if (title.isNullOrBlank() || body.isNullOrBlank()) {
-            return
+        when (data["type"]) {
+            "workspace_call_incoming" -> {
+                IncomingCallRingingService.start(applicationContext, data)
+                return
+            }
+
+            "workspace_call_updated" -> {
+                getSystemService(NotificationManager::class.java)?.cancel(notificationIdFor(data))
+                data["call_id"]?.let { callId ->
+                    IncomingCallRingingService.stop(applicationContext, callId)
+                    AndroidCallRuntime.dismiss(callId)
+                }
+                AndroidNotificationIntents.handle(Intent().apply { data.forEach { (k, v) -> putExtra(k, v) } })
+                return
+            }
         }
 
         showNotification(
-            title = title,
-            body = body,
+            title = data["title"]!!,
+            body = data["body"]!!,
             data = data,
         )
     }
@@ -47,9 +72,7 @@ class LumiFirebaseMessagingService : FirebaseMessagingService() {
 
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            data.forEach { (key, value) ->
-                putExtra(key, value)
-            }
+            data.forEach { (key, value) -> putExtra(key, value) }
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -68,11 +91,11 @@ class LumiFirebaseMessagingService : FirebaseMessagingService() {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager?.notify(notificationIdFor(data), notification)
+        getSystemService(NotificationManager::class.java)?.notify(notificationIdFor(data), notification)
     }
 
     private fun notificationIdFor(data: Map<String, String>): Int {
+        data["call_id"]?.let { return ("call" + it).hashCode() }
         val type = data["type"] ?: "unknown"
         val id = data["task_id"] ?: data["conversation_id"] ?: data["message_id"] ?: ""
         return (type + id).hashCode()

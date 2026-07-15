@@ -145,6 +145,32 @@ fun AppSectionIcon(
                 }
             }
 
+            AppSection.CALL_HISTORY -> {
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.22f, h * 0.18f),
+                    size = Size(w * 0.56f, h * 0.64f),
+                    cornerRadius = CornerRadius(w * 0.14f),
+                    style = stroke,
+                )
+                drawArc(
+                    color = tint,
+                    startAngle = 220f,
+                    sweepAngle = 100f,
+                    useCenter = false,
+                    topLeft = Offset(w * 0.3f, h * 0.52f),
+                    size = Size(w * 0.4f, h * 0.22f),
+                    style = thinStroke,
+                )
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.58f, h * 0.68f),
+                    end = Offset(w * 0.76f, h * 0.86f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round,
+                )
+            }
+
             AppSection.STOCK -> {
                 drawRoundRect(
                     color = tint,

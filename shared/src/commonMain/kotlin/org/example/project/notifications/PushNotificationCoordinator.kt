@@ -2,6 +2,7 @@ package org.example.project.notifications
 
 import io.ktor.client.HttpClient
 import org.example.project.data.notifications.DeviceTokenApiService
+import org.example.project.data.notifications.currentDeviceId
 import org.example.project.notifications.platform.currentDevicePlatform
 
 object PushNotificationCoordinator {
@@ -20,6 +21,13 @@ object PushNotificationCoordinator {
         val fcmToken = PushNotifications.getFcmToken() ?: return
         lastFcmToken = fcmToken
         registerToken(authToken, fcmToken)
+    }
+
+    suspend fun reregisterIfPossible() {
+        val token = authToken ?: return
+        val fcmToken = PushNotifications.getFcmToken() ?: return
+        lastFcmToken = fcmToken
+        registerToken(token, fcmToken)
     }
 
     suspend fun onTokenRefreshed(fcmToken: String) {
@@ -49,6 +57,7 @@ object PushNotificationCoordinator {
                 .registerDeviceToken(
                     fcmToken = fcmToken,
                     platform = currentDevicePlatform(),
+                    deviceId = currentDeviceId(),
                 )
         } catch (_: Exception) {
         }

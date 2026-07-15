@@ -1,6 +1,7 @@
 package features.main
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -9,6 +10,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import feature.stock.presentation.AddProductScreen
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.example.project.data.ApiConfig
 import org.example.project.data.accounts.UserApiService
@@ -26,9 +29,13 @@ import org.example.project.data.auth.AuthApiService
 import org.example.project.data.auth.UserSession
 import org.example.project.data.chat.ChatApiService
 import org.example.project.data.chat.ReverbChatRealtimeService
+import org.example.project.data.calls.CallApiService
+import org.example.project.data.calls.ReverbCallPresenceRealtimeService
+import org.example.project.data.calls.ReverbCallRealtimeService
 import org.example.project.data.createHttpClient
 import org.example.project.data.orders.OrdersApiService
 import org.example.project.data.project.ProjectApiService
+import org.example.project.data.realtime.ReverbPrivateChannelClient
 import org.example.project.data.returns.ReturnsApiService
 import org.example.project.data.stock.StockApiService
 import org.example.project.data.task.TaskApiService
@@ -45,6 +52,12 @@ import org.example.project.presentation.auditlogs.AuditLogsScreen
 import org.example.project.presentation.auditlogs.AuditLogsViewModel
 import org.example.project.presentation.chat.ChatScreen
 import org.example.project.presentation.chat.ChatViewModel
+import org.example.project.domain.calls.createPlatformCallController
+import org.example.project.presentation.calls.CallHistoryScreen
+import org.example.project.presentation.calls.CallHistoryViewModel
+import org.example.project.presentation.calls.CallOverlay
+import org.example.project.presentation.calls.CallViewModel
+import org.example.project.notifications.processStartupNotificationIntent
 import org.example.project.presentation.components.PlatformBackHandler
 import org.example.project.presentation.dashboard.DashboardScreen
 import org.example.project.presentation.localization.AppLanguage
@@ -142,11 +155,8 @@ fun MainScreen(
     }
 
     var showUserDetail by remember { mutableStateOf(false) }
-    val taskTimeEntryApi = remember(user.token) {
-        TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
-    }
-    val taskTimeEntryRealtimeApi = remember(user.token) {
-        ReverbTaskTimeEntryRealtimeService(
+    val realtimeClient = remember(user.token) {
+        ReverbPrivateChannelClient(
             client = apiHttpClient,
             baseUrl = ApiConfig.BASE_URL,
             appKey = ApiConfig.REVERB_APP_KEY,
@@ -155,6 +165,15 @@ fun MainScreen(
             scheme = ApiConfig.REVERB_SCHEME,
             token = user.token,
         )
+    }
+    DisposableEffect(realtimeClient) {
+        onDispose(realtimeClient::close)
+    }
+    val taskTimeEntryApi = remember(user.token) {
+        TaskTimeEntryApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
+    }
+    val taskTimeEntryRealtimeApi = remember(realtimeClient) {
+        ReverbTaskTimeEntryRealtimeService(realtimeClient)
     }
     val activeTimerViewModel = remember(user.id, user.token) {
         ActiveTimerViewModel(
@@ -167,16 +186,8 @@ fun MainScreen(
     val chatApi = remember(user.token) {
         ChatApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL, token = user.token)
     }
-    val chatRealtimeApi = remember(user.token) {
-        ReverbChatRealtimeService(
-            client = apiHttpClient,
-            baseUrl = ApiConfig.BASE_URL,
-            appKey = ApiConfig.REVERB_APP_KEY,
-            host = ApiConfig.REVERB_HOST,
-            port = ApiConfig.REVERB_PORT,
-            scheme = ApiConfig.REVERB_SCHEME,
-            token = user.token,
-        )
+    val chatRealtimeApi = remember(realtimeClient) {
+        ReverbChatRealtimeService(realtimeClient)
     }
     val chatViewModel = remember(user.id, user.token) {
         ChatViewModel(
@@ -186,6 +197,28 @@ fun MainScreen(
             chatRealtimeApi = chatRealtimeApi,
         )
     }
+    val callApi = remember(user.token) {
+        CallApiService(apiHttpClient, ApiConfig.BASE_URL, user.token)
+    }
+    val callRealtime = remember(realtimeClient) {
+        ReverbCallRealtimeService(realtimeClient)
+    }
+    val callPresenceRealtime = remember(realtimeClient) {
+        ReverbCallPresenceRealtimeService(realtimeClient)
+    }
+    val platformCallController = remember { createPlatformCallController() }
+    val callViewModel = remember(user.id, user.token) {
+        CallViewModel(user.id, callApi, callRealtime, callPresenceRealtime, platformCallController)
+    }
+    val callHistoryViewModel = remember(user.token) {
+        CallHistoryViewModel(callApi)
+    }
+    DisposableEffect(callViewModel, callHistoryViewModel) {
+        onDispose {
+            callViewModel.close()
+            callHistoryViewModel.close()
+        }
+    }
     val authRepository = remember(apiHttpClient) {
         AuthApiService(client = apiHttpClient, baseUrl = ApiConfig.BASE_URL)
     }
@@ -193,6 +226,11 @@ fun MainScreen(
     val strings = LocalAppStrings.current
     val pendingDeepLink by NotificationRouter.pending.collectAsState()
     val chatUiState by chatViewModel.uiState.collectAsState()
+    val callUiState by callViewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        processStartupNotificationIntent()
+    }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -232,6 +270,20 @@ fun MainScreen(
         task?.let { pushSubRoute(MainSubRoute.TaskDetail(it)) }
     }
 
+    LaunchedEffect(chatViewModel, callViewModel) {
+        callViewModel.setOnCallEnded { conversationId ->
+            conversationId?.let { id ->
+                scope.launch {
+                    chatViewModel.refreshConversation(id)
+                    delay(800)
+                    chatViewModel.refreshConversation(id)
+                    delay(2_000)
+                    chatViewModel.refreshConversation(id)
+                }
+            }
+        }
+    }
+
     LaunchedEffect(pendingDeepLink) {
         val link = pendingDeepLink ?: return@LaunchedEffect
 
@@ -245,6 +297,11 @@ fun MainScreen(
             "chat_message_received" -> {
                 navigateToMainSection(AppSection.CHAT)
                 link.conversationId?.let { chatViewModel.openConversationById(it) }
+            }
+
+            "workspace_call_incoming", "workspace_call_updated" -> {
+                callViewModel.openFromNotification(link.callId, link.callAction)
+                link.conversationId?.let { chatViewModel.refreshConversation(it) }
             }
         }
 
@@ -282,6 +339,7 @@ fun MainScreen(
             )
         },
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = AppColorPalette.Background,
             contentWindowInsets = WindowInsets.safeDrawing,
@@ -394,6 +452,16 @@ fun MainScreen(
                     ChatScreen(
                         viewModel = chatViewModel,
                         currentEmployeeId = user.id,
+                        onStartCall = { participantIds, type, conversationId ->
+                            callViewModel.startFromConversation(participantIds, type, conversationId)
+                        },
+                        modifier = Modifier.padding(paddingValues),
+                    )
+                }
+
+                AppSection.CALL_HISTORY -> {
+                    CallHistoryScreen(
+                        viewModel = callHistoryViewModel,
                         modifier = Modifier.padding(paddingValues),
                     )
                 }
@@ -422,6 +490,7 @@ fun MainScreen(
                     }
                 }
             }
+        }
 
             if (showUserDetail) {
                 UserDetailDialog(
@@ -429,10 +498,19 @@ fun MainScreen(
                     selectedLanguage = selectedLanguage,
                     authRepository = authRepository,
                     onLanguageSelected = onLanguageSelected,
-                    onPhoneNumberUpdated = onPhoneNumberUpdated,
-                    onDismiss = { showUserDetail = false },
+                    onPhoneNumberUpdated = { number ->
+                        onPhoneNumberUpdated(number)
+                        showUserDetail = false
+                    },
+                    onDismiss = {
+                        showUserDetail = false
+                    },
                     onLogout = onLogout,
                 )
+            }
+
+            if (callUiState.call != null) {
+                CallOverlay(callViewModel, user.id, callUiState)
             }
         }
     }

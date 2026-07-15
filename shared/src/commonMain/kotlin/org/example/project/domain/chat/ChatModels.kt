@@ -13,6 +13,15 @@ enum class ConversationType {
 }
 
 @Serializable
+enum class ChatMessageType {
+    @SerialName("text")
+    TEXT,
+
+    @SerialName("call")
+    CALL,
+}
+
+@Serializable
 data class Conversation (
     val id: Int,
     val type: ConversationType,
@@ -28,12 +37,28 @@ data class ConversationParticipant(
 )
 
 @Serializable
+data class ChatCallMetadata(
+    val id: String,
+    val status: String,
+    val type: String,
+    val mode: String = "1v1",
+    @SerialName("duration_seconds") val durationSeconds: Int? = null,
+    @SerialName("initiated_by_user_id") val initiatedByUserId: Int,
+    @SerialName("caller_name") val callerName: String = "",
+    @SerialName("answered_at") val answeredAt: String? = null,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("ended_at") val endedAt: String? = null,
+)
+
+@Serializable
 data class ChatMessage(
     val id: Int,
     val conversationId: Int,
     val senderId: Int,
     val messageText: String,
     val sentAt: String,
+    val messageType: ChatMessageType = ChatMessageType.TEXT,
+    val call: ChatCallMetadata? = null,
 )
 
 data class ChatParticipant(

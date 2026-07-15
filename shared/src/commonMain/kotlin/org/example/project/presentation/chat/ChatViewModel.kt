@@ -718,14 +718,20 @@ class ChatViewModel(
         when (event.type) {
             "chat_message_received" -> {
                 val conversationId = event.conversationId ?: return
-                refreshConversation(conversationId)
+                refreshConversationInternal(conversationId)
             }
 
             "chat_added_to_conversation" -> loadChat()
         }
     }
 
-    private suspend fun refreshConversation(conversationId: Int) {
+    fun refreshConversation(conversationId: Int) {
+        viewModelScope.launch {
+            refreshConversationInternal(conversationId)
+        }
+    }
+
+    private suspend fun refreshConversationInternal(conversationId: Int) {
         val existingConversation = _uiState.value.conversations
             .firstOrNull { it.conversation.id == conversationId }
 

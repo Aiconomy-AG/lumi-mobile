@@ -30,6 +30,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -51,7 +52,12 @@ import androidx.compose.ui.window.Dialog
 import org.example.project.data.accounts.User
 import org.example.project.data.chat.chatClockTimeLabel
 import org.example.project.domain.chat.ChatMessage
+import org.example.project.domain.chat.ChatMessageType
 import org.example.project.domain.chat.ChatParticipant
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material3.Icon
 import org.example.project.presentation.components.AppBackButton
 import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
@@ -63,6 +69,7 @@ import org.example.project.presentation.theme.AppDimensions
 fun ChatScreen(
     viewModel: ChatViewModel,
     currentEmployeeId: Int,
+    onStartCall: (participantIds: List<Int>, type: String, conversationId: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -91,6 +98,14 @@ fun ChatScreen(
                 onMessageDraftChanged = viewModel::onMessageDraftChanged,
                 onSendClick = viewModel::sendMessage,
                 onGroupSettingsClick = viewModel::openGroupSettings,
+                onStartCall = { type ->
+                    val conversation = uiState.selectedConversation!!
+                    onStartCall(
+                        conversation.participants.map { it.id },
+                        type,
+                        conversation.conversation.id,
+                    )
+                },
             )
         }
 
@@ -521,6 +536,7 @@ private fun ConversationDetailScreen(
     onMessageDraftChanged: (String) -> Unit,
     onSendClick: () -> Unit,
     onGroupSettingsClick: () -> Unit,
+    onStartCall: (String) -> Unit,
 ) {
     val selectedConversation = uiState.selectedConversation ?: return
     val listState = rememberLazyListState()
@@ -575,8 +591,25 @@ private fun ConversationDetailScreen(
                     Text(
                         text = strings.text("Settings"),
                         color = AppColorPalette.Primary,
+                        fontSize = 12.sp,
                     )
                 }
+            }
+            IconButton(onClick = { onStartCall("audio") }) {
+                Icon(
+                    imageVector = Icons.Filled.Call,
+                    contentDescription = strings.text("Audio call"),
+                    tint = AppColorPalette.Primary,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            IconButton(onClick = { onStartCall("video") }) {
+                Icon(
+                    imageVector = Icons.Filled.Videocam,
+                    contentDescription = strings.text("Video call"),
+                    tint = AppColorPalette.Primary,
+                    modifier = Modifier.size(22.dp),
+                )
             }
         }
 
@@ -591,14 +624,20 @@ private fun ConversationDetailScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(uiState.messages, key = { it.id }) { message ->
-                MessageBubble(
-                    message = message,
-                    isMine = message.senderId == currentEmployeeId,
-                    senderName = uiState.usersById[message.senderId]?.name
-                        ?: selectedConversation.participants.find { it.id == message.senderId }?.name
-                        ?: strings.text("Unknown sender"),
-                    showSenderName = selectedConversation.isGroup,
-                )
+                when (message.messageType) {
+                    ChatMessageType.CALL -> CallLogBubble(
+                        message = message,
+                        strings = strings,
+                    )
+                    else -> MessageBubble(
+                        message = message,
+                        isMine = message.senderId == currentEmployeeId,
+                        senderName = uiState.usersById[message.senderId]?.name
+                            ?: selectedConversation.participants.find { it.id == message.senderId }?.name
+                            ?: strings.text("Unknown sender"),
+                        showSenderName = selectedConversation.isGroup,
+                    )
+                }
             }
         }
 
@@ -637,6 +676,77 @@ private fun ConversationDetailScreen(
             }
         }
     }
+}
+
+@Composable
+private fun CallLogBubble(
+    message: ChatMessage,
+    strings: org.example.project.presentation.localization.AppStrings,
+) {
+    val call = message.call
+    val isMissed = call?.status in setOf("missed", "declined", "cancelled", "failed")
+    val isCompleted = !isMissed && (
+        call?.status in setOf("ended", "completed") ||
+            (call?.durationSeconds ?: 0) > 0
+        )
+    val icon = if (call?.type == "video") Icons.Filled.Videocam else Icons.Filled.Call
+    val accentColor = when {
+        isMissed -> AppColorPalette.LogoutDanger
+        isCompleted -> AppColorPalette.Success
+        else -> AppColorPalette.TextSecondary
+    }
+    val bubbleBackground = when {
+        isMissed -> AppColorPalette.SurfaceVariant
+        isCompleted -> AppColorPalette.StatusComplete.background
+        else -> AppColorPalette.SurfaceVariant
+    }
+    val label = buildCallLogLabel(message.messageText, call?.durationSeconds)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(bubbleBackground)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = accentColor,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = label,
+                color = accentColor,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+        if (message.sentAt.isNotBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = chatClockTimeLabel(message.sentAt),
+                color = AppColorPalette.TextSecondary,
+                fontSize = 11.sp,
+            )
+        }
+    }
+}
+
+private fun buildCallLogLabel(messageText: String, durationSeconds: Int?): String {
+    val duration = durationSeconds ?: 0
+    if (duration <= 0) return messageText
+    val minutes = duration / 60
+    val seconds = duration % 60
+    val formatted = "$minutes:${seconds.toString().padStart(2, '0')}"
+    return "$messageText · $formatted"
 }
 
 @Composable

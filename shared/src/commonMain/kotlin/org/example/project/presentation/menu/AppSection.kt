@@ -15,6 +15,7 @@ enum class AppSection(
     TASKS("Tasks", DrawerGroup.WORKSPACE),
     PROJECTS("Projects", DrawerGroup.WORKSPACE),
     CHAT("Chat", DrawerGroup.WORKSPACE),
+    CALL_HISTORY("Call History", DrawerGroup.WORKSPACE, showInBottomBar = false),
     STOCK("Stock", DrawerGroup.SALES, showInBottomBar = false),
     ORDERS("Orders", DrawerGroup.SALES, showInBottomBar = false),
     RETURNS("Returns", DrawerGroup.SALES, showInBottomBar = false),

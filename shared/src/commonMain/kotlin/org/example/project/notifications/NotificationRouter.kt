@@ -9,6 +9,8 @@ data class NotificationDeepLink(
     val taskId: Int? = null,
     val conversationId: Int? = null,
     val messageId: Int? = null,
+    val callId: String? = null,
+    val callAction: String? = null,
 )
 
 object NotificationRouter {
@@ -32,6 +34,15 @@ object NotificationRouter {
                     type = type,
                     conversationId = conversationId,
                     messageId = data["message_id"]?.toIntOrNull(),
+                )
+            }
+
+            "workspace_call_incoming", "workspace_call_updated" -> {
+                NotificationDeepLink(
+                    type = type,
+                    conversationId = data["conversation_id"]?.toIntOrNull(),
+                    callId = data["call_id"],
+                    callAction = data["call_action"],
                 )
             }
 
