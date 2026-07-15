@@ -27,6 +27,7 @@ import org.example.project.data.ApiConfig
 import org.example.project.data.accounts.UserApiService
 import org.example.project.data.auditlogs.AuditLogApiService
 import org.example.project.data.auth.AuthApiService
+import org.example.project.data.auth.SessionStorage
 import org.example.project.data.auth.UserSession
 import org.example.project.data.chat.ChatApiService
 import org.example.project.data.chat.ReverbChatRealtimeService
@@ -38,6 +39,8 @@ import org.example.project.data.orders.OrdersApiService
 import org.example.project.data.project.ProjectApiService
 import org.example.project.data.realtime.ReverbPrivateChannelClient
 import org.example.project.data.returns.ReturnsApiService
+import org.example.project.data.search.RecentSearchStorage
+import org.example.project.data.search.SearchApiService
 import org.example.project.data.stock.StockApiService
 import org.example.project.data.task.TaskApiService
 import org.example.project.data.tasktimeentry.ReverbTaskTimeEntryRealtimeService
@@ -72,6 +75,9 @@ import org.example.project.presentation.project.ProjectListScreen
 import org.example.project.presentation.project.ProjectListViewModel
 import org.example.project.presentation.returns.ReturnsScreen
 import org.example.project.presentation.returns.ReturnsViewModel
+import org.example.project.presentation.search.GlobalSearchDestination
+import org.example.project.presentation.search.GlobalSearchOverlay
+import org.example.project.presentation.search.GlobalSearchViewModel
 import org.example.project.presentation.stock.StockScreen
 import org.example.project.presentation.stock.StockViewModel
 import org.example.project.presentation.stocklogs.StockLogsScreen
@@ -91,6 +97,7 @@ fun MainScreen(
     selectedLanguage: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit,
     onPhoneNumberUpdated: (String) -> Unit,
+    onUserSessionUpdated: (UserSession) -> Unit,
     onLogout: () -> Unit,
 ) {
     var selectedSection by remember { mutableStateOf(AppSection.DASHBOARD) }
@@ -114,6 +121,18 @@ fun MainScreen(
         )
     }
     val projectListViewModel = remember { ProjectListViewModel(api = projectApi) }
+    val searchViewModel = remember(user.id, user.token) {
+        GlobalSearchViewModel(
+            api = SearchApiService(
+                client = apiHttpClient,
+                baseUrl = ApiConfig.BASE_URL,
+                token = user.token,
+            ),
+            recentStore = RecentSearchStorage,
+            userId = user.id,
+            isAdmin = user.role == UserRole.ADMIN,
+        )
+    }
 
     val adminViewModel = remember(user.token) {
         AdminViewModel(userApi)
@@ -168,6 +187,10 @@ fun MainScreen(
     }
 
     var showUserDetail by remember { mutableStateOf(false) }
+    var showGlobalSearch by remember { mutableStateOf(false) }
+    var pendingProductId by remember { mutableStateOf<Int?>(null) }
+    var pendingOrderId by remember { mutableStateOf<Int?>(null) }
+    var pendingReturnId by remember { mutableStateOf<Int?>(null) }
     val realtimeClient = remember(user.token) {
         ReverbPrivateChannelClient(
             client = apiHttpClient,
@@ -238,11 +261,20 @@ fun MainScreen(
 
     val strings = LocalAppStrings.current
     val pendingDeepLink by NotificationRouter.pending.collectAsState()
+    val taskListUiState by taskListViewModel.uiState.collectAsState()
     val chatUiState by chatViewModel.uiState.collectAsState()
     val callUiState by callViewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
         processStartupNotificationIntent()
+    }
+
+    LaunchedEffect(taskListUiState.tasks) {
+        searchViewModel.setTimerTasks(
+            taskListUiState.tasks
+                .filter { it.parentId == null }
+                .map { it.id to it.title },
+        )
     }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -281,6 +313,90 @@ fun MainScreen(
             }
         }
         task?.let { pushSubRoute(MainSubRoute.TaskDetail(it)) }
+    }
+
+    suspend fun openProjectById(projectId: Int) {
+        navigateToMainSection(AppSection.PROJECTS)
+
+        var project = projectListViewModel.uiState.value.projects.find { it.id == projectId }
+        if (project == null) {
+            try {
+                project = projectApi.getProject(projectId)
+                projectListViewModel.loadProjects()
+            } catch (_: Exception) {
+            }
+        }
+        project?.let { pushSubRoute(MainSubRoute.ProjectDetail(it)) }
+    }
+
+    fun navigateFromSearch(destination: GlobalSearchDestination) {
+        when (destination) {
+            is GlobalSearchDestination.TaskDetail -> {
+                scope.launch { openTaskById(destination.id) }
+            }
+
+            is GlobalSearchDestination.ProjectDetail -> {
+                scope.launch { openProjectById(destination.id) }
+            }
+
+            is GlobalSearchDestination.ProductDetail -> {
+                pendingProductId = destination.id
+                navigateToMainSection(AppSection.STOCK)
+            }
+
+            is GlobalSearchDestination.OrderDetail -> {
+                pendingOrderId = destination.id
+                navigateToMainSection(AppSection.ORDERS)
+            }
+
+            is GlobalSearchDestination.ReturnDetail -> {
+                pendingReturnId = destination.id
+                navigateToMainSection(AppSection.RETURNS)
+            }
+
+            is GlobalSearchDestination.DirectMessage -> {
+                navigateToMainSection(AppSection.CHAT)
+                chatViewModel.startDirectMessageByUserId(destination.userId)
+            }
+
+            is GlobalSearchDestination.Section -> {
+                navigateToMainSection(destination.section)
+            }
+
+            GlobalSearchDestination.CreateTask -> {
+                navigateToMainSection(AppSection.TASKS)
+                pushSubRoute(MainSubRoute.AddTask)
+            }
+
+            GlobalSearchDestination.CreateProject -> {
+                navigateToMainSection(AppSection.PROJECTS)
+                pushSubRoute(MainSubRoute.AddProject)
+            }
+
+            is GlobalSearchDestination.StartTimer -> {
+                scope.launch {
+                    var task = taskListViewModel.uiState.value.tasks.find { it.id == destination.taskId }
+                    if (task == null) {
+                        try {
+                            task = taskApi.getTask(destination.taskId)
+                            taskListViewModel.loadTasks()
+                        } catch (_: Exception) {
+                        }
+                    }
+                    task?.let(activeTimerViewModel::start)
+                }
+            }
+
+            is GlobalSearchDestination.UpdateStatus -> {
+                scope.launch {
+                    authRepository.updateStatus(user, destination.status)
+                        .onSuccess { updatedUser ->
+                            SessionStorage.saveSession(updatedUser)
+                            onUserSessionUpdated(updatedUser)
+                        }
+                }
+            }
+        }
     }
 
     LaunchedEffect(chatViewModel, callViewModel) {
@@ -365,6 +481,7 @@ fun MainScreen(
                         scope.launch { drawerState.open() }
                     },
                     onProfileClick = { showUserDetail = true },
+                    onSearchClick = { showGlobalSearch = true },
                     onOpenActiveTask = { task ->
                         navigateToMainSection(AppSection.TASKS)
                         pushSubRoute(MainSubRoute.TaskDetail(task))
@@ -442,6 +559,8 @@ fun MainScreen(
                             StockScreen(
                                 viewModel = stockViewModel,
                                 onAddProductClick = { pushSubRoute(MainSubRoute.AddProduct) },
+                                openProductId = pendingProductId,
+                                onOpenProductConsumed = { pendingProductId = null },
                             )
                         }
                     }
@@ -451,6 +570,8 @@ fun MainScreen(
                     OrdersScreen(
                         viewModel = ordersViewModel,
                         modifier = Modifier.padding(paddingValues),
+                        openOrderId = pendingOrderId,
+                        onOpenOrderConsumed = { pendingOrderId = null },
                     )
                 }
 
@@ -458,6 +579,8 @@ fun MainScreen(
                     ReturnsScreen(
                         viewModel = returnsViewModel,
                         modifier = Modifier.padding(paddingValues),
+                        openReturnId = pendingReturnId,
+                        onOpenReturnConsumed = { pendingReturnId = null },
                     )
                 }
 
@@ -526,6 +649,17 @@ fun MainScreen(
                         showUserDetail = false
                     },
                     onLogout = onLogout,
+                )
+            }
+
+            if (showGlobalSearch) {
+                GlobalSearchOverlay(
+                    viewModel = searchViewModel,
+                    onDismiss = {
+                        searchViewModel.setOpen(false)
+                        showGlobalSearch = false
+                    },
+                    onNavigate = ::navigateFromSearch,
                 )
             }
 

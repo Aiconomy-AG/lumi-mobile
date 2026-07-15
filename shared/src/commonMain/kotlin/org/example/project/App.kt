@@ -125,6 +125,11 @@ fun App() {
                                 currentUser = updatedUser
                                 SessionStorage.saveSession(updatedUser)
                             },
+                            onUserSessionUpdated = { updatedUser ->
+                                currentUser = updatedUser
+                                selectedLanguage = AppLanguage.fromCode(updatedUser.languageFlag)
+                                SessionStorage.saveSession(updatedUser)
+                            },
                             onLogout = {
                                 val authToken = currentUser?.token
                                 scope.launch {

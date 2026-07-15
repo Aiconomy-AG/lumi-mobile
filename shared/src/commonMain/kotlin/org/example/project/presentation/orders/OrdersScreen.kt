@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +26,9 @@ import org.example.project.presentation.theme.AppDimensions
 @Composable
 fun OrdersScreen(
     viewModel: OrdersViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    openOrderId: Int? = null,
+    onOpenOrderConsumed: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -36,6 +39,14 @@ fun OrdersScreen(
     val selectedOrder = selectedOrderId?.let { id ->
         state.orders.firstOrNull { order ->
             order.id == id
+        }
+    }
+
+    LaunchedEffect(openOrderId, state.orders) {
+        val orderId = openOrderId ?: return@LaunchedEffect
+        if (state.orders.any { it.id == orderId }) {
+            selectedOrderId = orderId
+            onOpenOrderConsumed()
         }
     }
 
