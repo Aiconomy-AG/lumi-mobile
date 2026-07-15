@@ -27,17 +27,31 @@ actual fun CallVideoRenderer(
     modifier: Modifier,
     participantName: String,
     cameraEnabled: Boolean,
+    participantIdentity: String?,
 ) {
     val room by AndroidLiveKitRoomHolder.room.collectAsState()
+    val mediaParticipants by AndroidLiveKitRoomHolder.mediaParticipants.collectAsState()
     val localCameraEnabled by AndroidLiveKitRoomHolder.localCameraEnabled.collectAsState()
     val remoteCameraEnabled by AndroidLiveKitRoomHolder.remoteCameraEnabled.collectAsState()
     val remoteName by AndroidLiveKitRoomHolder.remoteParticipantName.collectAsState()
     val localTrack by AndroidLiveKitRoomHolder.localVideoTrack.collectAsState()
     val remoteTrack by AndroidLiveKitRoomHolder.remoteVideoTrack.collectAsState()
 
-    val holderCameraEnabled = if (isLocal) localCameraEnabled else remoteCameraEnabled
-    val track = if (isLocal) localTrack else remoteTrack
-    val displayName = if (isLocal) participantName else remoteName.ifBlank { participantName }
+    val mediaParticipant = participantIdentity?.let { identity ->
+        mediaParticipants.firstOrNull { it.identity == identity }
+    } ?: mediaParticipants.firstOrNull { it.isLocal == isLocal }
+
+    val holderCameraEnabled = mediaParticipant?.cameraEnabled
+        ?: if (isLocal) localCameraEnabled else remoteCameraEnabled
+    val displayName = mediaParticipant?.name?.ifBlank { participantName } ?: participantName
+        .ifBlank { if (isLocal) participantName else remoteName.ifBlank { participantName } }
+    val track = resolveVideoTrack(
+        room = room,
+        mediaParticipant = mediaParticipant,
+        isLocal = isLocal,
+        localTrack = localTrack,
+        remoteTrack = remoteTrack,
+    )
     val showVideo = cameraEnabled && holderCameraEnabled && room != null && track != null
 
     if (showVideo) {
@@ -45,6 +59,29 @@ actual fun CallVideoRenderer(
     } else {
         CallVideoPlaceholder(name = displayName, modifier = modifier)
     }
+}
+
+private fun resolveVideoTrack(
+    room: Room?,
+    mediaParticipant: org.example.project.domain.calls.CallMediaParticipant?,
+    isLocal: Boolean,
+    localTrack: VideoTrack?,
+    remoteTrack: VideoTrack?,
+): VideoTrack? {
+    if (room == null) return null
+    val identity = mediaParticipant?.identity
+    if (!identity.isNullOrBlank()) {
+        val participant = if (mediaParticipant?.isLocal == true) {
+            room.localParticipant
+        } else {
+            room.remoteParticipants.values.firstOrNull {
+                it.identity?.value == identity || it.name == identity
+            }
+        } ?: return if (isLocal) localTrack else remoteTrack
+        val publication = participant.getTrackPublication(io.livekit.android.room.track.Track.Source.CAMERA)
+        return publication?.track as? VideoTrack
+    }
+    return if (isLocal) localTrack else remoteTrack
 }
 
 @Composable

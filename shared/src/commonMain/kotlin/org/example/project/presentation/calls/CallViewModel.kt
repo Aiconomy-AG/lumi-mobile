@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.withLock
 import org.example.project.data.calls.ClientInstanceIdStorage
 import org.example.project.domain.calls.CallApi
 import org.example.project.domain.calls.CallApiException
+import org.example.project.domain.calls.CallMediaParticipant
 import org.example.project.domain.calls.CallPermissions
 import org.example.project.domain.calls.CallPermissionPolicy
 import org.example.project.domain.calls.CallPermissionState
@@ -26,12 +27,14 @@ import org.example.project.domain.calls.WorkspaceCall
 
 data class CallUiState(
     val call: WorkspaceCall? = null,
+    val uiMode: CallUiMode = CallUiMode.Hidden,
     val muted: Boolean = false,
     val cameraEnabled: Boolean = false,
     val remoteCameraEnabled: Boolean = false,
     val connectionLabel: String = "",
     val elapsedSeconds: Int = 0,
     val remoteParticipantCount: Int = 0,
+    val mediaParticipants: List<CallMediaParticipant> = emptyList(),
     val accepting: Boolean = false,
     val permissionState: CallPermissionState = CallPermissionState.DENIED,
     val error: String? = null,
@@ -73,6 +76,11 @@ class CallViewModel(
         scope.launch {
             platform.remoteCameraEnabled.collect { enabled ->
                 _state.value = _state.value.copy(remoteCameraEnabled = enabled)
+            }
+        }
+        scope.launch {
+            platform.mediaParticipants.collect { participants ->
+                _state.value = _state.value.copy(mediaParticipants = participants)
             }
         }
         scope.launch {
@@ -145,28 +153,43 @@ class CallViewModel(
         participantIds: List<Int>,
         type: String = "audio",
         conversationId: Int? = null,
+        isGroupConversation: Boolean = false,
     ) {
         val calleeIds = participantIds.filter { it != currentUserId }
         if (calleeIds.isEmpty()) return
         scope.launch {
             if (!ensureCallMediaPermissions()) return@launch
             runCallRequest {
-                val startedCall = if (
-                    conversationId != null &&
-                    calleeIds.size == 1 &&
-                    type == "audio"
-                ) {
-                    api.startFromConversation(conversationId, instanceId, type)
+                val startedCall = if (shouldUseConversationEndpoint(
+                    conversationId = conversationId,
+                    calleeCount = calleeIds.size,
+                    isGroupConversation = isGroupConversation,
+                    type = type,
+                )) {
+                    api.startFromConversation(conversationId!!, instanceId, type)
                 } else {
                     api.start(
                         calleeIds = calleeIds,
                         clientInstanceId = instanceId,
                         type = type,
-                        mode = if (calleeIds.size > 1) "group" else "1v1",
+                        mode = if (calleeIds.size > 1 || isGroupConversation) "group" else "1v1",
                     )
                 }
                 validateStartedCall(startedCall, type)
             }
+        }
+    }
+
+    fun minimize() {
+        val call = _state.value.call ?: return
+        if (call.status == CallStatus.ACTIVE) {
+            _state.value = _state.value.copy(uiMode = CallUiMode.Minimized)
+        }
+    }
+
+    fun expand() {
+        if (_state.value.call != null) {
+            _state.value = _state.value.copy(uiMode = CallUiMode.FullScreen)
         }
     }
 
@@ -252,12 +275,7 @@ class CallViewModel(
             if (activeCall?.id == call.id) resolvedCall = activeCall
             attempts += 1
         }
-        _state.value = _state.value.copy(
-            call = resolvedCall,
-            error = null,
-            cameraEnabled = resolvedCall.isVideo && CallPermissions.hasCamera(),
-            connectionLabel = buildConnectionLabel(resolvedCall, ""),
-        )
+        applyCallToState(resolvedCall)
         subscribePresence(resolvedCall)
         if (resolvedCall.connection != null) {
             connectMedia(resolvedCall)
@@ -272,13 +290,31 @@ class CallViewModel(
     fun decline() = finish { call -> api.decline(call.id) }
     fun cancel() = finish { call -> api.cancel(call.id) }
     fun leave() = finish { call -> api.leave(call.id) }
-    fun end() = finish { call -> api.end(call.id) }
+
+    fun end() {
+        val call = _state.value.call ?: return
+        if (call.isGroup && call.status == CallStatus.ACTIVE) {
+            leave()
+            return
+        }
+        finish { api.end(it.id) }
+    }
 
     fun invite(userIds: List<Int>) {
         val call = _state.value.call ?: return
         if (userIds.isEmpty()) return
         scope.launch {
-            runCallRequest { api.invite(call.id, userIds) }
+            runCatching { api.invite(call.id, userIds) }
+                .onSuccess { updated ->
+                    applyCallToState(updated)
+                }
+                .onFailure { error ->
+                    val message = when (error) {
+                        is CallApiException -> error.message
+                        else -> error.message
+                    }
+                    _state.value = _state.value.copy(error = message ?: "Could not invite participants.")
+                }
         }
     }
 
@@ -385,13 +421,35 @@ class CallViewModel(
     }
 
     private fun applyCallToState(call: WorkspaceCall) {
-        val incoming = call.status == CallStatus.RINGING && call.initiatedByUserId != currentUserId
+        val currentMode = _state.value.uiMode
         _state.value = _state.value.copy(
             call = call,
+            uiMode = resolveUiMode(call, currentMode),
             error = null,
-            cameraEnabled = if (incoming) false else call.isVideo,
+            cameraEnabled = if (call.status == CallStatus.RINGING && call.initiatedByUserId != currentUserId) {
+                false
+            } else {
+                call.isVideo && CallPermissions.hasCamera()
+            },
             connectionLabel = buildConnectionLabel(call, _state.value.connectionLabel),
         )
+    }
+
+    private fun resolveUiMode(call: WorkspaceCall, current: CallUiMode): CallUiMode {
+        if (current == CallUiMode.Minimized && call.status == CallStatus.ACTIVE) {
+            return CallUiMode.Minimized
+        }
+        return when {
+            call.status == CallStatus.RINGING && call.initiatedByUserId != currentUserId ->
+                CallUiMode.Incoming
+            call.status == CallStatus.RINGING && call.initiatedByUserId == currentUserId && call.isGroup ->
+                CallUiMode.OutgoingRinging
+            call.status == CallStatus.RINGING ->
+                CallUiMode.FullScreen
+            call.status == CallStatus.ACTIVE ->
+                if (current == CallUiMode.Minimized) CallUiMode.Minimized else CallUiMode.FullScreen
+            else -> CallUiMode.Hidden
+        }
     }
 
     private fun startCallerSyncPolling(call: WorkspaceCall) {
@@ -585,7 +643,21 @@ class CallViewModel(
     }
 
     private fun emptyCallState(error: String? = null) = CallUiState(
+        uiMode = CallUiMode.Hidden,
         permissionState = CallPermissions.state.value,
         error = error,
+    )
+}
+
+internal fun shouldUseConversationEndpoint(
+    conversationId: Int?,
+    calleeCount: Int,
+    isGroupConversation: Boolean,
+    type: String,
+): Boolean {
+    return conversationId != null && (
+        isGroupConversation ||
+        calleeCount > 1 ||
+        (calleeCount == 1 && type == "audio")
     )
 }

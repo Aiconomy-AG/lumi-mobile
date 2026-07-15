@@ -38,7 +38,13 @@ object AndroidCallRuntime {
 
     internal fun context(): Context = checkNotNull(applicationContext) { "AndroidCallRuntime is not initialized." }
 
-    fun reportIncoming(callId: String, callerUserId: String, callerName: String, isVideo: Boolean = false) {
+    fun reportIncoming(
+        callId: String,
+        callerUserId: String,
+        callerName: String,
+        isVideo: Boolean = false,
+        isGroup: Boolean = false,
+    ) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || controls.containsKey(callId)) return
         val manager = callsManager ?: return
         val reportAsVideo = isVideo && CallPermissions.hasCamera()
@@ -95,6 +101,8 @@ private class AndroidLiveKitCallController : PlatformCallController {
     private val mediaScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val _remoteParticipantCount = MutableStateFlow(0)
     override val remoteParticipantCount: StateFlow<Int> = _remoteParticipantCount.asStateFlow()
+    override val mediaParticipants: StateFlow<List<CallMediaParticipant>> =
+        AndroidLiveKitRoomHolder.mediaParticipants
     override val remoteCameraEnabled: StateFlow<Boolean> = AndroidLiveKitRoomHolder.remoteCameraEnabled
 
     init {
@@ -165,6 +173,7 @@ private class AndroidLiveKitCallController : PlatformCallController {
             call.caller.id.toString(),
             call.caller.name,
             call.isVideo,
+            call.isGroup,
         )
     }
 

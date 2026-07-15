@@ -9,4 +9,5 @@ expect fun CallVideoRenderer(
     modifier: Modifier = Modifier,
     participantName: String = "",
     cameraEnabled: Boolean = true,
+    participantIdentity: String? = null,
 )

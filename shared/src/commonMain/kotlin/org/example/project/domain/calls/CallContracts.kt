@@ -44,6 +44,7 @@ interface PlatformCallController {
     fun isCameraEnabled(): Boolean
     val remoteCameraEnabled: StateFlow<Boolean>
     val remoteParticipantCount: StateFlow<Int>
+    val mediaParticipants: StateFlow<List<CallMediaParticipant>>
     fun showIncoming(call: WorkspaceCall)
     fun dismissIncoming(callId: String)
     fun onIncomingAnswered(callId: String)

@@ -857,7 +857,7 @@ class ChatViewModel(
             return
         }
 
-        val messages = chatApi.getMessages(conversationId)
+        val messages = runCatching { chatApi.getMessages(conversationId) }.getOrElse { return }
         val currentState = _uiState.value
         val mergedMessages = mergeWithOptimisticMessages(
             serverMessages = messages,

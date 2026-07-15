@@ -2,7 +2,6 @@ package org.example.project.presentation.calls
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -28,16 +27,28 @@ actual fun CallVideoRenderer(
     modifier: Modifier,
     participantName: String,
     cameraEnabled: Boolean,
+    participantIdentity: String?,
 ) {
+    val mediaParticipants by IosLiveKitRoomHolder.mediaParticipants.collectAsState()
     val localCameraEnabled by IosLiveKitRoomHolder.localCameraEnabled.collectAsState()
     val remoteCameraEnabled by IosLiveKitRoomHolder.remoteCameraEnabled.collectAsState()
     val remoteName by IosLiveKitRoomHolder.remoteParticipantName.collectAsState()
     val localHasVideoTrack by IosLiveKitRoomHolder.localHasVideoTrack.collectAsState()
     val remoteHasVideoTrack by IosLiveKitRoomHolder.remoteHasVideoTrack.collectAsState()
 
-    val holderCameraEnabled = if (isLocal) localCameraEnabled else remoteCameraEnabled
-    val hasTrack = if (isLocal) localHasVideoTrack else remoteHasVideoTrack
-    val displayName = if (isLocal) participantName else remoteName.ifBlank { participantName }
+    val mediaParticipant = participantIdentity?.let { identity ->
+        mediaParticipants.firstOrNull { it.identity == identity }
+    } ?: mediaParticipants.firstOrNull { it.isLocal == isLocal }
+
+    val holderCameraEnabled = mediaParticipant?.cameraEnabled
+        ?: if (isLocal) localCameraEnabled else remoteCameraEnabled
+    val hasTrack = mediaParticipant?.hasVideoTrack
+        ?: if (isLocal) localHasVideoTrack else remoteHasVideoTrack
+    val displayName = mediaParticipant?.name?.ifBlank { participantName } ?: participantName
+        .ifBlank { if (isLocal) participantName else remoteName.ifBlank { participantName } }
+    val identity = mediaParticipant?.identity
+        ?: participantIdentity
+        ?: if (isLocal) "local" else remoteName.ifBlank { "remote" }
     val showVideo = cameraEnabled && holderCameraEnabled && hasTrack
 
     if (showVideo) {
@@ -48,7 +59,7 @@ actual fun CallVideoRenderer(
                 NSNotificationCenter.defaultCenter.postNotificationName(
                     "LumiVideoViewCreated",
                     container,
-                    mapOf("isLocal" to isLocal),
+                    mapOf("identity" to identity),
                 )
                 container
             },
@@ -56,7 +67,7 @@ actual fun CallVideoRenderer(
                 NSNotificationCenter.defaultCenter.postNotificationName(
                     "LumiVideoViewReleased",
                     view,
-                    mapOf("isLocal" to isLocal),
+                    mapOf("identity" to identity),
                 )
             },
         )

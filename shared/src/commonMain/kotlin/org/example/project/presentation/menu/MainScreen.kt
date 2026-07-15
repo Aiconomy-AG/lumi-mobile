@@ -59,8 +59,12 @@ import org.example.project.presentation.chat.ChatViewModel
 import org.example.project.domain.calls.createPlatformCallController
 import org.example.project.presentation.calls.CallHistoryScreen
 import org.example.project.presentation.calls.CallHistoryViewModel
+import org.example.project.domain.calls.CallStatus
+import org.example.project.presentation.calls.CallInviteCandidate
 import org.example.project.presentation.calls.CallOverlay
+import org.example.project.presentation.calls.CallUiMode
 import org.example.project.presentation.calls.CallViewModel
+import org.example.project.presentation.calls.MinimizedCallOverlay
 import org.example.project.notifications.processStartupNotificationIntent
 import org.example.project.presentation.components.PlatformBackHandler
 import org.example.project.presentation.dashboard.DashboardScreen
@@ -438,13 +442,44 @@ fun MainScreen(
     }
 
     val hasChatConversation = selectedSection == AppSection.CHAT && chatUiState.selectedConversation != null
+    val inviteCandidates = remember(callUiState.call, chatUiState.selectedConversation, user.id) {
+        val call = callUiState.call ?: return@remember emptyList()
+        val conversation = chatUiState.selectedConversation ?: return@remember emptyList()
+        if (conversation.conversation.id != call.conversationId) return@remember emptyList()
+        conversation.participants
+            .filter { !it.isBot && it.id != user.id }
+            .filter { participant -> call.participants.none { it.userId == participant.id } }
+            .map { CallInviteCandidate(it.id, it.name) }
+    }
+    val callConversationTitle = remember(callUiState.call, chatUiState.selectedConversation) {
+        val call = callUiState.call ?: return@remember ""
+        chatUiState.selectedConversation
+            ?.takeIf { it.conversation.id == call.conversationId }
+            ?.title
+            .orEmpty()
+    }
+    val showCallOverlay = callUiState.uiMode in setOf(
+        CallUiMode.Incoming,
+        CallUiMode.OutgoingRinging,
+        CallUiMode.FullScreen,
+    )
 
     PlatformBackHandler(
-        enabled = showUserDetail || hasChatConversation || subRouteStack.isNotEmpty(),
+        enabled = showUserDetail || hasChatConversation || subRouteStack.isNotEmpty() ||
+            (callUiState.call?.status == CallStatus.ACTIVE && callUiState.uiMode == CallUiMode.FullScreen),
     ) {
         when {
+            callUiState.call?.status == CallStatus.ACTIVE && callUiState.uiMode == CallUiMode.FullScreen -> {
+                callViewModel.minimize()
+            }
             showUserDetail -> showUserDetail = false
-            hasChatConversation -> chatViewModel.backToConversationList()
+            hasChatConversation -> {
+                if (callUiState.call?.status == CallStatus.ACTIVE) {
+                    callViewModel.minimize()
+                } else {
+                    chatViewModel.backToConversationList()
+                }
+            }
             subRouteStack.isNotEmpty() -> popSubRoute()
         }
     }
@@ -462,6 +497,11 @@ fun MainScreen(
                 sections = availableSections,
                 selectedSection = selectedSection,
                 onSectionSelected = { section ->
+                    if (callUiState.call?.status == CallStatus.ACTIVE &&
+                        callUiState.uiMode == CallUiMode.FullScreen
+                    ) {
+                        callViewModel.minimize()
+                    }
                     navigateToMainSection(section)
                     scope.launch { drawerState.close() }
                 },
@@ -588,8 +628,13 @@ fun MainScreen(
                     ChatScreen(
                         viewModel = chatViewModel,
                         currentEmployeeId = user.id,
-                        onStartCall = { participantIds, type, conversationId ->
-                            callViewModel.startFromConversation(participantIds, type, conversationId)
+                        onStartCall = { participantIds, type, conversationId, isGroupConversation ->
+                            callViewModel.startFromConversation(
+                                participantIds = participantIds,
+                                type = type,
+                                conversationId = conversationId,
+                                isGroupConversation = isGroupConversation,
+                            )
                         },
                         modifier = Modifier.padding(paddingValues),
                     )
@@ -663,8 +708,23 @@ fun MainScreen(
                 )
             }
 
-            if (callUiState.call != null) {
-                CallOverlay(callViewModel, user.id, callUiState)
+            if (showCallOverlay && callUiState.call != null) {
+                CallOverlay(
+                    callViewModel,
+                    user.id,
+                    callUiState,
+                    inviteCandidates = inviteCandidates,
+                    conversationTitle = callConversationTitle,
+                )
+            }
+
+            if (callUiState.uiMode == CallUiMode.Minimized && callUiState.call != null) {
+                MinimizedCallOverlay(
+                    state = callUiState,
+                    currentUserId = user.id,
+                    selfName = strings.text("You"),
+                    onExpand = callViewModel::expand,
+                )
             }
         }
     }

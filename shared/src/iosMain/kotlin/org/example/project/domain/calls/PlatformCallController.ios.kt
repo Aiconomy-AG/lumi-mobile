@@ -8,6 +8,8 @@ private class IosLiveKitCallController : PlatformCallController {
         IosLiveKitRoomHolder.remoteParticipantCount
     override val remoteCameraEnabled: StateFlow<Boolean> =
         IosLiveKitRoomHolder.remoteCameraEnabled
+    override val mediaParticipants: StateFlow<List<CallMediaParticipant>> =
+        IosLiveKitRoomHolder.mediaParticipants
 
     override suspend fun connect(call: WorkspaceCall) {
         val connection = call.connection ?: return
@@ -52,6 +54,7 @@ private class IosLiveKitCallController : PlatformCallController {
                 "callerName" to call.caller.name,
                 "callerUserId" to call.caller.id.toString(),
                 "video" to call.isVideo,
+                "group" to call.isGroup,
             ),
         )
     }

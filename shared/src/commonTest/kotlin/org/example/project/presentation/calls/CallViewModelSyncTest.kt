@@ -18,6 +18,7 @@ import org.example.project.domain.calls.CallIdentity
 import org.example.project.domain.calls.CallPresenceRealtimeApi
 import org.example.project.domain.calls.CallRealtimeApi
 import org.example.project.domain.calls.CallStatus
+import org.example.project.domain.calls.CallMediaParticipant
 import org.example.project.domain.calls.PlatformCallController
 import org.example.project.domain.calls.WorkspaceCall
 
@@ -198,11 +199,13 @@ class CallViewModelSyncTest {
     private class RecordingPlatform : PlatformCallController {
         private val _remoteParticipantCount = MutableStateFlow(0)
         private val _remoteCameraEnabled = MutableStateFlow(false)
+        private val _mediaParticipants = MutableStateFlow<List<CallMediaParticipant>>(emptyList())
         val answeredCallIds = mutableListOf<String>()
         var showIncomingCount = 0
 
         override val remoteCameraEnabled: StateFlow<Boolean> = _remoteCameraEnabled.asStateFlow()
         override val remoteParticipantCount: StateFlow<Int> = _remoteParticipantCount.asStateFlow()
+        override val mediaParticipants: StateFlow<List<CallMediaParticipant>> = _mediaParticipants.asStateFlow()
 
         override suspend fun connect(call: WorkspaceCall) = Unit
         override suspend fun disconnect() = Unit

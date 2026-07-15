@@ -13,6 +13,7 @@ internal data class IncomingCallPayload(
     val body: String,
 ) {
     val isVideo: Boolean get() = callType == "video"
+    val isGroup: Boolean get() = callMode == "group"
 
     fun putInto(intent: Intent) {
         intent.putExtra(KEY_TYPE, TYPE_INCOMING_CALL)
@@ -42,17 +43,16 @@ internal data class IncomingCallPayload(
             val callId = data[KEY_CALL_ID]?.takeIf { it.isNotBlank() } ?: return null
             val callerName = data[KEY_CALLER_NAME].orEmpty().ifBlank { "Incoming call" }
             val callType = data[KEY_CALL_TYPE].orEmpty().ifBlank { "audio" }
+            val callMode = data[KEY_CALL_MODE].orEmpty().ifBlank { "1v1" }
             return IncomingCallPayload(
                 callId = callId,
                 callerName = callerName,
                 callerUserId = data[KEY_CALLER_USER_ID].orEmpty(),
                 callType = callType,
-                callMode = data[KEY_CALL_MODE].orEmpty().ifBlank { "1v1" },
+                callMode = callMode,
                 conversationId = data[KEY_CONVERSATION_ID].orEmpty(),
-                title = data[KEY_TITLE].orEmpty().ifBlank { callerName },
-                body = data[KEY_BODY].orEmpty().ifBlank {
-                    if (callType == "video") "Incoming video call" else "Incoming audio call"
-                },
+                title = data[KEY_TITLE].orEmpty().ifBlank { defaultTitle(callerName, callType, callMode) },
+                body = data[KEY_BODY].orEmpty().ifBlank { defaultBody(callerName, callType, callMode) },
             )
         }
 
@@ -61,18 +61,34 @@ internal data class IncomingCallPayload(
             val callId = intent.getStringExtra(KEY_CALL_ID)?.takeIf { it.isNotBlank() } ?: return null
             val callerName = intent.getStringExtra(KEY_CALLER_NAME).orEmpty().ifBlank { "Incoming call" }
             val callType = intent.getStringExtra(KEY_CALL_TYPE).orEmpty().ifBlank { "audio" }
+            val callMode = intent.getStringExtra(KEY_CALL_MODE).orEmpty().ifBlank { "1v1" }
             return IncomingCallPayload(
                 callId = callId,
                 callerName = callerName,
                 callerUserId = intent.getStringExtra(KEY_CALLER_USER_ID).orEmpty(),
                 callType = callType,
-                callMode = intent.getStringExtra(KEY_CALL_MODE).orEmpty().ifBlank { "1v1" },
+                callMode = callMode,
                 conversationId = intent.getStringExtra(KEY_CONVERSATION_ID).orEmpty(),
-                title = intent.getStringExtra(KEY_TITLE).orEmpty().ifBlank { callerName },
-                body = intent.getStringExtra(KEY_BODY).orEmpty().ifBlank {
-                    if (callType == "video") "Incoming video call" else "Incoming audio call"
-                },
+                title = intent.getStringExtra(KEY_TITLE).orEmpty().ifBlank { defaultTitle(callerName, callType, callMode) },
+                body = intent.getStringExtra(KEY_BODY).orEmpty().ifBlank { defaultBody(callerName, callType, callMode) },
             )
+        }
+
+        private fun defaultTitle(callerName: String, callType: String, callMode: String): String {
+            if (callMode == "group") {
+                val kind = if (callType == "video") "Group video call" else "Group audio call"
+                return "$callerName — $kind"
+            }
+            return callerName
+        }
+
+        private fun defaultBody(callerName: String, callType: String, callMode: String): String {
+            return when {
+                callMode == "group" && callType == "video" -> "Group video call from $callerName"
+                callMode == "group" -> "Group audio call from $callerName"
+                callType == "video" -> "Incoming video call"
+                else -> "Incoming audio call"
+            }
         }
     }
 }

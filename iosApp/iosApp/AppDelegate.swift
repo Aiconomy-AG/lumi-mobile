@@ -75,6 +75,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceiveRemoteNotification userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
+        Messaging.messaging().appDidReceiveMessage(userInfo)
         handleNotificationUserInfo(userInfo)
         completionHandler(.newData)
     }
@@ -82,10 +83,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         guard let fcmToken else { return }
         IosPushBridgeKt.onIosFcmTokenRefreshed(token: fcmToken)
-    }
-
-    func messaging(_ messaging: Messaging, didReceive remoteMessage: MessagingRemoteMessage) {
-        handleNotificationUserInfo(remoteMessage.appData)
     }
 
     func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
@@ -115,13 +112,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let callerName = data["caller_name"] ?? "Incoming call"
         let callerUserId = data["caller_user_id"] ?? "unknown"
         let isVideo = data["call_type"] == "video"
+        let isGroup = data["call_mode"] == "group"
 
         _Concurrency.Task { @MainActor in
             LumiCallManager.shared.reportIncomingFromPush(
                 callId: callId,
                 callerName: callerName,
                 callerUserId: callerUserId,
-                isVideo: isVideo
+                isVideo: isVideo,
+                isGroup: isGroup
             ) {
                 IosPushBridgeKt.onIosNotificationDataReceived(data: data)
                 completion()
@@ -139,7 +138,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         let userInfo = notification.request.content.userInfo
-        if isIncomingCallNotification(userInfo) {
+        Messaging.messaging().appDidReceiveMessage(userInfo)
+        if isCallNotification(userInfo) {
             handleNotificationUserInfo(userInfo)
             completionHandler([])
             return
@@ -152,7 +152,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        handleNotificationUserInfo(response.notification.request.content.userInfo)
+        let userInfo = response.notification.request.content.userInfo
+        Messaging.messaging().appDidReceiveMessage(userInfo)
+        handleNotificationUserInfo(userInfo)
         completionHandler()
     }
 
@@ -206,6 +208,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         }
 
         return data
+    }
+
+    private func isCallNotification(_ userInfo: [AnyHashable: Any]) -> Bool {
+        let data = extractNotificationData(from: userInfo)
+        return data["type"] == "workspace_call_incoming" || data["type"] == "workspace_call_updated"
     }
 
     private func isIncomingCallNotification(_ userInfo: [AnyHashable: Any]) -> Bool {

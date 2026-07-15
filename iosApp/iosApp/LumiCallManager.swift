@@ -14,6 +14,7 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
     private var room: Room?
     private var calls: [String: UUID] = [:]
     private var answeredCalls: Set<String> = []
+    private var suppressCallKitRoute = false
     private var isMuted = false
     private var isVideoCall = false
     private var roomStateTask: _Concurrency.Task<Void, Never>?
@@ -44,6 +45,7 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
         callerName: String,
         callerUserId: String,
         isVideo: Bool,
+        isGroup: Bool = false,
         completion: (() -> Void)? = nil
     ) {
         if calls[callId] != nil {
@@ -54,7 +56,12 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
         calls[callId] = uuid
         let update = CXCallUpdate()
         update.hasVideo = isVideo
-        update.localizedCallerName = callerName
+        if isGroup {
+            let callKind = isVideo ? "Group video call" : "Group audio call"
+            update.localizedCallerName = "\(callerName) — \(callKind)"
+        } else {
+            update.localizedCallerName = callerName
+        }
         update.remoteHandle = CXHandle(type: .generic, value: "lumi-user-\(callerUserId)")
         provider.reportNewIncomingCall(with: uuid, update: update) { error in
             if let error {
@@ -73,7 +80,17 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
     func reportCallAnswered(callId: String) {
         guard let uuid = calls[callId] else { return }
         answeredCalls.insert(callId)
-        provider.reportCall(with: uuid, connectedAt: Date())
+        suppressCallKitRoute = true
+        let controller = CXCallController()
+        let answerAction = CXAnswerCallAction(call: uuid)
+        controller.request(CXTransaction(action: answerAction)) { error in
+            if let error {
+                NSLog("CallKit programmatic answer failed: \(error.localizedDescription)")
+                _Concurrency.Task { @MainActor in
+                    self.suppressCallKitRoute = false
+                }
+            }
+        }
     }
 
     @objc private func connect(_ notification: Notification) {
@@ -108,7 +125,7 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
             room = nil
             isMuted = false
             isVideoCall = false
-            LumiVideoViewRegistry.shared.updateTracks(localTrack: nil, remoteTrack: nil)
+            LumiVideoViewRegistry.shared.updateTracks([:])
             IosLiveKitRoomHolderKt.clearIosRoomState()
         }
     }
@@ -135,11 +152,13 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
         let callerName = notification.userInfo?["callerName"] as? String ?? "Incoming call"
         let callerUserId = notification.userInfo?["callerUserId"] as? String ?? "unknown"
         let isVideo = notification.userInfo?["video"] as? Bool ?? false
+        let isGroup = notification.userInfo?["group"] as? Bool ?? false
         reportIncomingFromPush(
             callId: callId,
             callerName: callerName,
             callerUserId: callerUserId,
-            isVideo: isVideo
+            isVideo: isVideo,
+            isGroup: isGroup
         )
     }
 
@@ -155,15 +174,15 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
 
     @objc private func videoViewCreated(_ notification: Notification) {
         guard let container = notification.object as? UIView else { return }
-        let isLocal = notification.userInfo?["isLocal"] as? Bool ?? false
-        LumiVideoViewRegistry.shared.registerContainer(container, isLocal: isLocal)
+        let identity = notification.userInfo?["identity"] as? String ?? "unknown"
+        LumiVideoViewRegistry.shared.registerContainer(container, identity: identity)
         publishRoomState()
     }
 
     @objc private func videoViewReleased(_ notification: Notification) {
         guard let container = notification.object as? UIView else { return }
-        let isLocal = notification.userInfo?["isLocal"] as? Bool ?? false
-        LumiVideoViewRegistry.shared.releaseContainer(container, isLocal: isLocal)
+        let identity = notification.userInfo?["identity"] as? String ?? "unknown"
+        LumiVideoViewRegistry.shared.releaseContainer(container, identity: identity)
     }
 
     func debugIncomingCall() {
@@ -185,7 +204,11 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
 
     nonisolated func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         _Concurrency.Task { @MainActor in
-            self.routeCallKitAction(uuid: action.callUUID, action: "answer")
+            if !self.suppressCallKitRoute {
+                self.routeCallKitAction(uuid: action.callUUID, action: "answer")
+            } else {
+                self.suppressCallKitRoute = false
+            }
             action.fulfill()
         }
     }
@@ -239,30 +262,68 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
             return
         }
 
-        let remoteParticipant = room.remoteParticipants.values.first
-        let remotePublication = remoteParticipant?.trackPublications.values.first {
-            $0.source == .camera
-        }
-        let localPublication = room.localParticipant.trackPublications.values.first {
-            $0.source == .camera
-        }
+        var tracksByIdentity: [String: VideoTrack?] = [:]
+        var identities: [String] = []
+        var names: [String] = []
+        var isLocalFlags: [Bool] = []
+        var cameraEnabledFlags: [Bool] = []
+        var mutedFlags: [Bool] = []
+        var hasVideoTrackFlags: [Bool] = []
 
-        let remoteTrack = remotePublication?.track as? VideoTrack
+        let localIdentity = room.localParticipant.identity?.description ?? "local"
+        let localName = room.localParticipant.name ?? localIdentity
+        let localPublication = room.localParticipant.trackPublications.values.first { $0.source == .camera }
+        let localMicPublication = room.localParticipant.trackPublications.values.first { $0.source == .microphone }
         let localTrack = localPublication?.track as? VideoTrack
-        let remoteCameraEnabled = remotePublication?.isMuted == false && remoteTrack != nil
         let localCameraEnabled = localPublication?.isMuted == false && localTrack != nil
+        tracksByIdentity[localIdentity] = localTrack
+        identities.append(localIdentity)
+        names.append(localName)
+        isLocalFlags.append(true)
+        cameraEnabledFlags.append(localCameraEnabled)
+        mutedFlags.append(localMicPublication?.isMuted == true)
+        hasVideoTrackFlags.append(localTrack != nil)
 
-        LumiVideoViewRegistry.shared.updateTracks(localTrack: localTrack, remoteTrack: remoteTrack)
+        var remoteCameraEnabled = false
+        var remoteHasVideoTrack = false
+        var remoteName = ""
+        for remoteParticipant in room.remoteParticipants.values {
+            let identity = remoteParticipant.identity?.description ?? remoteParticipant.name ?? "remote"
+            let name = remoteParticipant.name ?? identity
+            let remotePublication = remoteParticipant.trackPublications.values.first { $0.source == .camera }
+            let micPublication = remoteParticipant.trackPublications.values.first { $0.source == .microphone }
+            let remoteTrack = remotePublication?.track as? VideoTrack
+            let cameraEnabled = remotePublication?.isMuted == false && remoteTrack != nil
+            tracksByIdentity[identity] = remoteTrack
+            identities.append(identity)
+            names.append(name)
+            isLocalFlags.append(false)
+            cameraEnabledFlags.append(cameraEnabled)
+            mutedFlags.append(micPublication?.isMuted == true)
+            hasVideoTrackFlags.append(remoteTrack != nil)
+            if remoteName.isEmpty {
+                remoteName = name
+                remoteCameraEnabled = cameraEnabled
+                remoteHasVideoTrack = remoteTrack != nil
+            }
+        }
 
-        let remoteName = remoteParticipant?.name ?? remoteParticipant?.identity?.description ?? ""
+        LumiVideoViewRegistry.shared.updateTracks(tracksByIdentity)
+
         IosLiveKitRoomHolderKt.updateIosRoomState(
             remoteCount: Int32(room.remoteParticipants.count),
             remoteCameraEnabled: remoteCameraEnabled,
             localCameraEnabled: localCameraEnabled,
             isMuted: isMuted,
             localHasVideoTrack: localTrack != nil,
-            remoteHasVideoTrack: remoteTrack != nil,
-            remoteParticipantName: remoteName
+            remoteHasVideoTrack: remoteHasVideoTrack,
+            remoteParticipantName: remoteName,
+            identities: identities,
+            names: names,
+            isLocalFlags: isLocalFlags.map { KotlinBoolean(bool: $0) },
+            cameraEnabledFlags: cameraEnabledFlags.map { KotlinBoolean(bool: $0) },
+            mutedFlags: mutedFlags.map { KotlinBoolean(bool: $0) },
+            hasVideoTrackFlags: hasVideoTrackFlags.map { KotlinBoolean(bool: $0) }
         )
     }
 }

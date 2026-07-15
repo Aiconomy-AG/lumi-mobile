@@ -16,6 +16,8 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.decodeFromJsonElement
 import org.example.project.domain.chat.AiActionMeta
 import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatCallMetadata
@@ -265,7 +267,7 @@ private data class ParticipantDto(
 }
 
 @Serializable
-private data class MessageListResponse(
+internal data class MessageListResponse(
     val data: List<MessageDto>,
 )
 
@@ -283,25 +285,27 @@ internal data class MessageDto(
     @SerialName("message_type") val messageType: String = "text",
     @SerialName("sent_at") val sentAt: String? = null,
     val call: ChatCallMetadataDto? = null,
-    val meta: AiActionMeta? = null,
+    val meta: JsonElement? = null,
     val reactions: List<ReactionDto> = emptyList(),
 ) {
-    fun toChatMessage(): ChatMessage = ChatMessage(
-        id = id,
-        conversationId = conversationId,
-        senderId = senderId,
-        messageText = message,
-        sentAt = sentAt ?: "",
-        call = call?.toMetadata(),
-        messageType = when {
-            meta != null -> ChatMessageType.AI_ACTION // Forces AI Action if meta exists
-            messageType == "call" -> ChatMessageType.CALL
-            messageType == "ai_action" -> ChatMessageType.AI_ACTION
-            else -> ChatMessageType.TEXT
-        },
-        meta = meta,
-        reactions = reactions.map { it.toReaction() },
-    )
+    fun toChatMessage(): ChatMessage {
+        val parsedMeta = meta?.let(::parseAiActionMetaOrNull)
+        return ChatMessage(
+            id = id,
+            conversationId = conversationId,
+            senderId = senderId,
+            messageText = message,
+            sentAt = sentAt ?: "",
+            call = call?.toMetadata(),
+            messageType = when {
+                messageType == "call" || call != null -> ChatMessageType.CALL
+                messageType == "ai_action" || parsedMeta != null -> ChatMessageType.AI_ACTION
+                else -> ChatMessageType.TEXT
+            },
+            meta = parsedMeta,
+            reactions = reactions.map { it.toReaction() },
+        )
+    }
 }
 
 @Serializable
@@ -387,5 +391,8 @@ private val chatJson = Json {
     ignoreUnknownKeys = true
     explicitNulls = false
 }
+
+private fun parseAiActionMetaOrNull(element: JsonElement): AiActionMeta? =
+    runCatching { chatJson.decodeFromJsonElement<AiActionMeta>(element) }.getOrNull()
 
 

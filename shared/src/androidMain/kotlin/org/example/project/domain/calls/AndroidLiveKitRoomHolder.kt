@@ -29,6 +29,8 @@ object AndroidLiveKitRoomHolder {
     val remoteParticipantName: StateFlow<String> = _remoteParticipantName.asStateFlow()
     private val _remoteParticipantCount = MutableStateFlow(0)
     val remoteParticipantCount: StateFlow<Int> = _remoteParticipantCount.asStateFlow()
+    private val _mediaParticipants = MutableStateFlow<List<CallMediaParticipant>>(emptyList())
+    val mediaParticipants: StateFlow<List<CallMediaParticipant>> = _mediaParticipants.asStateFlow()
 
     private var eventsJob: Job? = null
 
@@ -49,9 +51,39 @@ object AndroidLiveKitRoomHolder {
         _remoteParticipantCount.value = room.remoteParticipants.size
 
         val localPublication = room.localParticipant.getTrackPublication(Track.Source.CAMERA)
+        val localMicPublication = room.localParticipant.getTrackPublication(Track.Source.MICROPHONE)
         val localActive = isLocalCameraActive(localPublication)
         _localCameraEnabled.value = localActive
         _localVideoTrack.value = if (localActive) localPublication?.track as? VideoTrack else null
+
+        val localIdentity = room.localParticipant.identity?.value.orEmpty()
+        val localName = room.localParticipant.name.orEmpty().ifBlank { localIdentity }
+        val participants = mutableListOf<CallMediaParticipant>()
+        participants += CallMediaParticipant(
+            identity = localIdentity.ifBlank { "local" },
+            name = localName.ifBlank { "You" },
+            isLocal = true,
+            cameraEnabled = localActive,
+            isMuted = localMicPublication?.muted == true,
+            hasVideoTrack = localPublication?.track != null,
+        )
+
+        room.remoteParticipants.values.forEach { remoteParticipant ->
+            val identity = remoteParticipant.identity?.value.orEmpty()
+            val name = remoteParticipant.name.orEmpty().ifBlank { identity }
+            val remotePublication = remoteParticipant.getTrackPublication(Track.Source.CAMERA) as? RemoteTrackPublication
+            val micPublication = remoteParticipant.getTrackPublication(Track.Source.MICROPHONE) as? RemoteTrackPublication
+            val remoteActive = isRemoteCameraActive(remotePublication)
+            participants += CallMediaParticipant(
+                identity = identity.ifBlank { name },
+                name = name,
+                isLocal = false,
+                cameraEnabled = remoteActive,
+                isMuted = micPublication?.muted == true,
+                hasVideoTrack = remotePublication?.track != null,
+            )
+        }
+        _mediaParticipants.value = participants
 
         val remoteParticipant = room.remoteParticipants.values.firstOrNull()
         _remoteParticipantName.value = remoteParticipant?.name.orEmpty()
@@ -71,6 +103,7 @@ object AndroidLiveKitRoomHolder {
         _remoteCameraEnabled.value = false
         _remoteParticipantName.value = ""
         _remoteParticipantCount.value = 0
+        _mediaParticipants.value = emptyList()
     }
 
     private fun detachEvents() {

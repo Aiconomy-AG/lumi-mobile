@@ -29,7 +29,13 @@ class LumiFirebaseMessagingService : FirebaseMessagingService() {
         }
         if (data["body"].isNullOrBlank()) {
             val callType = data["call_type"] ?: "audio"
+            val callMode = data["call_mode"] ?: "1v1"
+            val callerName = data["caller_name"] ?: "Incoming call"
             data["body"] = notification?.body ?: when {
+                data["type"] == "workspace_call_incoming" && callMode == "group" && callType == "video" ->
+                    "Group video call from $callerName"
+                data["type"] == "workspace_call_incoming" && callMode == "group" ->
+                    "Group audio call from $callerName"
                 data["type"] == "workspace_call_incoming" && callType == "video" -> "Incoming video call"
                 data["type"] == "workspace_call_incoming" -> "Incoming audio call"
                 else -> "New notification"

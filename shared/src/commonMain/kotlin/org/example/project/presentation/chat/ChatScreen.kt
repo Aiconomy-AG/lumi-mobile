@@ -61,9 +61,11 @@ import org.example.project.data.chat.chatClockTimeLabel
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.domain.chat.ChatMessageReaction
 import org.example.project.domain.chat.ChatMessageType
+import org.example.project.domain.chat.ConversationType
 import org.example.project.domain.chat.ChatParticipant
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Icon
 import org.example.project.presentation.components.AppBackButton
@@ -82,7 +84,7 @@ import org.example.project.presentation.components.AppDetailField
 fun ChatScreen(
     viewModel: ChatViewModel,
     currentEmployeeId: Int,
-    onStartCall: (participantIds: List<Int>, type: String, conversationId: Int) -> Unit,
+    onStartCall: (participantIds: List<Int>, type: String, conversationId: Int, isGroupConversation: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -114,9 +116,10 @@ fun ChatScreen(
                 onStartCall = { type ->
                     val conversation = uiState.selectedConversation!!
                     onStartCall(
-                        conversation.participants.map { it.id },
+                        conversation.participants.filter { !it.isBot }.map { it.id },
                         type,
                         conversation.conversation.id,
+                        conversation.conversation.type == ConversationType.GROUP,
                     )
                 },
                 onApproveAiAction = viewModel::approveAiAction,
@@ -829,7 +832,11 @@ private fun CallLogBubble(
         call?.status in setOf("ended", "completed") ||
             (call?.durationSeconds ?: 0) > 0
         )
-    val icon = if (call?.type == "video") Icons.Filled.Videocam else Icons.Filled.Call
+    val icon = when {
+        call?.mode == "group" -> Icons.Filled.Group
+        call?.type == "video" -> Icons.Filled.Videocam
+        else -> Icons.Filled.Call
+    }
     val accentColor = when {
         isMissed -> AppColorPalette.LogoutDanger
         isCompleted -> AppColorPalette.Success

@@ -79,3 +79,12 @@ data class CallPresenceEvent(
     val call: WorkspaceCall,
     @SerialName("participant_user_id") val participantUserId: Int,
 )
+
+data class CallMediaParticipant(
+    val identity: String,
+    val name: String,
+    val isLocal: Boolean,
+    val cameraEnabled: Boolean,
+    val isMuted: Boolean,
+    val hasVideoTrack: Boolean = false,
+)
