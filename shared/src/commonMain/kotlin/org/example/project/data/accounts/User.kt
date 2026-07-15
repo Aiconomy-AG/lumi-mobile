@@ -10,7 +10,8 @@ data class User(
     val status: String,
     val phoneNumber: String,
     val languageFlag: String,
-    val isActive: Boolean
+    val isActive: Boolean,
+    val photoUrl: String? = null,
 ) {
     val initials: String
         get() = name

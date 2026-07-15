@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import org.example.project.data.auth.UserSession
 import org.example.project.domain.task.Task
 import org.example.project.presentation.tasks.ActiveTimerViewModel
@@ -90,12 +92,22 @@ fun AppTopBar(
                 .clickable(onClick = onProfileClick),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = user.name.take(2).uppercase(),
-                color = AppColorPalette.IconPrimary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            if (!user.photoUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = user.photoUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                )
+            } else {
+                Text(
+                    text = user.name.take(2).uppercase(),
+                    color = AppColorPalette.IconPrimary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
