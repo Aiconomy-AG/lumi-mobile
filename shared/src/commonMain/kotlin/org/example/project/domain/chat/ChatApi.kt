@@ -35,6 +35,8 @@ interface ChatApi {
         removeParticipantEmployeeIds: List<Int> = emptyList(),
     ): Conversation
     suspend fun sendMessage(conversationId: Int, senderId: Int, messageText: String): ChatMessage
+    suspend fun addReaction(conversationId: Int, messageId: Int, emoji: String): ChatMessage
+    suspend fun removeReaction(conversationId: Int, messageId: Int, emoji: String): ChatMessage
     suspend fun approveAiAction(conversationId: Int, actionId: Int)
     suspend fun rejectAiAction(conversationId: Int, actionId: Int)
 }
