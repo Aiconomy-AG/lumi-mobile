@@ -18,6 +18,7 @@ import org.example.project.domain.calls.AndroidCallRuntime
 import org.example.project.domain.calls.CallPermissions
 import org.example.project.data.auth.SessionStorage
 import org.example.project.data.chat.ChatReadStateStorage
+import org.example.project.data.search.RecentSearchStorage
 import org.example.project.notifications.PendingNotificationIntent
 import org.example.project.notifications.PushNotificationCoordinator
 import org.example.project.notifications.PushNotifications
@@ -45,8 +46,9 @@ class MainActivity : ComponentActivity() {
         CallPermissions.initialize(this)
         PushNotifications.initialize(this)
         AndroidCallRuntime.initialize(this)
-        org.example.project.data.auth.SessionStorage.initialize(this)
-        org.example.project.data.chat.ChatReadStateStorage.initialize(this)
+        SessionStorage.initialize(this)
+        ChatReadStateStorage.initialize(this)
+        RecentSearchStorage.initialize(this)
         startedFromIncomingCall =
             intent.getStringExtra("type") == "workspace_call_incoming"
         PendingNotificationIntent.enqueue(intent)

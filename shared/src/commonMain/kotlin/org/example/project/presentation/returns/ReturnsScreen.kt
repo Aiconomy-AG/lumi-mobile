@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,9 +55,17 @@ import org.example.project.presentation.theme.formatChf
 fun ReturnsScreen(
     viewModel: ReturnsViewModel,
     modifier: Modifier = Modifier,
+    openReturnId: Int? = null,
+    onOpenReturnConsumed: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val strings = LocalAppStrings.current
+
+    LaunchedEffect(openReturnId) {
+        val returnId = openReturnId ?: return@LaunchedEffect
+        viewModel.openReturn(returnId)
+        onOpenReturnConsumed()
+    }
 
     PlatformBackHandler(
         enabled = state.selectedReturn != null,
