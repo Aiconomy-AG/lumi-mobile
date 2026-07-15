@@ -21,8 +21,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.decodeFromJsonElement
 import org.example.project.domain.chat.AiActionMeta
 import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatCallMetadata
@@ -353,9 +351,8 @@ internal data class MessageDto(
             photoUrl = resolvedPhotoUrl(),
             call = call?.toMetadata(),
             messageType = when {
-                aiActionMeta != null -> ChatMessageType.AI_ACTION
-                messageType == "call" -> ChatMessageType.CALL
-                messageType == "ai_action" -> ChatMessageType.AI_ACTION
+                messageType == "call" || call != null -> ChatMessageType.CALL
+                messageType == "ai_action" || aiActionMeta != null -> ChatMessageType.AI_ACTION
                 messageType == "image" || messageType == "photo" || resolvedPhotoUrl() != null -> ChatMessageType.IMAGE
                 else -> ChatMessageType.TEXT
             },
@@ -380,25 +377,6 @@ internal data class MessageImageDto(
     val url: String? = null,
     @SerialName("thumb_url") val thumbUrl: String? = null,
 )
-    fun toChatMessage(): ChatMessage {
-        val parsedMeta = meta?.let(::parseAiActionMetaOrNull)
-        return ChatMessage(
-            id = id,
-            conversationId = conversationId,
-            senderId = senderId,
-            messageText = message,
-            sentAt = sentAt ?: "",
-            call = call?.toMetadata(),
-            messageType = when {
-                messageType == "call" || call != null -> ChatMessageType.CALL
-                messageType == "ai_action" || parsedMeta != null -> ChatMessageType.AI_ACTION
-                else -> ChatMessageType.TEXT
-            },
-            meta = parsedMeta,
-            reactions = reactions.map { it.toReaction() },
-        )
-    }
-}
 
 @Serializable
 internal data class ReactionDto(
@@ -483,8 +461,3 @@ private val chatJson = Json {
     ignoreUnknownKeys = true
     explicitNulls = false
 }
-
-private fun parseAiActionMetaOrNull(element: JsonElement): AiActionMeta? =
-    runCatching { chatJson.decodeFromJsonElement<AiActionMeta>(element) }.getOrNull()
-
-
