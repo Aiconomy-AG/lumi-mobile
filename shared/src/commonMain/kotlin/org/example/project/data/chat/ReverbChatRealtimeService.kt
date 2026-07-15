@@ -11,6 +11,9 @@ import org.example.project.data.realtime.ReverbPrivateChannelClient
 import org.example.project.data.realtime.decodeRealtime
 import org.example.project.domain.chat.ChatNotificationEvent
 import org.example.project.domain.chat.ChatRealtimeApi
+import org.example.project.domain.chat.ChatRealtimeEvent
+
+private val CHAT_CONVERSATION_EVENTS = setOf("message.reaction.updated")
 
 class ReverbChatRealtimeService(
     private val realtime: ReverbPrivateChannelClient,
@@ -27,6 +30,15 @@ class ReverbChatRealtimeService(
                 messageId = delivery.event.messageId,
                 actorUserId = delivery.event.actorUserId,
             )
+        }
+        .flowOn(Dispatchers.Default)
+
+    override fun conversationEvents(conversationId: Int): Flow<ChatRealtimeEvent> = realtime
+        .events("conversations.$conversationId")
+        .filter { it.name in CHAT_CONVERSATION_EVENTS }
+        .map { event ->
+            val message = event.data.decodeRealtime<MessageDto>().toChatMessage()
+            ChatRealtimeEvent.ReactionUpdated(message)
         }
         .flowOn(Dispatchers.Default)
 }

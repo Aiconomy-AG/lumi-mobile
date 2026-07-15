@@ -275,7 +275,7 @@ private data class MessageResponse(
 )
 
 @Serializable
-private data class MessageDto(
+internal data class MessageDto(
     val id: Int,
     @SerialName("conversation_id") val conversationId: Int,
     @SerialName("sender_id") val senderId: Int,
@@ -305,7 +305,7 @@ private data class MessageDto(
 }
 
 @Serializable
-private data class ReactionDto(
+internal data class ReactionDto(
     val emoji: String,
     val count: Int,
     @SerialName("user_ids") val userIds: List<Int> = emptyList(),
@@ -318,7 +318,7 @@ private data class ReactionDto(
 }
 
 @Serializable
-private data class ChatCallMetadataDto(
+internal data class ChatCallMetadataDto(
     val id: String,
     val status: String,
     val type: String,

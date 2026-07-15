@@ -43,6 +43,7 @@ interface ChatApi {
 
 interface ChatRealtimeApi {
     fun notificationEvents(userId: Int): Flow<ChatNotificationEvent>
+    fun conversationEvents(conversationId: Int): Flow<ChatRealtimeEvent>
 }
 
 data class ChatNotificationEvent(
@@ -52,3 +53,7 @@ data class ChatNotificationEvent(
     val messageId: Int?,
     val actorUserId: Int?,
 )
+
+sealed interface ChatRealtimeEvent {
+    data class ReactionUpdated(val message: ChatMessage) : ChatRealtimeEvent
+}
