@@ -12,5 +12,6 @@ data class UserSession(
     val phoneNumber: String,
     val status: String,
     val languageFlag: String,
-    val token: String
+    val token: String,
+    val photoUrl: String? = null,
 )
