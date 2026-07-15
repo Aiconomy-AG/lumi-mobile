@@ -68,6 +68,13 @@ data class ChatCallMetadata(
 )
 
 @Serializable
+data class ChatMessageReaction(
+    val emoji: String,
+    val count: Int,
+    val userIds: List<Int>,
+)
+
+@Serializable
 data class ChatMessage(
     val id: Int,
     val conversationId: Int,
@@ -77,6 +84,7 @@ data class ChatMessage(
     val messageType: ChatMessageType = ChatMessageType.TEXT,
     val call: ChatCallMetadata? = null,
     val meta: AiActionMeta? = null,
+    val reactions: List<ChatMessageReaction> = emptyList(),
 )
 
 data class ChatParticipant(
