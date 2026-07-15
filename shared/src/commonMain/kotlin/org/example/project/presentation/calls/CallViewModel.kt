@@ -43,9 +43,10 @@ class CallViewModel(
     private val realtime: CallRealtimeApi,
     private val presenceRealtime: CallPresenceRealtimeApi?,
     private val platform: PlatformCallController,
+    clientInstanceId: String = ClientInstanceIdStorage.getOrCreate(),
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val instanceId = ClientInstanceIdStorage.getOrCreate()
+    private val instanceId = clientInstanceId
     private val _state = MutableStateFlow(emptyCallState())
     val state: StateFlow<CallUiState> = _state.asStateFlow()
     private var presenceJob: Job? = null
@@ -54,11 +55,15 @@ class CallViewModel(
     private val connectMutex = Mutex()
     private val acceptMutex = Mutex()
     private var acceptingCall = false
+    private var callerSyncJob: Job? = null
+    private val incomingPresentedCallIds = mutableSetOf<String>()
 
     init {
         recover()
         scope.launch {
-            realtime.events(currentUserId).collect(::handleRealtime)
+            realtime.events(currentUserId).collect { call ->
+                runCatching { handleRealtime(call) }
+            }
         }
         scope.launch {
             platform.remoteParticipantCount.collect { count ->
@@ -168,15 +173,19 @@ class CallViewModel(
     fun openFromNotification(callId: String?, action: String?) {
         scope.launch {
             val call = when {
-                !callId.isNullOrBlank() -> runCatching { api.get(callId) }.getOrNull()
+                !callId.isNullOrBlank() -> runCatching { api.get(callId, instanceId) }.getOrNull()
                     ?: runCatching { api.active(instanceId) }.getOrNull()
                 else -> runCatching { api.active(instanceId) }.getOrNull()
             } ?: return@launch
 
             when (action) {
                 "answer" -> {
-                    activate(call)
-                    acceptIncomingCall()
+                    applyCallToState(call)
+                    if (call.status == CallStatus.ACTIVE && call.answeredClientInstanceId == instanceId) {
+                        joinAcceptedCall(call)
+                    } else {
+                        acceptIncomingCall()
+                    }
                 }
                 "decline", "hangup" -> {
                     runCatching {
@@ -206,6 +215,7 @@ class CallViewModel(
         acceptingCall = true
         _state.value = _state.value.copy(accepting = true, error = null)
         try {
+            prepareIncomingAnswer(call.id)
             if (!ensureCallMediaPermissions()) {
                 return
             }
@@ -227,6 +237,10 @@ class CallViewModel(
             _state.value = _state.value.copy(accepting = false)
             acceptMutex.unlock()
         }
+    }
+
+    private fun prepareIncomingAnswer(callId: String) {
+        platform.onIncomingAnswered(callId)
     }
 
     private suspend fun joinAcceptedCall(call: WorkspaceCall) {
@@ -347,20 +361,52 @@ class CallViewModel(
         }
 
         val incoming = call.status == CallStatus.RINGING && call.initiatedByUserId != currentUserId
-        _state.value = _state.value.copy(
-            call = call,
-            error = null,
-            cameraEnabled = if (incoming) false else call.isVideo,
-            connectionLabel = buildConnectionLabel(call, ""),
-        )
+        applyCallToState(call)
 
         subscribePresence(call)
 
         if (incoming) {
-            runCatching { platform.showIncoming(call) }
+            if (incomingPresentedCallIds.add(call.id)) {
+                runCatching { platform.showIncoming(call) }
+            }
             return
-        } else if (call.connection != null) {
+        }
+
+        if (call.initiatedByUserId == currentUserId && call.status == CallStatus.RINGING) {
+            startCallerSyncPolling(call)
+        } else {
+            callerSyncJob?.cancel()
+            callerSyncJob = null
+        }
+
+        if (call.connection != null) {
             connectMedia(call)
+        }
+    }
+
+    private fun applyCallToState(call: WorkspaceCall) {
+        val incoming = call.status == CallStatus.RINGING && call.initiatedByUserId != currentUserId
+        _state.value = _state.value.copy(
+            call = call,
+            error = null,
+            cameraEnabled = if (incoming) false else call.isVideo,
+            connectionLabel = buildConnectionLabel(call, _state.value.connectionLabel),
+        )
+    }
+
+    private fun startCallerSyncPolling(call: WorkspaceCall) {
+        if (call.initiatedByUserId != currentUserId || call.status != CallStatus.RINGING) return
+        callerSyncJob?.cancel()
+        callerSyncJob = scope.launch {
+            repeat(30) {
+                delay(1_000)
+                val current = _state.value.call ?: return@launch
+                if (current.id != call.id || current.status != CallStatus.RINGING) return@launch
+                val fresh = runCatching { api.get(call.id, instanceId) }.getOrNull() ?: return@repeat
+                if (fresh.status != CallStatus.RINGING) {
+                    handleRealtime(fresh)
+                }
+            }
         }
     }
 
@@ -411,6 +457,10 @@ class CallViewModel(
 
         activate(call)
 
+        if (isAnsweringCallee(call)) {
+            prepareIncomingAnswer(call.id)
+        }
+
         if (acceptingCall) return
 
         val incomingRinging = call.status == CallStatus.RINGING &&
@@ -429,6 +479,12 @@ class CallViewModel(
     private fun canJoinActiveCall(call: WorkspaceCall): Boolean {
         if (call.initiatedByUserId == currentUserId) return true
         return call.answeredClientInstanceId == instanceId
+    }
+
+    private fun isAnsweringCallee(call: WorkspaceCall): Boolean {
+        return call.status == CallStatus.ACTIVE &&
+            call.answeredClientInstanceId == instanceId &&
+            call.initiatedByUserId != currentUserId
     }
 
     private fun shouldDismissForOtherDevice(call: WorkspaceCall): Boolean {
@@ -458,6 +514,11 @@ class CallViewModel(
         presenceJob = null
         durationJob?.cancel()
         durationJob = null
+        callerSyncJob?.cancel()
+        callerSyncJob = null
+        if (!callId.isNullOrBlank()) {
+            incomingPresentedCallIds.remove(callId)
+        }
         platform.disconnect()
         if (!callId.isNullOrBlank()) {
             platform.dismissIncoming(callId)
@@ -484,8 +545,16 @@ class CallViewModel(
     )
 
     private fun buildConnectionLabel(call: WorkspaceCall, mediaState: String): String {
+        val effectiveMediaState = if (
+            call.status == CallStatus.ACTIVE &&
+            (mediaState.contains("Calling", ignoreCase = true) || mediaState.contains("Ringing", ignoreCase = true))
+        ) {
+            ""
+        } else {
+            mediaState
+        }
         return when {
-            mediaState.isNotBlank() -> mediaState
+            effectiveMediaState.isNotBlank() -> effectiveMediaState
             call.status == CallStatus.RINGING && call.initiatedByUserId == currentUserId -> "Calling…"
             call.status == CallStatus.RINGING -> "Ringing…"
             call.status == CallStatus.ACTIVE && call.connection == null -> "Connecting…"

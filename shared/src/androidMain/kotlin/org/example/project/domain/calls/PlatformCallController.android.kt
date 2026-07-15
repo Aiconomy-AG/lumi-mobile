@@ -169,6 +169,11 @@ private class AndroidLiveKitCallController : PlatformCallController {
     }
 
     override fun dismissIncoming(callId: String) = AndroidCallRuntime.dismiss(callId)
+
+    override fun onIncomingAnswered(callId: String) {
+        IncomingCallRingingService.stop(AndroidCallRuntime.context(), callId)
+        AndroidCallRuntime.dismiss(callId)
+    }
 }
 
 actual fun createPlatformCallController(): PlatformCallController = AndroidLiveKitCallController()

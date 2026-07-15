@@ -16,7 +16,7 @@ interface CallApi {
         clientInstanceId: String,
         type: String = "audio",
     ): WorkspaceCall
-    suspend fun get(callId: String): WorkspaceCall
+    suspend fun get(callId: String, clientInstanceId: String): WorkspaceCall
     suspend fun active(clientInstanceId: String): WorkspaceCall?
     suspend fun history(page: Int = 1, perPage: Int = 20): CallHistoryPage
     suspend fun accept(callId: String, clientInstanceId: String): WorkspaceCall
@@ -46,6 +46,7 @@ interface PlatformCallController {
     val remoteParticipantCount: StateFlow<Int>
     fun showIncoming(call: WorkspaceCall)
     fun dismissIncoming(callId: String)
+    fun onIncomingAnswered(callId: String)
 }
 
 expect fun createPlatformCallController(): PlatformCallController

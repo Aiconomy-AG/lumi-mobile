@@ -59,6 +59,10 @@ private class IosLiveKitCallController : PlatformCallController {
     override fun dismissIncoming(callId: String) {
         NSNotificationCenter.defaultCenter.postNotificationName("LumiCallDismiss", null, mapOf("callId" to callId))
     }
+
+    override fun onIncomingAnswered(callId: String) {
+        NSNotificationCenter.defaultCenter.postNotificationName("LumiCallAnswered", null, mapOf("callId" to callId))
+    }
 }
 
 actual fun createPlatformCallController(): PlatformCallController = IosLiveKitCallController()

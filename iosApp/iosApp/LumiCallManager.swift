@@ -13,6 +13,7 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
     private let provider: CXProvider
     private var room: Room?
     private var calls: [String: UUID] = [:]
+    private var answeredCalls: Set<String> = []
     private var isMuted = false
     private var isVideoCall = false
     private var roomStateTask: _Concurrency.Task<Void, Never>?
@@ -33,6 +34,7 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
         center.addObserver(self, selector: #selector(setCamera(_:)), name: .lumiCallCamera, object: nil)
         center.addObserver(self, selector: #selector(showIncoming(_:)), name: .lumiCallIncoming, object: nil)
         center.addObserver(self, selector: #selector(dismiss(_:)), name: .lumiCallDismiss, object: nil)
+        center.addObserver(self, selector: #selector(answerIncoming(_:)), name: .lumiCallAnswered, object: nil)
         center.addObserver(self, selector: #selector(videoViewCreated(_:)), name: .lumiVideoViewCreated, object: nil)
         center.addObserver(self, selector: #selector(videoViewReleased(_:)), name: .lumiVideoViewReleased, object: nil)
     }
@@ -44,7 +46,11 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
         isVideo: Bool,
         completion: (() -> Void)? = nil
     ) {
-        let uuid = calls[callId] ?? UUID()
+        if calls[callId] != nil {
+            completion?()
+            return
+        }
+        let uuid = UUID()
         calls[callId] = uuid
         let update = CXCallUpdate()
         update.hasVideo = isVideo
@@ -60,7 +66,14 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
 
     func dismissCall(callId: String) {
         guard let uuid = calls.removeValue(forKey: callId) else { return }
+        answeredCalls.remove(callId)
         provider.reportCall(with: uuid, endedAt: Date(), reason: .remoteEnded)
+    }
+
+    func reportCallAnswered(callId: String) {
+        guard let uuid = calls[callId] else { return }
+        answeredCalls.insert(callId)
+        provider.reportCall(with: uuid, connectedAt: Date())
     }
 
     @objc private func connect(_ notification: Notification) {
@@ -133,6 +146,11 @@ final class LumiCallManager: NSObject, CXProviderDelegate {
     @objc private func dismiss(_ notification: Notification) {
         guard let callId = notification.userInfo?["callId"] as? String else { return }
         dismissCall(callId: callId)
+    }
+
+    @objc private func answerIncoming(_ notification: Notification) {
+        guard let callId = notification.userInfo?["callId"] as? String else { return }
+        reportCallAnswered(callId: callId)
     }
 
     @objc private func videoViewCreated(_ notification: Notification) {
@@ -256,6 +274,7 @@ private extension Notification.Name {
     static let lumiCallCamera = Notification.Name("LumiCallCamera")
     static let lumiCallIncoming = Notification.Name("LumiCallIncoming")
     static let lumiCallDismiss = Notification.Name("LumiCallDismiss")
+    static let lumiCallAnswered = Notification.Name("LumiCallAnswered")
     static let lumiVideoViewCreated = Notification.Name("LumiVideoViewCreated")
     static let lumiVideoViewReleased = Notification.Name("LumiVideoViewReleased")
 }

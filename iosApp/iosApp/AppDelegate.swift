@@ -84,6 +84,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         IosPushBridgeKt.onIosFcmTokenRefreshed(token: fcmToken)
     }
 
+    func messaging(_ messaging: Messaging, didReceive remoteMessage: MessagingRemoteMessage) {
+        handleNotificationUserInfo(remoteMessage.appData)
+    }
+
     func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
         guard type == .voIP else { return }
         let token = pushCredentials.token.map { String(format: "%02x", $0) }.joined()

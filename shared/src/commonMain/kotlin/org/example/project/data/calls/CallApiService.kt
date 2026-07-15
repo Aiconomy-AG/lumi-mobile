@@ -52,8 +52,8 @@ class CallApiService(
         ),
     )
 
-    override suspend fun get(callId: String): WorkspaceCall {
-        val response = client.get("$baseUrl/calls/$callId") { bearer() }
+    override suspend fun get(callId: String, clientInstanceId: String): WorkspaceCall {
+        val response = client.get("$baseUrl/calls/$callId?client_instance_id=$clientInstanceId") { bearer() }
         val text = response.bodyAsText()
         ensureSuccess(response.status.isSuccess(), text)
         return callsJson.decodeFromString<CallResponse>(text).data
