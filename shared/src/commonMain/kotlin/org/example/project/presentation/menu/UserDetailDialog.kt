@@ -15,9 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -29,16 +32,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.example.project.data.auth.AuthRepository
 import org.example.project.data.auth.UserSession
 import org.example.project.domain.auth.UserRole
 import org.example.project.presentation.localization.AppLanguage
 import org.example.project.presentation.localization.LocalAppStrings
+import org.example.project.presentation.components.rememberPhotoPicker
 import org.example.project.presentation.theme.AppColorPalette
 
 @Composable
@@ -48,12 +54,35 @@ fun UserDetailDialog(
     authRepository: AuthRepository,
     onLanguageSelected: (AppLanguage) -> Unit,
     onPhoneNumberUpdated: (String) -> Unit,
+    onUserSessionUpdated: (UserSession) -> Unit,
     onDismiss: () -> Unit,
     onLogout: () -> Unit,
     startInPhoneEditMode: Boolean = false,
 ) {
     val strings = LocalAppStrings.current
+    val scope = rememberCoroutineScope()
     var displayedPhone by remember(user.phoneNumber) { mutableStateOf(user.phoneNumber) }
+    var displayedPhotoUrl by remember(user.photoUrl) { mutableStateOf(user.photoUrl) }
+    var isSavingPhoto by remember { mutableStateOf(false) }
+    var photoError by remember { mutableStateOf<String?>(null) }
+    val photoPicker = rememberPhotoPicker(
+        onPhotoPicked = { photo ->
+            scope.launch {
+                isSavingPhoto = true
+                photoError = null
+                authRepository.updateProfilePhoto(user, photo.bytes, photo.fileName, photo.mimeType)
+                    .onSuccess { updatedUser ->
+                        displayedPhotoUrl = updatedUser.photoUrl
+                        onUserSessionUpdated(updatedUser)
+                    }
+                    .onFailure { error ->
+                        photoError = error.message
+                    }
+                isSavingPhoto = false
+            }
+        },
+        onError = { message -> photoError = message },
+    )
 
     Dialog(onDismissRequest = onDismiss) {
         Column(
@@ -64,17 +93,63 @@ fun UserDetailDialog(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .background(color = AppColorPalette.Primary, shape = CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
+            Box(contentAlignment = Alignment.BottomEnd) {
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(color = AppColorPalette.Primary, shape = CircleShape)
+                        .clickable(enabled = !isSavingPhoto) { photoPicker.launch() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (!displayedPhotoUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = displayedPhotoUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxWidth().height(72.dp),
+                        )
+                    } else {
+                        Text(
+                            text = user.name.take(2).uppercase(),
+                            color = AppColorPalette.OnPrimary,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+
+                    if (isSavingPhoto) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(28.dp),
+                            color = AppColorPalette.OnPrimary,
+                            strokeWidth = 2.dp,
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(AppColorPalette.SurfaceVariant)
+                        .border(1.dp, AppColorPalette.Border, CircleShape)
+                        .clickable(enabled = !isSavingPhoto) { photoPicker.launch() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PhotoCamera,
+                        contentDescription = strings.text("Change photo"),
+                        tint = AppColorPalette.Primary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+
+            photoError?.let { message ->
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = user.name.take(2).uppercase(),
-                    color = AppColorPalette.OnPrimary,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold,
+                    text = message,
+                    color = AppColorPalette.Error,
+                    fontSize = 12.sp,
                 )
             }
 

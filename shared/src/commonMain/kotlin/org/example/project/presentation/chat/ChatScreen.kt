@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -50,6 +51,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,8 +69,10 @@ import org.example.project.domain.chat.ChatParticipant
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Icon
+import coil3.compose.AsyncImage
 import org.example.project.presentation.components.AppBackButton
 import org.example.project.presentation.components.AppSearchField
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
@@ -79,6 +84,8 @@ import org.example.project.presentation.components.AppButton
 import org.example.project.presentation.components.AppOutlinedButton
 import org.example.project.presentation.components.AppDetailGrid
 import org.example.project.presentation.components.AppDetailField
+import org.example.project.presentation.components.PickedPhoto
+import org.example.project.presentation.components.rememberPhotoPicker
 
 @Composable
 fun ChatScreen(
@@ -112,6 +119,7 @@ fun ChatScreen(
                 onBackClick = viewModel::backToConversationList,
                 onMessageDraftChanged = viewModel::onMessageDraftChanged,
                 onSendClick = viewModel::sendMessage,
+                onPhotoPicked = viewModel::sendPhoto,
                 onGroupSettingsClick = viewModel::openGroupSettings,
                 onStartCall = { type ->
                     val conversation = uiState.selectedConversation!!
@@ -606,12 +614,21 @@ fun ParticipantAvatar(
                 .background(color),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = if (participant.isBot) "AI" else initials,
-                color = AppColorPalette.TextPrimary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-            )
+            if (!participant.photoUrl.isNullOrBlank() && !participant.isBot) {
+                AsyncImage(
+                    model = participant.photoUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Text(
+                    text = if (participant.isBot) "AI" else initials,
+                    color = AppColorPalette.TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                )
+            }
         }
 
         if (showStatus) {
@@ -669,6 +686,7 @@ private fun ConversationDetailScreen(
     onBackClick: () -> Unit,
     onMessageDraftChanged: (String) -> Unit,
     onSendClick: () -> Unit,
+    onPhotoPicked: (PickedPhoto) -> Unit,
     onGroupSettingsClick: () -> Unit,
     onStartCall: (String) -> Unit,
     onApproveAiAction: (Int, Int) -> Unit,
@@ -679,6 +697,10 @@ private fun ConversationDetailScreen(
     val selectedConversation = uiState.selectedConversation ?: return
     val listState = rememberLazyListState()
     val strings = LocalAppStrings.current
+    val photoPicker = rememberPhotoPicker(
+        onPhotoPicked = onPhotoPicked,
+        onError = { },
+    )
 
     LaunchedEffect(uiState.messages.size, selectedConversation.conversation.id) {
         if (uiState.messages.isNotEmpty()) {
@@ -793,20 +815,64 @@ private fun ConversationDetailScreen(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            OutlinedTextField(
+            IconButton(
+                onClick = { photoPicker.launch() },
+                enabled = !uiState.isSendingPhoto,
+            ) {
+                if (uiState.isSendingPhoto) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = AppColorPalette.Primary,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.Image,
+                        contentDescription = strings.text("Add photo"),
+                        tint = AppColorPalette.Primary,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            BasicTextField(
                 value = uiState.messageDraft,
                 onValueChange = onMessageDraftChanged,
-                placeholder = { Text(strings.text("Write a message...")) },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 44.dp, max = 112.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(AppColorPalette.SurfaceVariant)
+                    .border(1.dp, AppColorPalette.Border, RoundedCornerShape(18.dp))
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = AppColorPalette.TextPrimary,
+                    fontFamily = FontFamily.SansSerif,
+                ),
+                cursorBrush = SolidColor(AppColorPalette.Primary),
+                minLines = 1,
                 maxLines = 4,
-                colors = chatTextFieldColors(),
+                decorationBox = { innerTextField ->
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (uiState.messageDraft.isEmpty()) {
+                            Text(
+                                text = strings.text("Write a message..."),
+                                color = AppColorPalette.TextSecondary,
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Button(
                 onClick = onSendClick,
-                enabled = uiState.messageDraft.isNotBlank(),
+                enabled = uiState.messageDraft.isNotBlank() && !uiState.isSendingPhoto,
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AppColorPalette.Primary,
@@ -950,6 +1016,42 @@ private fun MessageBubble(
                             onApprove = { cid, aid -> onApproveAiAction?.invoke(cid, aid) },
                             onReject = { cid, aid -> onRejectAiAction?.invoke(cid, aid) }
                         )
+                    } else if (message.messageType == ChatMessageType.IMAGE) {
+                        if (!message.photoUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = message.photoUrl,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 140.dp, max = 260.dp)
+                                    .clip(RoundedCornerShape(10.dp)),
+                            )
+                        } else {
+                            Text(
+                                text = message.messageText.ifBlank { "Photo" },
+                                color = if (isMine) AppColorPalette.OnPrimary else AppColorPalette.TextPrimary,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                            )
+                        }
+
+                        if (!message.photoUrl.isNullOrBlank() &&
+                            message.messageText.isNotBlank() &&
+                            !message.messageText.equals("Photo", ignoreCase = true)
+                        ) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = message.messageText,
+                                color = if (isMine) AppColorPalette.OnPrimary else AppColorPalette.TextPrimary,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                            )
+                        }
                     } else {
                         Text(
                             text = message.messageText,

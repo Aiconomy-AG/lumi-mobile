@@ -1,6 +1,8 @@
 package org.example.project.data.chat
 
 import io.ktor.client.HttpClient
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -10,12 +12,15 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.example.project.domain.chat.AiActionMeta
@@ -143,6 +148,39 @@ class ChatApiService(
         return chatJson.decodeFromString<MessageResponse>(text).data.toChatMessage()
     }
 
+    override suspend fun sendPhotoMessage(
+        conversationId: Int,
+        senderId: Int,
+        messageText: String,
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String,
+    ): ChatMessage {
+        val response = client.post("$baseUrl/workspace/conversations/$conversationId/messages") {
+            bearerAuth()
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        if (messageText.isNotBlank()) {
+                            append("message", messageText)
+                        }
+                        append(
+                            key = "image",
+                            value = bytes,
+                            headers = Headers.build {
+                                append(HttpHeaders.ContentType, mimeType)
+                                append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                            },
+                        )
+                    }
+                )
+            )
+        }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
+        return chatJson.decodeFromString<MessageResponse>(text).data.toChatMessage()
+    }
+
     override suspend fun addReaction(conversationId: Int, messageId: Int, emoji: String): ChatMessage {
         val response = client.post("$baseUrl/workspace/conversations/$conversationId/messages/$messageId/reactions") {
             bearerAuth()
@@ -233,14 +271,16 @@ private data class ConversationDto(
 
 @Serializable
 private data class LastMessageDto(
-    val message: String = "",
+    val message: String? = null,
     @SerialName("sender_id")
     val senderId: Int = 0,
     @SerialName("sent_at")
     val sentAt: String = "",
+    @SerialName("message_type")
+    val messageType: String = "text",
 ) {
     fun toChatMessagePreview(): ChatMessagePreview = ChatMessagePreview(
-        message = message,
+        message = message ?: if (messageType == "image") "Photo" else "",
         senderId = senderId,
         sentAt = sentAt,
     )
@@ -255,6 +295,14 @@ private data class ParticipantDto(
     val status: String = "",
     @SerialName("is_bot")
     val isBot: Boolean = false,
+    @SerialName("photo_url")
+    val photoUrl: String? = null,
+    @SerialName("profile_photo_url")
+    val profilePhotoUrl: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+    @SerialName("image_url")
+    val imageUrl: String? = null,
 ) {
     fun toChatParticipant(): ChatParticipant = ChatParticipant(
         id = id,
@@ -262,6 +310,7 @@ private data class ParticipantDto(
         email = email,
         role = role,
         status = status,
+        photoUrl = listOf(photoUrl, profilePhotoUrl, avatarUrl, imageUrl).firstOrNull { !it.isNullOrBlank() },
         isBot = isBot,
     )
 }
@@ -281,13 +330,56 @@ internal data class MessageDto(
     val id: Int,
     @SerialName("conversation_id") val conversationId: Int,
     @SerialName("sender_id") val senderId: Int,
-    val message: String,
+    val message: String? = null,
     @SerialName("message_type") val messageType: String = "text",
+    @SerialName("photo_url") val photoUrl: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("attachment_url") val attachmentUrl: String? = null,
+    @SerialName("file_url") val fileUrl: String? = null,
+    val image: MessageImageDto? = null,
     @SerialName("sent_at") val sentAt: String? = null,
     val call: ChatCallMetadataDto? = null,
     val meta: JsonElement? = null,
     val reactions: List<ReactionDto> = emptyList(),
 ) {
+    fun toChatMessage(): ChatMessage {
+        val aiActionMeta = resolvedAiActionMeta()
+        return ChatMessage(
+            id = id,
+            conversationId = conversationId,
+            senderId = senderId,
+            messageText = message.orEmpty(),
+            sentAt = sentAt ?: "",
+            photoUrl = resolvedPhotoUrl(),
+            call = call?.toMetadata(),
+            messageType = when {
+                aiActionMeta != null -> ChatMessageType.AI_ACTION
+                messageType == "call" -> ChatMessageType.CALL
+                messageType == "ai_action" -> ChatMessageType.AI_ACTION
+                messageType == "image" || messageType == "photo" || resolvedPhotoUrl() != null -> ChatMessageType.IMAGE
+                else -> ChatMessageType.TEXT
+            },
+            meta = aiActionMeta,
+            reactions = reactions.map { it.toReaction() },
+        )
+    }
+
+    private fun resolvedPhotoUrl(): String? =
+        listOf(image?.thumbUrl, image?.url, photoUrl, imageUrl, attachmentUrl, fileUrl)
+            .firstOrNull { !it.isNullOrBlank() }
+
+    private fun resolvedAiActionMeta(): AiActionMeta? = try {
+        meta?.let { chatJson.decodeFromJsonElement<AiActionMeta>(it) }
+    } catch (_: Exception) {
+        null
+    }
+}
+
+@Serializable
+internal data class MessageImageDto(
+    val url: String? = null,
+    @SerialName("thumb_url") val thumbUrl: String? = null,
+)
     fun toChatMessage(): ChatMessage {
         val parsedMeta = meta?.let(::parseAiActionMetaOrNull)
         return ChatMessage(

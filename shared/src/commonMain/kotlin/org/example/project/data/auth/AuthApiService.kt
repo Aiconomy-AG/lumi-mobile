@@ -1,6 +1,8 @@
 package org.example.project.data.auth
 
 import io.ktor.client.HttpClient
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.patch
@@ -9,6 +11,7 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -49,7 +52,8 @@ class AuthApiService(
                     phoneNumber = loginResponse.user.resolvedPhoneNumber(),
                     status = loginResponse.user.status ?: "",
                     languageFlag = loginResponse.user.languageFlag ?: "en",
-                    token = loginResponse.token
+                    token = loginResponse.token,
+                    photoUrl = loginResponse.user.resolvedPhotoUrl(),
                 )
             )
         } catch (exception: Exception) {
@@ -129,6 +133,46 @@ class AuthApiService(
         }
     }
 
+    override suspend fun updateProfilePhoto(
+        session: UserSession,
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String,
+    ): Result<UserSession> {
+        return try {
+            val response = client.post("$baseUrl/auth/me/avatar") {
+                bearerAuth(session.token)
+                setBody(
+                    MultiPartFormDataContent(
+                        formData {
+                            append(
+                                key = "avatar",
+                                value = bytes,
+                                headers = Headers.build {
+                                    append(HttpHeaders.ContentType, mimeType)
+                                    append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                                },
+                            )
+                        }
+                    )
+                )
+            }
+
+            val responseText = response.bodyAsText()
+            if (!response.status.isSuccess()) {
+                return Result.failure(Exception(parseErrorMessage(responseText)))
+            }
+
+            val updated = parseMeResponse(responseText, session)
+                ?: session.copy(photoUrl = parsePhotoUrl(responseText) ?: session.photoUrl)
+            Result.success(updated)
+        } catch (exception: Exception) {
+            Result.failure(
+                Exception(exception.message ?: "Could not update profile photo.")
+            )
+        }
+    }
+
     private suspend fun validateWithTasksEndpoint(session: UserSession): Result<UserSession> {
         val response = client.get("$baseUrl/workspace/tasks") {
             bearerAuth(session.token)
@@ -164,6 +208,7 @@ class AuthApiService(
                             phoneNumber = loginResponse.user.resolvedPhoneNumber(),
                             status = loginResponse.user.status ?: "",
                             languageFlag = loginResponse.user.languageFlag ?: "en",
+                            photoUrl = loginResponse.user.resolvedPhotoUrl(),
                             token = loginResponse.token.ifBlank { session.token },
                         )
                     }
@@ -188,6 +233,14 @@ class AuthApiService(
             authJson.decodeFromString<AuthErrorResponse>(responseText).message
         } catch (exception: Exception) {
             "Login failed."
+        }
+    }
+
+    private fun parsePhotoUrl(responseText: String): String? {
+        return try {
+            authJson.decodeFromString<PhotoResponse>(responseText).resolvedPhotoUrl()
+        } catch (_: Exception) {
+            null
         }
     }
 }
@@ -220,6 +273,14 @@ private data class AuthUserResponse(
     val telephone: String? = null,
     @SerialName("language_flag")
     val languageFlag: String? = null,
+    @SerialName("photo_url")
+    val photoUrl: String? = null,
+    @SerialName("profile_photo_url")
+    val profilePhotoUrl: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+    @SerialName("image_url")
+    val imageUrl: String? = null,
     @SerialName("is_active")
     val isActive: Boolean? = null
 )
@@ -228,6 +289,10 @@ private fun AuthUserResponse.resolvedPhoneNumber(): String =
     listOf(phoneNumber, phoneNumberCamel, phone, mobile, telephone)
         .firstOrNull { !it.isNullOrBlank() }
         ?: ""
+
+private fun AuthUserResponse.resolvedPhotoUrl(): String? =
+    listOf(photoUrl, profilePhotoUrl, avatarUrl, imageUrl)
+        .firstOrNull { !it.isNullOrBlank() }
 
 @Serializable
 private data class MeWrappedResponse(
@@ -244,9 +309,22 @@ private fun AuthUserResponse.toUserSession(token: String): UserSession {
         phoneNumber = resolvedPhoneNumber(),
         status = status ?: "",
         languageFlag = languageFlag ?: "en",
+        photoUrl = resolvedPhotoUrl(),
         token = token,
     )
 }
+
+@Serializable
+private data class PhotoResponse(
+    val data: AuthUserResponse? = null,
+    @SerialName("photo_url")
+    val photoUrl: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+)
+
+private fun PhotoResponse.resolvedPhotoUrl(): String? =
+    data?.resolvedPhotoUrl() ?: avatarUrl ?: photoUrl
 
 @Serializable
 private data class UpdatePhoneRequest(

@@ -14,5 +14,7 @@
 	<string>Lumi uses your microphone for audio calls.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Lumi uses your camera for video calls.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Lumi uses your photo library so you can add account and chat photos.</string>
 </dict>
 </plist>

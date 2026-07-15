@@ -147,6 +147,14 @@ private data class UserDto(
     val phoneNumber: String? = null,
     @SerialName("language_flag")
     val languageFlag: String? = null,
+    @SerialName("photo_url")
+    val photoUrl: String? = null,
+    @SerialName("profile_photo_url")
+    val profilePhotoUrl: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+    @SerialName("image_url")
+    val imageUrl: String? = null,
     @SerialName("is_active")
     val isActive: Boolean = true
 ) {
@@ -159,7 +167,8 @@ private data class UserDto(
             status = status ?: "offline",
             phoneNumber = phoneNumber ?: "",
             languageFlag = languageFlag ?: "en",
-            isActive = isActive
+            isActive = isActive,
+            photoUrl = listOf(photoUrl, profilePhotoUrl, avatarUrl, imageUrl).firstOrNull { !it.isNullOrBlank() },
         )
     }
 }

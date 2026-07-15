@@ -690,6 +690,9 @@ fun MainScreen(
                         onPhoneNumberUpdated(number)
                         showUserDetail = false
                     },
+                    onUserSessionUpdated = { updatedUser ->
+                        onUserSessionUpdated(updatedUser)
+                    },
                     onDismiss = {
                         showUserDetail = false
                     },

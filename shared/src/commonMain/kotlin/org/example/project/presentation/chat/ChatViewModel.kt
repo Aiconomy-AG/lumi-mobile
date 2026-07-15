@@ -20,6 +20,7 @@ import org.example.project.data.chat.currentTimeLabel
 import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.domain.chat.ChatMessageReaction
+import org.example.project.domain.chat.ChatMessageType
 import org.example.project.domain.chat.ChatNotificationEvent
 import org.example.project.domain.chat.ChatParticipant
 import org.example.project.domain.chat.ChatRealtimeApi
@@ -27,6 +28,7 @@ import org.example.project.domain.chat.ChatRealtimeEvent
 import org.example.project.domain.chat.Conversation
 import org.example.project.domain.chat.ConversationSummary
 import org.example.project.domain.chat.ConversationType
+import org.example.project.presentation.components.PickedPhoto
 
 data class ChatConversationItem(
     val conversation: Conversation,
@@ -88,6 +90,7 @@ data class ChatUiState(
     val createGroupDialog: CreateGroupDialogState = CreateGroupDialogState(),
     val groupSettings: GroupSettingsState? = null,
     val showNewMessagePicker: Boolean = false,
+    val isSendingPhoto: Boolean = false,
 ) {
     val filteredConversations: List<ChatConversationItem>
         get() = if (searchQuery.isBlank()) {
@@ -608,6 +611,87 @@ class ChatViewModel(
         }
     }
 
+    fun sendPhoto(photo: PickedPhoto) {
+        val selectedConversation = _uiState.value.selectedConversation ?: return
+        if (_uiState.value.isSendingPhoto) return
+
+        val text = _uiState.value.messageDraft.trim()
+        val previewText = text.ifBlank { "Photo" }
+        val optimisticMessage = ChatMessage(
+            id = nextOptimisticMessageId--,
+            conversationId = selectedConversation.conversation.id,
+            senderId = currentEmployeeId,
+            messageText = previewText,
+            sentAt = currentTimeLabel(),
+            messageType = ChatMessageType.IMAGE,
+            photoUrl = photo.previewUri,
+        )
+        val optimisticPreview = formatLastMessagePreview(
+            conversation = selectedConversation.conversation,
+            messageText = previewText,
+            senderId = optimisticMessage.senderId,
+            participants = selectedConversation.participants,
+            usersById = _uiState.value.usersById,
+        )
+        val optimisticConversation = selectedConversation.copy(
+            lastMessage = optimisticPreview,
+            lastSentAt = optimisticMessage.sentAt,
+            lastMessageId = optimisticMessage.id,
+            lastMessageSenderId = optimisticMessage.senderId,
+            lastActivitySortKey = currentActivitySortKey(),
+        )
+
+        _uiState.value = _uiState.value.copy(
+            messages = _uiState.value.messages + optimisticMessage,
+            messageDraft = "",
+            isSendingPhoto = true,
+            conversations = sortConversations(
+                _uiState.value.conversations.map {
+                    if (it.conversation.id == selectedConversation.conversation.id) {
+                        optimisticConversation
+                    } else {
+                        it
+                    }
+                }
+            ),
+            selectedConversation = optimisticConversation,
+            contacts = finalizeContacts(
+                _uiState.value.contacts.map {
+                    if (it.conversation?.conversation?.id == selectedConversation.conversation.id) {
+                        it.copy(conversation = optimisticConversation)
+                    } else {
+                        it
+                    }
+                }
+            ),
+            error = null,
+        )
+
+        viewModelScope.launch {
+            try {
+                val message = chatApi.sendPhotoMessage(
+                    conversationId = selectedConversation.conversation.id,
+                    senderId = currentEmployeeId,
+                    messageText = text,
+                    bytes = photo.bytes,
+                    fileName = photo.fileName,
+                    mimeType = photo.mimeType,
+                )
+                replaceOptimisticMessage(
+                    optimisticMessage = optimisticMessage,
+                    savedMessage = message,
+                )
+                _uiState.value = _uiState.value.copy(isSendingPhoto = false)
+            } catch (e: Exception) {
+                removeOptimisticMessage(optimisticMessage)
+                _uiState.value = _uiState.value.copy(
+                    isSendingPhoto = false,
+                    error = e.message ?: "Fotografia nu a putut fi trimisă.",
+                )
+            }
+        }
+    }
+
     fun reactToMessage(message: ChatMessage, emoji: String) {
         if (message.id < 0) return
         val previousReactions = message.reactions
@@ -1107,7 +1191,15 @@ class ChatViewModel(
         lastMessageSenderId: Int?,
         lastSentAt: String,
     ): ChatConversationItem {
-        val otherParticipants = participants.filter { it.id != currentEmployeeId }
+        val enrichedParticipants = participants.map { participant ->
+            val user = usersById[participant.id]
+            if (participant.photoUrl.isNullOrBlank() && !user?.photoUrl.isNullOrBlank()) {
+                participant.copy(photoUrl = user.photoUrl)
+            } else {
+                participant
+            }
+        }
+        val otherParticipants = enrichedParticipants.filter { it.id != currentEmployeeId }
         val title = when (type) {
             ConversationType.DIRECT -> otherParticipants.firstOrNull()?.name ?: "Chat direct"
             ConversationType.GROUP -> name ?: "Chat de grup"
@@ -1119,7 +1211,7 @@ class ChatViewModel(
                 conversation = this,
                 messageText = lastMessageText,
                 senderId = lastMessageSenderId,
-                participants = participants,
+                participants = enrichedParticipants,
                 usersById = usersById,
             )
         }
@@ -1134,7 +1226,7 @@ class ChatViewModel(
             lastMessageSenderId = lastMessageSenderId,
             lastActivitySortKey = chatActivitySortKey(lastSentAt),
             isGroup = type == ConversationType.GROUP,
-            participants = participants,
+            participants = enrichedParticipants,
         )
     }
 

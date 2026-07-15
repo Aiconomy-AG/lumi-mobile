@@ -18,6 +18,9 @@ enum class ChatMessageType {
     @SerialName("text")
     TEXT,
 
+    @SerialName("image")
+    IMAGE,
+
     @SerialName("call")
     CALL,
 
@@ -82,6 +85,7 @@ data class ChatMessage(
     val messageText: String,
     val sentAt: String,
     val messageType: ChatMessageType = ChatMessageType.TEXT,
+    val photoUrl: String? = null,
     val call: ChatCallMetadata? = null,
     val meta: AiActionMeta? = null,
     val reactions: List<ChatMessageReaction> = emptyList(),
@@ -93,5 +97,6 @@ data class ChatParticipant(
     val email: String,
     val role: String = "",
     val status: String = "",
+    val photoUrl: String? = null,
     val isBot: Boolean = false,
 )
