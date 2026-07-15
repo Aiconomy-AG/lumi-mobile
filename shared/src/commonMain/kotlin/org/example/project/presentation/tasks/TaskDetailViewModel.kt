@@ -108,6 +108,7 @@ class TaskDetailViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TaskDetailUiState(task = task, isLoading = true))
 
     init {
+        refreshTask()
         loadEntries()
         loadReferenceData()
         if (task.isRootTask) {
@@ -188,6 +189,16 @@ class TaskDetailViewModel(
                     isCreating = false,
                     error = e.message ?: "Could not create subtask.",
                 )
+            }
+        }
+    }
+
+    fun refreshTask() {
+        viewModelScope.launch {
+            try {
+                val refreshed = taskApi.getTask(currentTaskState.value.id)
+                currentTaskState.value = refreshed
+            } catch (_: Exception) {
             }
         }
     }
