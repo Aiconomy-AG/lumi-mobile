@@ -43,14 +43,8 @@ class UserApiService(
     }
 
     override suspend fun addUser(
-        name: String,
         email: String,
-        password: String,
         role: AccountRole,
-        phoneNumber: String,
-        languageFlag: String,
-        status: String,
-        isActive: Boolean
     ): Result<User> {
         return try {
             val response = client.post("$baseUrl/admin/users") {
@@ -58,14 +52,8 @@ class UserApiService(
                 contentType(ContentType.Application.Json)
                 setBody(
                     CreateUserRequest(
-                        name = name,
                         email = email,
-                        password = password,
                         role = role.toApiValue(),
-                        phoneNumber = phoneNumber,
-                        languageFlag = languageFlag,
-                        status = status,
-                        isActive = isActive
                     )
                 )
             }
@@ -166,17 +154,8 @@ private data class UserDto(
 
 @Serializable
 private data class CreateUserRequest(
-    val name: String,
     val email: String,
-    val password: String,
     val role: String,
-    val status: String,
-    @SerialName("phone_number")
-    val phoneNumber: String,
-    @SerialName("language_flag")
-    val languageFlag: String,
-    @SerialName("is_active")
-    val isActive: Boolean
 )
 
 @Serializable
