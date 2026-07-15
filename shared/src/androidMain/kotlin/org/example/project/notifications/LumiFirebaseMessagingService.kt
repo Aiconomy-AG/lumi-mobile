@@ -46,7 +46,9 @@ class LumiFirebaseMessagingService : FirebaseMessagingService() {
                 getSystemService(NotificationManager::class.java)?.cancel(notificationIdFor(data))
                 data["call_id"]?.let { callId ->
                     IncomingCallRingingService.stop(applicationContext, callId)
-                    AndroidCallRuntime.dismiss(callId)
+                    if (isTerminalCallUpdate(data["status"])) {
+                        AndroidCallRuntime.dismiss(callId)
+                    }
                 }
                 AndroidNotificationIntents.handle(Intent().apply { data.forEach { (k, v) -> putExtra(k, v) } })
                 return
@@ -103,5 +105,17 @@ class LumiFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "LumiFirebaseMessaging"
+
+        private val TERMINAL_CALL_STATUSES = setOf(
+            "ended",
+            "declined",
+            "cancelled",
+            "missed",
+            "failed",
+        )
+
+        private fun isTerminalCallUpdate(status: String?): Boolean {
+            return status?.lowercase() in TERMINAL_CALL_STATUSES
+        }
     }
 }

@@ -168,7 +168,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let data = extractNotificationData(from: userInfo)
         guard !data.isEmpty else { return }
 
-        if data["type"] == "workspace_call_updated", let callId = data["call_id"] {
+        if data["type"] == "workspace_call_updated",
+           let callId = data["call_id"],
+           isTerminalCallUpdate(status: data["status"]) {
             _Concurrency.Task { @MainActor in
                 LumiCallManager.shared.dismissCall(callId: callId)
             }
@@ -205,5 +207,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     private func isIncomingCallNotification(_ userInfo: [AnyHashable: Any]) -> Bool {
         let data = extractNotificationData(from: userInfo)
         return data["type"] == "workspace_call_incoming"
+    }
+
+    private func isTerminalCallUpdate(status: String?) -> Bool {
+        guard let status else { return false }
+        return ["ended", "declined", "cancelled", "missed", "failed"].contains(status.lowercased())
     }
 }
