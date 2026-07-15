@@ -2,6 +2,7 @@ package org.example.project.domain.chat
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 enum class ConversationType {
@@ -19,6 +20,9 @@ enum class ChatMessageType {
 
     @SerialName("call")
     CALL,
+
+    @SerialName("ai_action")
+    AI_ACTION
 }
 
 @Serializable
@@ -29,6 +33,19 @@ data class Conversation (
     val createdBy: Int
 )
 
+@Serializable
+data class AiActionMeta(
+    @SerialName("action_id") val actionId: Int,
+    @SerialName("tool_name") val toolName: String,
+    val summary: String,
+    val status: String,
+    @SerialName("requested_by_user_id") val requestedByUserId: Int? = null,
+    @SerialName("requested_by_name") val requestedByName: String? = null,
+    val arguments: Map<String, JsonElement>? = null,
+    val result: JsonElement? = null,
+    val error: String? = null,
+    @SerialName("expires_at") val expiresAt: String,
+)
 @Serializable
 data class ConversationParticipant(
     val conversationId: Int,
@@ -59,6 +76,7 @@ data class ChatMessage(
     val sentAt: String,
     val messageType: ChatMessageType = ChatMessageType.TEXT,
     val call: ChatCallMetadata? = null,
+    val meta: AiActionMeta? = null,
 )
 
 data class ChatParticipant(

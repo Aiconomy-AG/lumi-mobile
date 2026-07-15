@@ -1021,6 +1021,32 @@ class ChatViewModel(
         )
     }
 
+    fun approveAiAction(conversationId: Int, actionId: Int) {
+        viewModelScope.launch {
+            try {
+                chatApi.approveAiAction(conversationId, actionId)
+                refreshConversationInternal(conversationId)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "Failed to approve AI action."
+                )
+            }
+        }
+    }
+
+    fun rejectAiAction(conversationId: Int, actionId: Int) {
+        viewModelScope.launch {
+            try {
+                chatApi.rejectAiAction(conversationId, actionId)
+                refreshConversationInternal(conversationId)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "Failed to reject AI action."
+                )
+            }
+        }
+    }
+
     private fun formatLastMessagePreview(
         conversation: Conversation,
         messageText: String,

@@ -15,6 +15,7 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.example.project.domain.chat.AiActionMeta
 import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatCallMetadata
 import org.example.project.domain.chat.ChatMessage
@@ -138,6 +139,20 @@ class ChatApiService(
         return chatJson.decodeFromString<MessageResponse>(text).data.toChatMessage()
     }
 
+    override suspend fun approveAiAction(conversationId: Int, actionId: Int) {
+        val response = client.post("$baseUrl/workspace/conversations/$conversationId/ai-actions/$actionId/approve") {
+            bearerAuth()
+        }
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(response.bodyAsText()))
+    }
+
+    override suspend fun rejectAiAction(conversationId: Int, actionId: Int) {
+        val response = client.post("$baseUrl/workspace/conversations/$conversationId/ai-actions/$actionId/reject") {
+            bearerAuth()
+        }
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(response.bodyAsText()))
+    }
+
     private fun HttpRequestBuilder.bearerAuth() {
         header(HttpHeaders.Authorization, "Bearer $token")
         header(HttpHeaders.Accept, "application/json")
@@ -238,16 +253,13 @@ private data class MessageResponse(
 @Serializable
 private data class MessageDto(
     val id: Int,
-    @SerialName("conversation_id")
-    val conversationId: Int,
-    @SerialName("sender_id")
-    val senderId: Int,
+    @SerialName("conversation_id") val conversationId: Int,
+    @SerialName("sender_id") val senderId: Int,
     val message: String,
-    @SerialName("message_type")
-    val messageType: String = "text",
-    @SerialName("sent_at")
-    val sentAt: String? = null,
+    @SerialName("message_type") val messageType: String = "text",
+    @SerialName("sent_at") val sentAt: String? = null,
     val call: ChatCallMetadataDto? = null,
+    val meta: AiActionMeta? = null,
 ) {
     fun toChatMessage(): ChatMessage = ChatMessage(
         id = id,
@@ -255,11 +267,14 @@ private data class MessageDto(
         senderId = senderId,
         messageText = message,
         sentAt = sentAt ?: "",
-        messageType = when (messageType) {
-            "call" -> ChatMessageType.CALL
+        call = call?.toMetadata(),
+        messageType = when {
+            meta != null -> ChatMessageType.AI_ACTION // Forces AI Action if meta exists
+            messageType == "call" -> ChatMessageType.CALL
+            messageType == "ai_action" -> ChatMessageType.AI_ACTION
             else -> ChatMessageType.TEXT
         },
-        call = call?.toMetadata(),
+        meta = meta,
     )
 }
 
@@ -328,3 +343,5 @@ private val chatJson = Json {
     ignoreUnknownKeys = true
     explicitNulls = false
 }
+
+
