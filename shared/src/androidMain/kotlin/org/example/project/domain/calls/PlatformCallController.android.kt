@@ -25,6 +25,7 @@ object AndroidCallRuntime {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var callsManager: CallsManager? = null
     private val controls = mutableMapOf<String, CallControlScope>()
+    private val suppressDeclineOnDisconnect = mutableSetOf<String>()
 
     fun initialize(context: Context) {
         applicationContext = context.applicationContext
@@ -56,7 +57,10 @@ object AndroidCallRuntime {
                         0,
                     ),
                     onAnswer = { openCallAction(callId, "answer") },
-                    onDisconnect = { openCallAction(callId, "decline") },
+                    onDisconnect = {
+                        if (suppressDeclineOnDisconnect.remove(callId)) return@addCall
+                        openCallAction(callId, "decline")
+                    },
                     onSetActive = {},
                     onSetInactive = {},
                 ) { controls[callId] = this }
@@ -66,7 +70,11 @@ object AndroidCallRuntime {
 
     fun dismiss(callId: String) {
         val control = controls.remove(callId) ?: return
-        scope.launch { control.disconnect(DisconnectCause(DisconnectCause.REMOTE)) }
+        suppressDeclineOnDisconnect.add(callId)
+        scope.launch {
+            runCatching { control.disconnect(DisconnectCause(DisconnectCause.REMOTE)) }
+            suppressDeclineOnDisconnect.remove(callId)
+        }
         IncomingCallRingingService.stop(context(), callId)
     }
 
