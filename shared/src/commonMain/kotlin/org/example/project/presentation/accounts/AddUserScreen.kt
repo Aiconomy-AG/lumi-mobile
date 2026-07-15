@@ -27,11 +27,7 @@ fun AddUserScreen(
     onUserAdded: () -> Unit,
     onBackClick: () -> Unit
 ) {
-    var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var phoneNumber by remember { mutableStateOf("") }
-    var languageFlag by remember { mutableStateOf("en") }
     var selectedRole by remember { mutableStateOf(AccountRole.EMPLOYEE) }
     val strings = LocalAppStrings.current
 
@@ -51,33 +47,9 @@ fun AddUserScreen(
         Spacer(modifier = Modifier.height(AppDimensions.SectionSpacing))
 
         UserInput(
-            value = fullName,
-            onValueChange = { fullName = it },
-            label = strings.text("Full name")
-        )
-
-        UserInput(
             value = email,
             onValueChange = { email = it },
             label = strings.text("Email")
-        )
-
-        UserInput(
-            value = password,
-            onValueChange = { password = it },
-            label = strings.text("Password")
-        )
-
-        UserInput(
-            value = phoneNumber,
-            onValueChange = { phoneNumber = it },
-            label = strings.text("Phone number")
-        )
-
-        UserInput(
-            value = languageFlag,
-            onValueChange = { languageFlag = it },
-            label = strings.text("Language flag")
         )
 
         Spacer(modifier = Modifier.height(AppDimensions.SmallSpacing))
@@ -110,17 +82,9 @@ fun AddUserScreen(
 
         Button(
             onClick = {
-                if (
-                    fullName.isNotBlank() &&
-                    email.isNotBlank() &&
-                    password.isNotBlank()
-                ) {
+                if (email.isNotBlank()) {
                     viewModel.addUser(
-                        name = fullName,
                         email = email,
-                        password = password,
-                        phoneNumber = phoneNumber,
-                        languageFlag = languageFlag.ifBlank { "en" },
                         role = selectedRole,
                         onSuccess = onUserAdded
                     )

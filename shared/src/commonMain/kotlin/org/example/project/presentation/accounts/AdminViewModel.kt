@@ -66,30 +66,19 @@ class AdminViewModel(
     }
 
     fun addUser(
-        name: String,
         email: String,
-        password: String,
-        phoneNumber: String,
-        languageFlag: String,
         role: AccountRole,
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, errorMessage = null)
 
-            repository.addUser(
-                name = name,
-                email = email,
-                password = password,
-                role = role,
-                phoneNumber = phoneNumber,
-                languageFlag = languageFlag,
-                status = "offline",
-                isActive = true
-            )
-                .onSuccess {
-                    _state.value = _state.value.copy(isSaving = false)
-                    loadUsers()
+            repository.addUser(email = email, role = role)
+                .onSuccess { user ->
+                    _state.value = _state.value.copy(
+                        isSaving = false,
+                        users = _state.value.users + user,
+                    )
                     onSuccess()
                 }
                 .onFailure { error ->
