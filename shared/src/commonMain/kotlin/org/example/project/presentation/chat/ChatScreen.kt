@@ -64,6 +64,11 @@ import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
+import org.example.project.domain.chat.AiActionMeta
+import org.example.project.presentation.components.AppButton
+import org.example.project.presentation.components.AppOutlinedButton
+import org.example.project.presentation.components.AppDetailGrid
+import org.example.project.presentation.components.AppDetailField
 
 @Composable
 fun ChatScreen(
@@ -106,6 +111,8 @@ fun ChatScreen(
                         conversation.conversation.id,
                     )
                 },
+                onApproveAiAction = viewModel::approveAiAction,
+                onRejectAiAction = viewModel::rejectAiAction,
             )
         }
 
@@ -132,6 +139,118 @@ fun ChatScreen(
                 onToggleAddMember = viewModel::toggleGroupSettingsAddMember,
                 onToggleRemoveMember = viewModel::toggleGroupSettingsRemoveMember,
                 onSave = viewModel::saveGroupSettings,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AiActionCard(
+    conversationId: Int,
+    meta: AiActionMeta,
+    currentUserId: Int,
+    onApprove: (Int, Int) -> Unit,
+    onReject: (Int, Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val strings = LocalAppStrings.current
+
+    val isExpired = meta.status == "expired"
+    val effectiveStatus = if (isExpired && meta.status == "pending") "expired" else meta.status
+    val isRequester = currentUserId == meta.requestedByUserId
+    val canRespond = isRequester && effectiveStatus == "pending" && !isExpired
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppDimensions.TableCornerRadius))
+            .background(AppColorPalette.Surface)
+            .border(1.dp, AppColorPalette.Border, RoundedCornerShape(AppDimensions.TableCornerRadius))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // --- 1. Header & Status ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
+        ) {
+            Text(
+                text = meta.summary,
+                color = AppColorPalette.TextPrimary,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f).padding(end = 8.dp)
+            )
+
+            // Mimics AppStatusBadge but manually maps to your AppColorPalette
+            val (statusTextColor, statusBgColor) = when (effectiveStatus) {
+                "pending" -> AppColorPalette.Warning to AppColorPalette.Warning.copy(alpha = 0.15f)
+                "approved", "executed" -> AppColorPalette.Success to AppColorPalette.Success.copy(alpha = 0.15f)
+                "failed", "rejected" -> AppColorPalette.Error to AppColorPalette.Error.copy(alpha = 0.15f)
+                else -> AppColorPalette.TextSecondary to AppColorPalette.SurfaceVariant
+            }
+
+            Box(
+                modifier = Modifier
+                    .background(statusBgColor, MaterialTheme.shapes.extraSmall)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = strings.text(effectiveStatus.uppercase()),
+                    color = statusTextColor,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        // --- 2. Arguments Grid ---
+        val detailFields = meta.arguments?.map { (key, value) ->
+            AppDetailField(
+                label = key.replace("_", " ").replaceFirstChar { it.uppercase() },
+                value = value.toString().removeSurrounding("\"")
+            )
+        } ?: emptyList()
+
+        if (detailFields.isNotEmpty()) {
+            AppDetailGrid(fields = detailFields)
+        }
+
+        // --- 3. Error Message ---
+        meta.error?.let { errorMsg ->
+            Text(
+                text = errorMsg,
+                color = AppColorPalette.Error,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        // --- 4. Call to Action ---
+        if (canRespond) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AppButton(
+                    onClick = { onApprove(conversationId, meta.actionId) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(strings.text("Approve"))
+                }
+
+                AppOutlinedButton(
+                    onClick = { onReject(conversationId, meta.actionId) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(strings.text("Reject"), color = AppColorPalette.TextPrimary)
+                }
+            }
+        } else if (effectiveStatus == "pending" && !isRequester) {
+            Text(
+                text = strings.format("Waiting for {name} to confirm", "name" to (meta.requestedByName ?: "someone")),
+                color = AppColorPalette.TextSecondary,
+                style = MaterialTheme.typography.labelMedium
             )
         }
     }
@@ -351,6 +470,8 @@ private fun NewMessageRow(
     }
 }
 
+
+
 @Composable
 private fun GroupBadge() {
     val strings = LocalAppStrings.current
@@ -537,6 +658,8 @@ private fun ConversationDetailScreen(
     onSendClick: () -> Unit,
     onGroupSettingsClick: () -> Unit,
     onStartCall: (String) -> Unit,
+    onApproveAiAction: (Int, Int) -> Unit,
+    onRejectAiAction: (Int, Int) -> Unit,
 ) {
     val selectedConversation = uiState.selectedConversation ?: return
     val listState = rememberLazyListState()
@@ -636,6 +759,9 @@ private fun ConversationDetailScreen(
                             ?: selectedConversation.participants.find { it.id == message.senderId }?.name
                             ?: strings.text("Unknown sender"),
                         showSenderName = selectedConversation.isGroup,
+                        currentUserId = currentEmployeeId,
+                        onApproveAiAction = onApproveAiAction,
+                        onRejectAiAction = onRejectAiAction,
                     )
                 }
             }
@@ -755,6 +881,9 @@ private fun MessageBubble(
     isMine: Boolean,
     senderName: String,
     showSenderName: Boolean,
+    currentUserId: Int? = null,
+    onApproveAiAction: ((Int, Int) -> Unit)? = null,
+    onRejectAiAction: ((Int, Int) -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -778,14 +907,24 @@ private fun MessageBubble(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            Text(
-                text = message.messageText,
-                color = if (isMine) AppColorPalette.OnPrimary else AppColorPalette.TextPrimary,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Medium,
-                ),
-            )
+            if (message.messageType == ChatMessageType.AI_ACTION && message.meta != null) {
+                AiActionCard(
+                    conversationId = message.conversationId,
+                    meta = message.meta,
+                    currentUserId = currentUserId ?: 0,
+                    onApprove = { cid, aid -> onApproveAiAction?.invoke(cid, aid) },
+                    onReject = { cid, aid -> onRejectAiAction?.invoke(cid, aid) }
+                )
+            } else {
+                Text(
+                    text = message.messageText,
+                    color = if (isMine) AppColorPalette.OnPrimary else AppColorPalette.TextPrimary,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                )
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 

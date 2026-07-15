@@ -18,6 +18,7 @@ object AppColorPalette {
     val OverlayBackground = Color(0xF20B0B0B)
     val OverlaySurface = Color(0xF20F0F0F)
     val SelectionOverlay = Color(0x1AE6E6E6)
+    val Warning = Color(0xFFF59E0B)
 
     val Primary = Color(0xFFAE86F4)
     val OnPrimary = Background

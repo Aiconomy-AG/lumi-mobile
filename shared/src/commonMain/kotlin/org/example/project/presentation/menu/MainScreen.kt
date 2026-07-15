@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import feature.stock.presentation.AddProductScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -73,6 +74,8 @@ import org.example.project.presentation.returns.ReturnsScreen
 import org.example.project.presentation.returns.ReturnsViewModel
 import org.example.project.presentation.stock.StockScreen
 import org.example.project.presentation.stock.StockViewModel
+import org.example.project.presentation.stocklogs.StockLogsScreen
+import org.example.project.presentation.stocklogs.StockLogsViewModel
 import org.example.project.presentation.tasks.ActiveTimerViewModel
 import org.example.project.presentation.tasks.AddTaskScreen
 import org.example.project.presentation.tasks.EditTaskScreen
@@ -147,6 +150,16 @@ fun MainScreen(
     val auditLogsViewModel = remember(user.token) {
         AuditLogsViewModel(
             AuditLogApiService(
+                client = apiHttpClient,
+                baseUrl = ApiConfig.BASE_URL,
+                token = user.token,
+            ),
+        )
+    }
+
+    val stockLogsViewModel = remember(user.token) {
+        StockLogsViewModel(
+            repository = AuditLogApiService(
                 client = apiHttpClient,
                 baseUrl = ApiConfig.BASE_URL,
                 token = user.token,
@@ -469,6 +482,13 @@ fun MainScreen(
                 AppSection.AUDIT_LOGS -> {
                     AuditLogsScreen(
                         viewModel = auditLogsViewModel,
+                        modifier = Modifier.padding(paddingValues),
+                    )
+                }
+
+                AppSection.STOCK_LOGS -> {
+                    StockLogsScreen(
+                        viewModel = stockLogsViewModel,
                         modifier = Modifier.padding(paddingValues),
                     )
                 }

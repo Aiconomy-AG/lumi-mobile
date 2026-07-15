@@ -306,6 +306,89 @@ fun AppSectionIcon(
                     center = Offset(w * 0.12f, h * 0.68f)
                 )
             }
+
+            AppSection.STOCK_LOGS -> {
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.16f, h * 0.36f),
+                    size = Size(w * 0.58f, h * 0.4f),
+                    cornerRadius = CornerRadius(w * 0.08f),
+                    style = stroke
+                )
+
+
+                drawLine(
+                    color = tint.copy(alpha = 0.72f),
+                    start = Offset(w * 0.3f, h * 0.36f),
+                    end = Offset(w * 0.3f, h * 0.24f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+
+                drawLine(
+                    color = tint.copy(alpha = 0.72f),
+                    start = Offset(w * 0.6f, h * 0.36f),
+                    end = Offset(w * 0.6f, h * 0.24f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+
+
+                listOf(0.48f, 0.6f).forEach { y ->
+                    drawLine(
+                        color = tint.copy(alpha = 0.62f),
+                        start = Offset(w * 0.26f, h * y),
+                        end = Offset(w * 0.62f, h * y),
+                        strokeWidth = thinStroke.width,
+                        cap = StrokeCap.Round
+                    )
+                }
+
+
+                drawArc(
+                    color = tint,
+                    startAngle = 40f,
+                    sweepAngle = 280f,
+                    useCenter = false,
+                    topLeft = Offset(w * 0.58f, h * 0.12f),
+                    size = Size(w * 0.32f, h * 0.32f),
+                    style = thinStroke
+                )
+
+
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.61f, h * 0.16f),
+                    end = Offset(w * 0.59f, h * 0.29f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.61f, h * 0.16f),
+                    end = Offset(w * 0.72f, h * 0.19f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+
+
+                drawLine(
+                    color = tint.copy(alpha = 0.72f),
+                    start = Offset(w * 0.74f, h * 0.28f),
+                    end = Offset(w * 0.74f, h * 0.2f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+
+                drawLine(
+                    color = tint.copy(alpha = 0.72f),
+                    start = Offset(w * 0.74f, h * 0.28f),
+                    end = Offset(w * 0.82f, h * 0.31f),
+                    strokeWidth = thinStroke.width,
+                    cap = StrokeCap.Round
+                )
+            }
         }
     }
 }

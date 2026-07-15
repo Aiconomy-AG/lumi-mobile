@@ -226,7 +226,7 @@ private fun AuditLogsSearchRow(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AuditDateField(
+fun AuditDateField(
     label: String,
     value: String,
     onDateSelected: (String) -> Unit,
@@ -283,7 +283,7 @@ private fun AuditDateField(
 }
 
 @Composable
-private fun AuditLogRow(
+fun AuditLogRow(
     log: AuditLog,
     expanded: Boolean,
     onClick: () -> Unit
