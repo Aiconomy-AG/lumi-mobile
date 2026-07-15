@@ -1,11 +1,14 @@
 package org.example.project.presentation.chat
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +32,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +44,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +59,7 @@ import androidx.compose.ui.window.Dialog
 import org.example.project.data.accounts.User
 import org.example.project.data.chat.chatClockTimeLabel
 import org.example.project.domain.chat.ChatMessage
+import org.example.project.domain.chat.ChatMessageReaction
 import org.example.project.domain.chat.ChatMessageType
 import org.example.project.domain.chat.ChatParticipant
 import androidx.compose.material.icons.Icons
@@ -113,6 +121,8 @@ fun ChatScreen(
                 },
                 onApproveAiAction = viewModel::approveAiAction,
                 onRejectAiAction = viewModel::rejectAiAction,
+                onReact = viewModel::reactToMessage,
+                onRemoveReaction = viewModel::removeReaction,
             )
         }
 
@@ -660,6 +670,8 @@ private fun ConversationDetailScreen(
     onStartCall: (String) -> Unit,
     onApproveAiAction: (Int, Int) -> Unit,
     onRejectAiAction: (Int, Int) -> Unit,
+    onReact: (ChatMessage, String) -> Unit,
+    onRemoveReaction: (ChatMessage, String) -> Unit,
 ) {
     val selectedConversation = uiState.selectedConversation ?: return
     val listState = rememberLazyListState()
@@ -762,6 +774,8 @@ private fun ConversationDetailScreen(
                         currentUserId = currentEmployeeId,
                         onApproveAiAction = onApproveAiAction,
                         onRejectAiAction = onRejectAiAction,
+                        onReact = onReact,
+                        onRemoveReaction = onRemoveReaction,
                     )
                 }
             }
@@ -875,6 +889,9 @@ private fun buildCallLogLabel(messageText: String, durationSeconds: Int?): Strin
     return "$messageText · $formatted"
 }
 
+private val REACTION_EMOJIS = listOf("👍", "❤️", "😂", "😮", "😢", "🔥", "🐓", "🍗")
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MessageBubble(
     message: ChatMessage,
@@ -884,56 +901,152 @@ private fun MessageBubble(
     currentUserId: Int? = null,
     onApproveAiAction: ((Int, Int) -> Unit)? = null,
     onRejectAiAction: ((Int, Int) -> Unit)? = null,
+    onReact: ((ChatMessage, String) -> Unit)? = null,
+    onRemoveReaction: ((ChatMessage, String) -> Unit)? = null,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
+    var showReactionPicker by remember(message.id) { mutableStateOf(false) }
+    val canReact = onReact != null && message.id > 0
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
+        ) {
+            Box {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(0.78f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (isMine) AppColorPalette.Primary else AppColorPalette.SurfaceVariant)
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = { if (canReact) showReactionPicker = true },
+                        )
+                        .padding(12.dp),
+                ) {
+                    if (!isMine && showSenderName) {
+                        Text(
+                            text = senderName,
+                            color = AppColorPalette.Primary,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    if (message.messageType == ChatMessageType.AI_ACTION && message.meta != null) {
+                        AiActionCard(
+                            conversationId = message.conversationId,
+                            meta = message.meta,
+                            currentUserId = currentUserId ?: 0,
+                            onApprove = { cid, aid -> onApproveAiAction?.invoke(cid, aid) },
+                            onReject = { cid, aid -> onRejectAiAction?.invoke(cid, aid) }
+                        )
+                    } else {
+                        Text(
+                            text = message.messageText,
+                            color = if (isMine) AppColorPalette.OnPrimary else AppColorPalette.TextPrimary,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = chatClockTimeLabel(message.sentAt),
+                        color = if (isMine) AppColorPalette.OnPrimary.copy(alpha = 0.7f) else AppColorPalette.TextSecondary,
+                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.SansSerif),
+                        modifier = Modifier.align(Alignment.End),
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showReactionPicker,
+                    onDismissRequest = { showReactionPicker = false },
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        REACTION_EMOJIS.forEach { emoji ->
+                            Text(
+                                text = emoji,
+                                fontSize = 22.sp,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        onReact?.invoke(message, emoji)
+                                        showReactionPicker = false
+                                    }
+                                    .padding(6.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (message.reactions.isNotEmpty()) {
+            MessageReactionRow(
+                reactions = message.reactions,
+                currentUserId = currentUserId,
+                isMine = isMine,
+                onToggle = { emoji, hasReacted ->
+                    if (hasReacted) {
+                        onRemoveReaction?.invoke(message, emoji)
+                    } else {
+                        onReact?.invoke(message, emoji)
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun MessageReactionRow(
+    reactions: List<ChatMessageReaction>,
+    currentUserId: Int?,
+    isMine: Boolean,
+    onToggle: (emoji: String, hasReacted: Boolean) -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp),
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.78f)
-                .clip(RoundedCornerShape(14.dp))
-                .background(if (isMine) AppColorPalette.Primary else AppColorPalette.SurfaceVariant)
-                .padding(12.dp),
-        ) {
-            if (!isMine && showSenderName) {
+        reactions.forEach { reaction ->
+            val hasReacted = currentUserId != null && currentUserId in reaction.userIds
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .padding(end = 4.dp, bottom = 4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(
+                        if (hasReacted) AppColorPalette.Primary.copy(alpha = 0.18f) else AppColorPalette.SurfaceVariant
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = if (hasReacted) AppColorPalette.Primary.copy(alpha = 0.4f) else AppColorPalette.Border,
+                        shape = RoundedCornerShape(50),
+                    )
+                    .clickable { onToggle(reaction.emoji, hasReacted) }
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            ) {
+                Text(text = reaction.emoji, fontSize = 13.sp)
                 Text(
-                    text = senderName,
-                    color = AppColorPalette.Primary,
-                    style = MaterialTheme.typography.labelSmall,
+                    text = reaction.count.toString(),
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-
-            if (message.messageType == ChatMessageType.AI_ACTION && message.meta != null) {
-                AiActionCard(
-                    conversationId = message.conversationId,
-                    meta = message.meta,
-                    currentUserId = currentUserId ?: 0,
-                    onApprove = { cid, aid -> onApproveAiAction?.invoke(cid, aid) },
-                    onReject = { cid, aid -> onRejectAiAction?.invoke(cid, aid) }
-                )
-            } else {
-                Text(
-                    text = message.messageText,
-                    color = if (isMine) AppColorPalette.OnPrimary else AppColorPalette.TextPrimary,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Medium,
-                    ),
+                    color = if (hasReacted) AppColorPalette.Primary else AppColorPalette.TextSecondary,
                 )
             }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = chatClockTimeLabel(message.sentAt),
-                color = if (isMine) AppColorPalette.OnPrimary.copy(alpha = 0.7f) else AppColorPalette.TextSecondary,
-                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.SansSerif),
-                modifier = Modifier.align(Alignment.End),
-            )
         }
     }
 }
