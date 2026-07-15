@@ -19,6 +19,7 @@ import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskApi
 import org.example.project.domain.task.TaskStatus
 import org.example.project.domain.task.canCreateSubtask
+import org.example.project.domain.tasktimeentry.TaskTimeEntry
 import org.example.project.domain.tasktimeentry.TaskTimeEntryApi
 
 data class TaskDetailUiState(
@@ -38,6 +39,7 @@ data class TaskDetailUiState(
     val isCreatingSubtask: Boolean = false,
     val error: String? = null,
     val isCurrentUserAssigned: Boolean = false,
+    val timeEntries: List<TaskTimeEntry> = emptyList(),
 ) {
     val isRootTask: Boolean get() = task.isRootTask
 }
@@ -51,6 +53,7 @@ private data class HistoricalTotals(
     val isLoading: Boolean = true,
     val myPastSeconds: Int = 0,
     val taskTotalPastSeconds: Int = 0,
+    val entries: List<TaskTimeEntry> = emptyList(),
     val error: String? = null,
 )
 
@@ -91,8 +94,9 @@ class TaskDetailViewModel(
                 task = currentTask,
                 isLoading = historical.isLoading,
                 isTimerRunning = isMine,
-                elapsedSeconds = historical.myPastSeconds + if (isMine) active.elapsedSeconds else 0,
+                elapsedSeconds = if (isMine) active.elapsedSeconds else 0,
                 taskTotalSeconds = historical.taskTotalPastSeconds + if (isMine) active.elapsedSeconds else 0,
+                timeEntries = historical.entries,
                 isSaving = saving.first,
                 assignees = currentTask.assigneeIds.mapNotNull { id -> reference.users.find { it.id == id } },
                 allUsers = reference.users,
@@ -219,6 +223,7 @@ class TaskDetailViewModel(
                     isLoading = false,
                     myPastSeconds = myPast,
                     taskTotalPastSeconds = allPast,
+                    entries = allEntries,
                 )
             } catch (e: Exception) {
                 historicalState.value = historicalState.value.copy(isLoading = false, error = e.message)

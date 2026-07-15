@@ -26,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -48,6 +49,14 @@ import org.example.project.domain.task.Task
 import org.example.project.domain.task.TaskStatus
 import org.example.project.presentation.components.AppBackButton
 import org.example.project.presentation.localization.LocalAppStrings
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import org.example.project.domain.tasktimeentry.TaskTimeEntry
+import org.example.project.presentation.theme.AppColorPalette
 
 
 @Composable
@@ -79,33 +88,45 @@ fun TaskDetailScreen(
                 })
             }
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            AppBackButton(onClick = onBack)
+            Row(
+                modifier = Modifier.clickable(onClick = onBack),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back to tasks",
+                    tint = colors.onBackground,
+                    modifier = Modifier.size(18.dp)
+                )
 
-            Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
-            Text(
-                text = task.title,
-                color = colors.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
+                Text(
+                    text = "Tasks",
+                    color = colors.onBackground,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
 
             Text(
                 text = strings.text("Edit"),
                 color = colors.primary,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clickable(onClick = onEditClick),
+                fontSize = 14.sp,
+                modifier = Modifier.clickable(onClick = onEditClick)
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Text(
             text = task.title,
@@ -125,7 +146,7 @@ fun TaskDetailScreen(
 
         StatusTabs(currentStatus = task.status)
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         TimeTrackingCard(
             elapsedSeconds = uiState.elapsedSeconds,
@@ -142,11 +163,16 @@ fun TaskDetailScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(text = strings.text("Description"), color = colors.onSurfaceVariant)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = task.description, color = colors.onBackground)
+        DetailSectionCard(title = strings.text("Description")) {
+            Text(
+                text = task.description.ifBlank { strings.text("No description.") },
+                color = colors.onBackground,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+            )
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         AssigneesSection(
             assignees = uiState.assignees,
@@ -160,7 +186,7 @@ fun TaskDetailScreen(
         )
 
         if (uiState.isRootTask) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             SubtasksSection(
                 subtasks = uiState.subtasks,
                 expanded = uiState.subtasksExpanded,
@@ -174,6 +200,108 @@ fun TaskDetailScreen(
                 },
             )
         }
+        TimeEntriesSection(
+            entries = uiState.timeEntries,
+            users = uiState.allUsers,
+            totalSeconds = uiState.taskTotalSeconds,
+        )
+    }
+}
+
+@Composable
+private fun TimeEntriesSection(
+    entries: List<TaskTimeEntry>,
+    users: List<User>,
+    totalSeconds: Int,
+) {
+    val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
+
+    DetailSectionCard(title = strings.text("Time entries")) {
+        if (entries.isEmpty()) {
+            Text(
+                text = strings.text("No time entries yet."),
+                color = colors.onSurfaceVariant,
+                fontSize = 14.sp,
+            )
+        } else {
+            entries.take(6).forEach { entry ->
+                val user = users.firstOrNull { it.id == entry.employeeId }
+                val displayName = user?.name ?: "Employee #${entry.employeeId}"
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (user != null) {
+                        UserAvatar(user = user, size = 28.dp)
+                        Spacer(modifier = Modifier.width(10.dp))
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = displayName,
+                            color = colors.onBackground,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+
+                        Text(
+                            text = if (entry.stoppedAt == null) "Running" else "Completed",
+                            color = colors.onSurfaceVariant,
+                            fontSize = 12.sp,
+                        )
+                    }
+
+                    Text(
+                        text = formatElapsed(entry.durationSeconds ?: 0),
+                        color = colors.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Total logged: ${formatElapsed(totalSeconds)}",
+                color = colors.primary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DetailSectionCard(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = colors.surface, shape = RoundedCornerShape(16.dp))
+            .border(width = 1.dp, color = colors.outline, shape = RoundedCornerShape(16.dp))
+            .padding(16.dp),
+    ) {
+        Text(
+            text = title,
+            color = colors.onSurfaceVariant,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        content()
     }
 }
 
@@ -307,8 +435,6 @@ private fun AssigneeChip(employee: User, onRemove: () -> Unit) {
 
 @Composable
 private fun StatusTabs(currentStatus: TaskStatus) {
-    val colors = MaterialTheme.colorScheme
-    val strings = LocalAppStrings.current
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -316,21 +442,38 @@ private fun StatusTabs(currentStatus: TaskStatus) {
     ) {
         TaskStatus.entries.forEach { status ->
             val selected = status == currentStatus
+            val color = statusColor(status)
+
             Box(
                 modifier = Modifier
                     .background(
-                        color = if (selected) colors.surfaceVariant else Color.Transparent,
-                        shape = MaterialTheme.shapes.small,
+                        color = if (selected) color.copy(alpha = 0.20f) else Color.Transparent,
+                        shape = RoundedCornerShape(999.dp),
                     )
-                    .border(width = 1.dp, color = colors.outline, shape = MaterialTheme.shapes.small)
+                    .border(
+                        width = 1.dp,
+                        color = if (selected) color else MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(999.dp),
+                    )
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
                 Text(
-                    text = strings.taskStatus(status),
-                    color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+                    text = LocalAppStrings.current.taskStatus(status),
+                    color = if (selected) color else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 13.sp,
                 )
             }
         }
+    }
+}
+
+private fun statusColor(status: TaskStatus): Color {
+    return when (status) {
+        TaskStatus.TO_DO -> Color(0xFF8A8A8A)
+        TaskStatus.IN_PROGRESS -> Color(0xFFB57CFF)
+        TaskStatus.COMPLETE -> Color(0xFF22C55E)
+        TaskStatus.BLOCKED -> Color(0xFFFF4D4D)
     }
 }
 
@@ -343,49 +486,70 @@ private fun TimeTrackingCard(
     onToggle: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val strings = LocalAppStrings.current
+    val canUseTimer = isAssigned || isRunning
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = colors.surface, shape = MaterialTheme.shapes.medium)
-            .padding(20.dp),
+            .background(color = colors.surface, shape = RoundedCornerShape(18.dp))
+            .border(width = 1.dp, color = colors.outline, shape = RoundedCornerShape(18.dp))
+            .padding(18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
-            Text(text = strings.text("Time tracking"), color = colors.onSurfaceVariant)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Current session",
+                color = colors.onSurfaceVariant,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.8.sp,
+            )
+
             Spacer(modifier = Modifier.height(6.dp))
+
             Text(
                 text = formatElapsed(elapsedSeconds),
                 color = colors.onSurface,
-                fontSize = 32.sp,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
             )
+
             Spacer(modifier = Modifier.height(4.dp))
+
             Text(
-                text = "${strings.text("Total task")}: ${formatElapsed(taskTotalSeconds)}",
-                color = colors.onSurfaceVariant,
+                text = "Total logged: ${formatElapsed(taskTotalSeconds)}",
+                color = colors.primary,
                 fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
             )
+
+            if (!isAssigned && !isRunning) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "You are not assigned on this task!",
+                    color = colors.error,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
         }
-        Box(
+
+        IconButton(
+            onClick = onToggle,
+            enabled = canUseTimer,
             modifier = Modifier
                 .size(52.dp)
                 .background(
-                    color = if (isAssigned || isRunning) colors.primary else colors.surfaceVariant,
-                    shape = CircleShape
-                )
-                .clickable(
-                    enabled = isAssigned || isRunning,
-                    onClick = onToggle
+                    color = if (canUseTimer) colors.primary.copy(alpha = 0.18f) else colors.surfaceVariant,
+                    shape = CircleShape,
                 ),
-            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = if (isRunning) "■" else "▶",
-                color = if (isAssigned || isRunning) colors.onPrimary else colors.onSurfaceVariant.copy(alpha = 0.5f),
-                fontSize = 24.sp,
-                textAlign = TextAlign.Center
+            Icon(
+                imageVector = if (isRunning) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                contentDescription = if (isRunning) "Pause timer" else "Start timer",
+                tint = if (canUseTimer) colors.primary else colors.onSurfaceVariant.copy(alpha = 0.5f),
             )
         }
     }
