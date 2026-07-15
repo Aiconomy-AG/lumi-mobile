@@ -25,6 +25,9 @@ enum class DevicePlatform {
 
     @SerialName("ios")
     IOS,
+
+    @SerialName("apns_voip")
+    APNS_VOIP,
 }
 
 class DeviceTokenApiService(

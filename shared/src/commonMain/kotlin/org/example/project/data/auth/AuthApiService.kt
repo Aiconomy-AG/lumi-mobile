@@ -3,6 +3,7 @@ package org.example.project.data.auth
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -102,6 +103,28 @@ class AuthApiService(
         } catch (exception: Exception) {
             Result.failure(
                 Exception(exception.message ?: "Could not update phone number.")
+            )
+        }
+    }
+
+    override suspend fun updateStatus(session: UserSession, status: String): Result<UserSession> {
+        return try {
+            val response = client.patch("$baseUrl/auth/me/status") {
+                bearerAuth(session.token)
+                contentType(ContentType.Application.Json)
+                setBody(UpdateStatusRequest(status = status))
+            }
+
+            val responseText = response.bodyAsText()
+            if (!response.status.isSuccess()) {
+                return Result.failure(Exception(parseErrorMessage(responseText)))
+            }
+
+            val updated = parseMeResponse(responseText, session) ?: session.copy(status = status)
+            Result.success(updated)
+        } catch (exception: Exception) {
+            Result.failure(
+                Exception(exception.message ?: "Could not update status.")
             )
         }
     }
@@ -236,6 +259,11 @@ private data class UpdatePhoneResponse(
     val message: String = "",
     @SerialName("phone_number")
     val phoneNumber: String,
+)
+
+@Serializable
+private data class UpdateStatusRequest(
+    val status: String,
 )
 
 @Serializable

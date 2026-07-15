@@ -17,6 +17,7 @@ import org.example.project.data.createHttpClient
 import org.example.project.notifications.PushNotificationCoordinator
 import org.example.project.notifications.PushNotifications
 import org.example.project.notifications.installTokenRefreshHandler
+import org.example.project.notifications.installVoipTokenRefreshHandler
 import org.example.project.presentation.auth.LoginScreen
 import org.example.project.presentation.auth.LoginViewModel
 import org.example.project.presentation.localization.AppLanguage
@@ -50,6 +51,9 @@ fun App() {
         PushNotificationCoordinator.configure(httpClient, ApiConfig.BASE_URL)
         installTokenRefreshHandler { fcmToken ->
             PushNotificationCoordinator.onTokenRefreshed(fcmToken)
+        }
+        installVoipTokenRefreshHandler { voipToken ->
+            PushNotificationCoordinator.onVoipTokenRefreshed(voipToken)
         }
         PushNotifications.requestPermission()
 
@@ -119,6 +123,11 @@ fun App() {
                             onPhoneNumberUpdated = { phoneNumber ->
                                 val updatedUser = user.copy(phoneNumber = phoneNumber)
                                 currentUser = updatedUser
+                                SessionStorage.saveSession(updatedUser)
+                            },
+                            onUserSessionUpdated = { updatedUser ->
+                                currentUser = updatedUser
+                                selectedLanguage = AppLanguage.fromCode(updatedUser.languageFlag)
                                 SessionStorage.saveSession(updatedUser)
                             },
                             onLogout = {

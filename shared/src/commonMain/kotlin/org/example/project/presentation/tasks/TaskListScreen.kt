@@ -40,6 +40,17 @@ import org.example.project.presentation.localization.LocalAppStrings
 import org.example.project.presentation.components.DismissKeyboardOnTapOutside
 import org.example.project.presentation.theme.AppColorPalette
 import org.example.project.presentation.theme.AppDimensions
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 
 private const val TASK_LIST_REFRESH_INTERVAL_MS = 5_000L
 
@@ -117,7 +128,6 @@ private fun TaskListToolbar(
     onToggleOnlyMine: () -> Unit,
     onAddTaskClick: () -> Unit,
 ) {
-    val colors = MaterialTheme.colorScheme
     val strings = LocalAppStrings.current
 
     Column {
@@ -129,25 +139,118 @@ private fun TaskListToolbar(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        StatusFilterBar(selected = statusFilter, onSelect = onStatusFilterChanged)
-
-        Spacer(modifier = Modifier.height(12.dp))
-
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             MyTasksToggle(
                 active = onlyMine,
                 onToggle = onToggleOnlyMine,
+                modifier = Modifier.weight(0.9f),
+            )
+
+            StatusFilterDropdown(
+                selected = statusFilter,
+                onSelect = onStatusFilterChanged,
+                modifier = Modifier.weight(1.15f),
             )
 
             AppButton(
                 onClick = onAddTaskClick,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1.25f)
+                    .height(44.dp),
             ) {
-                Text(strings.text("+ Add task"))
+                Text(
+                    text = strings.text("+ Add task"),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusFilterDropdown(
+    selected: TaskStatus?,
+    onSelect: (TaskStatus?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val strings = LocalAppStrings.current
+    var expanded by remember { mutableStateOf(false) }
+
+    val options: List<Pair<String, TaskStatus?>> = listOf(
+        strings.text("All") to null,
+        strings.taskStatus(TaskStatus.TO_DO) to TaskStatus.TO_DO,
+        strings.taskStatus(TaskStatus.IN_PROGRESS) to TaskStatus.IN_PROGRESS,
+        strings.taskStatus(TaskStatus.COMPLETE) to TaskStatus.COMPLETE,
+        strings.taskStatus(TaskStatus.BLOCKED) to TaskStatus.BLOCKED,
+    )
+
+    val selectedLabel = options
+        .firstOrNull { it.second == selected }
+        ?.first
+        ?: strings.text("All")
+
+    Box(modifier = modifier) {
+        OutlinedButton(
+            onClick = { expanded = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp),
+            shape = RoundedCornerShape(12.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = colors.outline,
+            ),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = colors.surface,
+                contentColor = colors.onSurface,
+            ),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = selectedLabel,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.SemiBold,
+                )
+
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowDown,
+                    contentDescription = "Open status filter",
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(colors.surface),
+        ) {
+            options.forEach { (label, status) ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = label,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = colors.onSurface,
+                        )
+                    },
+                    onClick = {
+                        onSelect(status)
+                        expanded = false
+                    },
+                )
             }
         }
     }
@@ -202,11 +305,14 @@ private fun StatusFilterBar(
 private fun MyTasksToggle(
     active: Boolean,
     onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
     val strings = LocalAppStrings.current
+
     Box(
-        modifier = Modifier
+        modifier = modifier
+            .height(44.dp)
             .border(
                 width = 1.dp,
                 color = if (active) colors.primary else colors.outline,
@@ -217,12 +323,15 @@ private fun MyTasksToggle(
                 shape = RoundedCornerShape(12.dp),
             )
             .clickable(onClick = onToggle)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = strings.text("My tasks"),
             color = if (active) colors.onPrimary else colors.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -305,9 +414,29 @@ private fun TaskListHeader() {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = strings.text("Task"), modifier = Modifier.weight(1.7f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
-        Text(text = strings.text("Status"), modifier = Modifier.weight(1.3f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
-        Text(text = strings.text("Due"), modifier = Modifier.weight(1f), color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+        Text(
+            text = strings.text("Task"),
+            modifier = Modifier.weight(1.55f),
+            color = colors.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
+
+        Text(
+            text = strings.text("Status"),
+            modifier = Modifier.weight(1.05f),
+            color = colors.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
+
+        Text(
+            text = strings.text("Due"),
+            modifier = Modifier.weight(1.15f),
+            color = colors.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
     }
 }
 
@@ -326,20 +455,25 @@ private fun TaskRow(task: Task, onClick: () -> Unit) {
     ) {
         Text(
             text = task.title,
-            modifier = Modifier.weight(1.7f),
+            modifier = Modifier.weight(1.55f),
             style = MaterialTheme.typography.bodyLarge,
             color = if (isDone) colors.onSurfaceVariant else colors.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
+
         Box(
-            modifier = Modifier.weight(1.3f),
+            modifier = Modifier.weight(1.05f),
             contentAlignment = Alignment.CenterStart,
         ) {
             StatusBadge(status = task.status)
         }
+
         Text(
             text = task.dueDate.take(10),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1.15f),
             color = colors.onSurfaceVariant,
+            maxLines = 1,
         )
     }
 }

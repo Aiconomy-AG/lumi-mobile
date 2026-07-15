@@ -100,6 +100,8 @@ actual object CallPermissions {
         return ensureForCall("video")
     }
 
+    actual suspend fun requestLaunchPermissionsIfNeeded(): Boolean = requestAtLaunchIfNeeded()
+
     actual fun refresh() {
         val context = appContext ?: return
         if (hasAudio() && hasCamera()) {
