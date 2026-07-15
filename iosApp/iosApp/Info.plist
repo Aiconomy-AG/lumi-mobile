@@ -8,10 +8,7 @@
 	<array>
 		<string>audio</string>
 		<string>remote-notification</string>
+		<string>voip</string>
 	</array>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Lumi uses your microphone for audio calls.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Lumi does not publish video; this key is required by the LiveKit SDK.</string>
 </dict>
 </plist>
