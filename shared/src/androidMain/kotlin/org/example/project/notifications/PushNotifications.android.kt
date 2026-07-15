@@ -51,6 +51,8 @@ actual object PushNotifications {
         }
     }
 
+    actual suspend fun getVoipToken(): String? = null
+
     private var activity: Activity? = null
 
     private suspend fun <T> Task<T>.await(): T = suspendCoroutine { continuation ->
