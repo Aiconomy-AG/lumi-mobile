@@ -2,6 +2,7 @@ package org.example.project.presentation.chat
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
@@ -18,9 +19,11 @@ import org.example.project.data.chat.currentActivitySortKey
 import org.example.project.data.chat.currentTimeLabel
 import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatMessage
+import org.example.project.domain.chat.ChatMessageReaction
 import org.example.project.domain.chat.ChatNotificationEvent
 import org.example.project.domain.chat.ChatParticipant
 import org.example.project.domain.chat.ChatRealtimeApi
+import org.example.project.domain.chat.ChatRealtimeEvent
 import org.example.project.domain.chat.Conversation
 import org.example.project.domain.chat.ConversationSummary
 import org.example.project.domain.chat.ConversationType
@@ -144,6 +147,7 @@ class ChatViewModel(
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
     private var nextOptimisticMessageId = -1
     private var readStateByConversationId = ChatReadStateStorage.load(currentEmployeeId).toMutableMap()
+    private var conversationRealtimeJob: Job? = null
 
     init {
         loadChat()
@@ -441,6 +445,8 @@ class ChatViewModel(
     }
 
     fun selectConversation(conversation: ChatConversationItem) {
+        listenForConversationEvents(conversation.conversation.id)
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 selectedConversation = conversation,
@@ -515,6 +521,7 @@ class ChatViewModel(
     }
 
     fun backToConversationList() {
+        stopListeningForConversationEvents()
         _uiState.value = _uiState.value.copy(
             selectedConversation = null,
             messages = emptyList(),
@@ -599,6 +606,105 @@ class ChatViewModel(
                 )
             }
         }
+    }
+
+    fun reactToMessage(message: ChatMessage, emoji: String) {
+        if (message.id < 0) return
+        val previousReactions = message.reactions
+        applyMessageReactions(message.id, patchReaction(previousReactions, emoji, add = true))
+
+        viewModelScope.launch {
+            try {
+                val updated = chatApi.addReaction(message.conversationId, message.id, emoji)
+                applyMessageReactions(message.id, updated.reactions)
+            } catch (e: Exception) {
+                applyMessageReactions(message.id, previousReactions)
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "Nu am putut adăuga reacția.",
+                )
+            }
+        }
+    }
+
+    fun removeReaction(message: ChatMessage, emoji: String) {
+        if (message.id < 0) return
+        val previousReactions = message.reactions
+        applyMessageReactions(message.id, patchReaction(previousReactions, emoji, add = false))
+
+        viewModelScope.launch {
+            try {
+                val updated = chatApi.removeReaction(message.conversationId, message.id, emoji)
+                applyMessageReactions(message.id, updated.reactions)
+            } catch (e: Exception) {
+                applyMessageReactions(message.id, previousReactions)
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "Nu am putut elimina reacția.",
+                )
+            }
+        }
+    }
+
+    private fun patchReaction(
+        reactions: List<ChatMessageReaction>,
+        emoji: String,
+        add: Boolean,
+    ): List<ChatMessageReaction> {
+        val withoutSelf = reactions.mapNotNull { reaction ->
+            if (currentEmployeeId !in reaction.userIds) return@mapNotNull reaction
+            val remainingUserIds = reaction.userIds - currentEmployeeId
+            if (remainingUserIds.isEmpty()) null else reaction.copy(count = remainingUserIds.size, userIds = remainingUserIds)
+        }
+
+        if (!add) return withoutSelf
+
+        val existing = withoutSelf.find { it.emoji == emoji }
+        return if (existing != null) {
+            withoutSelf.map {
+                if (it.emoji == emoji) {
+                    it.copy(count = it.count + 1, userIds = it.userIds + currentEmployeeId)
+                } else {
+                    it
+                }
+            }
+        } else {
+            withoutSelf + ChatMessageReaction(emoji = emoji, count = 1, userIds = listOf(currentEmployeeId))
+        }
+    }
+
+    private fun applyMessageReactions(messageId: Int, reactions: List<ChatMessageReaction>) {
+        _uiState.value = _uiState.value.copy(
+            messages = _uiState.value.messages.map {
+                if (it.id == messageId) it.copy(reactions = reactions) else it
+            },
+        )
+    }
+
+    private fun listenForConversationEvents(conversationId: Int) {
+        conversationRealtimeJob?.cancel()
+        val realtimeApi = chatRealtimeApi ?: return
+
+        conversationRealtimeJob = viewModelScope.launch {
+            realtimeApi.conversationEvents(conversationId)
+                .catch { }
+                .collect { event ->
+                    when (event) {
+                        is ChatRealtimeEvent.ReactionUpdated -> applyRealtimeMessage(event.message)
+                    }
+                }
+        }
+    }
+
+    private fun stopListeningForConversationEvents() {
+        conversationRealtimeJob?.cancel()
+        conversationRealtimeJob = null
+    }
+
+    private fun applyRealtimeMessage(message: ChatMessage) {
+        val currentState = _uiState.value
+        if (currentState.selectedConversation?.conversation?.id != message.conversationId) return
+        _uiState.value = currentState.copy(
+            messages = currentState.messages.map { if (it.id == message.id) message else it },
+        )
     }
 
     private fun listenForRealtimeChat() {

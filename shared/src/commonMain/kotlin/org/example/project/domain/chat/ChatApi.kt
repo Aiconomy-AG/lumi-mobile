@@ -35,12 +35,15 @@ interface ChatApi {
         removeParticipantEmployeeIds: List<Int> = emptyList(),
     ): Conversation
     suspend fun sendMessage(conversationId: Int, senderId: Int, messageText: String): ChatMessage
+    suspend fun addReaction(conversationId: Int, messageId: Int, emoji: String): ChatMessage
+    suspend fun removeReaction(conversationId: Int, messageId: Int, emoji: String): ChatMessage
     suspend fun approveAiAction(conversationId: Int, actionId: Int)
     suspend fun rejectAiAction(conversationId: Int, actionId: Int)
 }
 
 interface ChatRealtimeApi {
     fun notificationEvents(userId: Int): Flow<ChatNotificationEvent>
+    fun conversationEvents(conversationId: Int): Flow<ChatRealtimeEvent>
 }
 
 data class ChatNotificationEvent(
@@ -50,3 +53,7 @@ data class ChatNotificationEvent(
     val messageId: Int?,
     val actorUserId: Int?,
 )
+
+sealed interface ChatRealtimeEvent {
+    data class ReactionUpdated(val message: ChatMessage) : ChatRealtimeEvent
+}

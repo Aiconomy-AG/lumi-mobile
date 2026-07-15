@@ -2,6 +2,7 @@ package org.example.project.data.chat
 
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -20,6 +21,7 @@ import org.example.project.domain.chat.ChatApi
 import org.example.project.domain.chat.ChatCallMetadata
 import org.example.project.domain.chat.ChatMessage
 import org.example.project.domain.chat.ChatMessagePreview
+import org.example.project.domain.chat.ChatMessageReaction
 import org.example.project.domain.chat.ChatMessageType
 import org.example.project.domain.chat.ChatParticipant
 import org.example.project.domain.chat.Conversation
@@ -139,6 +141,28 @@ class ChatApiService(
         return chatJson.decodeFromString<MessageResponse>(text).data.toChatMessage()
     }
 
+    override suspend fun addReaction(conversationId: Int, messageId: Int, emoji: String): ChatMessage {
+        val response = client.post("$baseUrl/workspace/conversations/$conversationId/messages/$messageId/reactions") {
+            bearerAuth()
+            contentType(ContentType.Application.Json)
+            setBody(ReactionRequestBody(emoji = emoji))
+        }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
+        return chatJson.decodeFromString<MessageResponse>(text).data.toChatMessage()
+    }
+
+    override suspend fun removeReaction(conversationId: Int, messageId: Int, emoji: String): ChatMessage {
+        val response = client.delete("$baseUrl/workspace/conversations/$conversationId/messages/$messageId/reactions") {
+            bearerAuth()
+            contentType(ContentType.Application.Json)
+            setBody(ReactionRequestBody(emoji = emoji))
+        }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) throw Exception(parseErrorMessage(text))
+        return chatJson.decodeFromString<MessageResponse>(text).data.toChatMessage()
+    }
+
     override suspend fun approveAiAction(conversationId: Int, actionId: Int) {
         val response = client.post("$baseUrl/workspace/conversations/$conversationId/ai-actions/$actionId/approve") {
             bearerAuth()
@@ -251,7 +275,7 @@ private data class MessageResponse(
 )
 
 @Serializable
-private data class MessageDto(
+internal data class MessageDto(
     val id: Int,
     @SerialName("conversation_id") val conversationId: Int,
     @SerialName("sender_id") val senderId: Int,
@@ -260,6 +284,7 @@ private data class MessageDto(
     @SerialName("sent_at") val sentAt: String? = null,
     val call: ChatCallMetadataDto? = null,
     val meta: AiActionMeta? = null,
+    val reactions: List<ReactionDto> = emptyList(),
 ) {
     fun toChatMessage(): ChatMessage = ChatMessage(
         id = id,
@@ -275,11 +300,25 @@ private data class MessageDto(
             else -> ChatMessageType.TEXT
         },
         meta = meta,
+        reactions = reactions.map { it.toReaction() },
     )
 }
 
 @Serializable
-private data class ChatCallMetadataDto(
+internal data class ReactionDto(
+    val emoji: String,
+    val count: Int,
+    @SerialName("user_ids") val userIds: List<Int> = emptyList(),
+) {
+    fun toReaction(): ChatMessageReaction = ChatMessageReaction(
+        emoji = emoji,
+        count = count,
+        userIds = userIds,
+    )
+}
+
+@Serializable
+internal data class ChatCallMetadataDto(
     val id: String,
     val status: String,
     val type: String,
@@ -308,6 +347,11 @@ private data class ChatCallMetadataDto(
 @Serializable
 private data class SendMessageRequestBody(
     val message: String,
+)
+
+@Serializable
+private data class ReactionRequestBody(
+    val emoji: String,
 )
 
 @Serializable
