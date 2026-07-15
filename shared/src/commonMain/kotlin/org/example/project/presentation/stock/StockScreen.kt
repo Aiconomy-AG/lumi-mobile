@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,11 +26,21 @@ import org.example.project.presentation.theme.AppDimensions
 fun StockScreen(
     viewModel: StockViewModel,
     onAddProductClick: () -> Unit,
+    openProductId: Int? = null,
+    onOpenProductConsumed: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     var selectedProductId by remember { mutableStateOf<Int?>(null) }
     val selectedProduct = selectedProductId?.let { id ->
         state.products.firstOrNull { it.id == id }
+    }
+
+    LaunchedEffect(openProductId, state.products) {
+        val productId = openProductId ?: return@LaunchedEffect
+        if (state.products.any { it.id == productId }) {
+            selectedProductId = productId
+            onOpenProductConsumed()
+        }
     }
 
     PlatformBackHandler(

@@ -34,6 +34,18 @@ actual object PushNotifications {
         }
     }
 
+    actual suspend fun getVoipToken(): String? {
+        IosVoipTokenStore.voipToken?.let { return it }
+
+        return withTimeoutOrNull(TOKEN_TIMEOUT_MS) {
+            suspendCancellableCoroutine { continuation ->
+                IosVoipTokenStore.awaitToken { token ->
+                    continuation.resume(token)
+                }
+            }
+        }
+    }
+
     private const val PERMISSION_TIMEOUT_MS = 30_000L
     private const val TOKEN_TIMEOUT_MS = 15_000L
 }

@@ -10,5 +10,9 @@
 		<string>remote-notification</string>
 		<string>voip</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Lumi uses your microphone for audio calls.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Lumi uses your camera for video calls.</string>
 </dict>
 </plist>

@@ -18,6 +18,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.data.auth.UserSession
@@ -32,6 +33,7 @@ fun AppTopBar(
     activeTimerViewModel: ActiveTimerViewModel,
     onOpenActiveTask: (Task) -> Unit,
     onMenuClick: () -> Unit,
+    onSearchClick: () -> Unit,
     onProfileClick: () -> Unit = {}
 ) {
     val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -56,6 +58,8 @@ fun AppTopBar(
             color = AppColorPalette.TextPrimarySoft,
             fontSize = 17.sp,
             fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
 
@@ -69,6 +73,15 @@ fun AppTopBar(
 
             Spacer(modifier = Modifier.width(10.dp))
         }
+
+        IconButton(
+            onClick = onSearchClick,
+            modifier = Modifier.size(40.dp),
+        ) {
+            SearchGlyph(tint = AppColorPalette.IconPrimaryTranslucent)
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         Box(
             modifier = Modifier
@@ -84,6 +97,31 @@ fun AppTopBar(
                 fontWeight = FontWeight.SemiBold
             )
         }
+    }
+}
+
+@Composable
+private fun SearchGlyph(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier.size(22.dp)) {
+        val strokeWidth = size.width * 0.085f
+        val radius = size.width * 0.28f
+        val center = Offset(size.width * 0.43f, size.height * 0.42f)
+        drawCircle(
+            color = tint,
+            radius = radius,
+            center = center,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
+        )
+        drawLine(
+            color = tint,
+            start = Offset(center.x + radius * 0.68f, center.y + radius * 0.68f),
+            end = Offset(size.width * 0.78f, size.height * 0.78f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
     }
 }
 

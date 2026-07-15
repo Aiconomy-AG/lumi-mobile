@@ -429,6 +429,17 @@ class ChatViewModel(
         )
     }
 
+    fun startDirectMessageByUserId(userId: Int) {
+        viewModelScope.launch {
+            var contact = _uiState.value.contacts.firstOrNull { it.user.id == userId }
+            if (contact == null) {
+                refreshChat(showLoading = false, showError = false)
+                contact = _uiState.value.contacts.firstOrNull { it.user.id == userId }
+            }
+            contact?.let { selectContact(it) }
+        }
+    }
+
     fun selectConversation(conversation: ChatConversationItem) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
