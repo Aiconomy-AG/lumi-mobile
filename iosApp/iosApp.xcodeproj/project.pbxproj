@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		325D260D3000EE4B001A0224 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 325D260C3000EE4B001A0224 /* FirebaseCore */; };
-		FA12D7732FFFC1D400DF55A8 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FA12D7722FFFC1D400DF55A8 /* FirebaseMessaging */; settings = {ATTRIBUTES = (Required, ); }; };
 		A10000000000000000000003 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000002 /* LiveKit */; };
+		FA12D7732FFFC1D400DF55A8 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FA12D7722FFFC1D400DF55A8 /* FirebaseMessaging */; settings = {ATTRIBUTES = (Required, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -329,6 +329,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Lumi does not publish video; this key is required by the LiveKit SDK.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Lumi uses your microphone for audio calls.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -360,6 +362,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Lumi does not publish video; this key is required by the LiveKit SDK.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Lumi uses your microphone for audio calls.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -419,15 +423,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A10000000000000000000002 /* LiveKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A10000000000000000000001 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
-			productName = LiveKit;
-		};
 		325D260C3000EE4B001A0224 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = FA12D7712FFFC1D400DF55A8 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCore;
+		};
+		A10000000000000000000002 /* LiveKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000001 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
+			productName = LiveKit;
 		};
 		FA12D7722FFFC1D400DF55A8 /* FirebaseMessaging */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -2,6 +2,7 @@ package org.example.project.notifications
 
 import io.ktor.client.HttpClient
 import org.example.project.data.notifications.DeviceTokenApiService
+import org.example.project.data.notifications.DevicePlatform
 import org.example.project.data.notifications.currentDeviceId
 import org.example.project.notifications.platform.currentDevicePlatform
 
@@ -10,6 +11,7 @@ object PushNotificationCoordinator {
     private var httpClient: HttpClient? = null
     private var baseUrl: String = ""
     private var lastFcmToken: String? = null
+    private var lastVoipToken: String? = null
 
     fun configure(httpClient: HttpClient, baseUrl: String) {
         this.httpClient = httpClient
@@ -18,22 +20,42 @@ object PushNotificationCoordinator {
 
     suspend fun registerAfterLogin(authToken: String) {
         this.authToken = authToken
-        val fcmToken = PushNotifications.getFcmToken() ?: return
-        lastFcmToken = fcmToken
-        registerToken(authToken, fcmToken)
+        val fcmToken = PushNotifications.getFcmToken()
+        if (fcmToken != null) {
+            lastFcmToken = fcmToken
+            registerToken(authToken, fcmToken, currentDevicePlatform())
+        }
+        val voipToken = PushNotifications.getVoipToken()
+        if (voipToken != null) {
+            lastVoipToken = voipToken
+            registerToken(authToken, voipToken, DevicePlatform.APNS_VOIP)
+        }
     }
 
     suspend fun reregisterIfPossible() {
         val token = authToken ?: return
-        val fcmToken = PushNotifications.getFcmToken() ?: return
-        lastFcmToken = fcmToken
-        registerToken(token, fcmToken)
+        val fcmToken = PushNotifications.getFcmToken()
+        if (fcmToken != null) {
+            lastFcmToken = fcmToken
+            registerToken(token, fcmToken, currentDevicePlatform())
+        }
+        val voipToken = PushNotifications.getVoipToken()
+        if (voipToken != null) {
+            lastVoipToken = voipToken
+            registerToken(token, voipToken, DevicePlatform.APNS_VOIP)
+        }
     }
 
     suspend fun onTokenRefreshed(fcmToken: String) {
         lastFcmToken = fcmToken
         val token = authToken ?: return
-        registerToken(token, fcmToken)
+        registerToken(token, fcmToken, currentDevicePlatform())
+    }
+
+    suspend fun onVoipTokenRefreshed(voipToken: String) {
+        lastVoipToken = voipToken
+        val token = authToken ?: return
+        registerToken(token, voipToken, DevicePlatform.APNS_VOIP)
     }
 
     suspend fun unregisterOnLogout(authToken: String) {
@@ -46,17 +68,30 @@ object PushNotificationCoordinator {
             } catch (_: Exception) {
             }
         }
+        val voipToken = lastVoipToken ?: PushNotifications.getVoipToken()
+        if (voipToken != null) {
+            try {
+                DeviceTokenApiService(client, baseUrl, authToken)
+                    .unregisterDeviceToken(voipToken)
+            } catch (_: Exception) {
+            }
+        }
         this.authToken = null
         lastFcmToken = null
+        lastVoipToken = null
     }
 
-    private suspend fun registerToken(authToken: String, fcmToken: String) {
+    private suspend fun registerToken(
+        authToken: String,
+        token: String,
+        platform: DevicePlatform,
+    ) {
         val client = httpClient ?: return
         try {
             DeviceTokenApiService(client, baseUrl, authToken)
                 .registerDeviceToken(
-                    fcmToken = fcmToken,
-                    platform = currentDevicePlatform(),
+                    fcmToken = token,
+                    platform = platform,
                     deviceId = currentDeviceId(),
                 )
         } catch (_: Exception) {
